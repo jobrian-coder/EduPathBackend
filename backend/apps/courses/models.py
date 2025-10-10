@@ -11,8 +11,8 @@ class University(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=10, unique=True, help_text='University code (e.g., AA01)')
     name = models.CharField(max_length=200)
+    code = models.CharField(max_length=10, unique=True, null=True, blank=True, help_text='University code (e.g., U001)')
     short_name = models.CharField(max_length=50)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     location = models.CharField(max_length=200)
@@ -84,6 +84,12 @@ class CourseUniversity(models.Model):
     cutoff_points = models.DecimalField(max_digits=5, decimal_places=2)
     application_deadline = models.DateField(blank=True, null=True)
     course_url = models.URLField(blank=True, null=True)
+    
+    # New fields from Excel data
+    program_code = models.CharField(max_length=20, blank=True, null=True, help_text='KUCCPS program code')
+    cutoff_2022 = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, help_text='2022 cutoff points')
+    cluster_subjects = models.JSONField(default=list, blank=True, help_text='List of cluster subjects')
+    all_subjects = models.TextField(blank=True, null=True, help_text='All subjects as text')
     
     class Meta:
         db_table = 'course_universities'

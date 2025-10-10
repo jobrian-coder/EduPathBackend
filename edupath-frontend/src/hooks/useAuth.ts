@@ -7,15 +7,17 @@ export function useAuth() {
 
   useEffect(() => {
     const token = localStorage.getItem('edupath.auth.token')
+    
     if (!token) {
       setLoading(false)
       return
     }
+    
     ;(async () => {
       try {
         const me = await api.auth.getProfile()
         setUser(me)
-      } catch {
+      } catch (error) {
         localStorage.removeItem('edupath.auth.token')
         localStorage.removeItem('edupath.user')
       } finally {

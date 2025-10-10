@@ -231,6 +231,17 @@ export interface Course {
   mandatory_subjects: string[];
   alternative_subjects: string[];
   cluster_subjects?: string[] | null;
+  universities?: CourseUniversity[];
+}
+
+export interface CourseUniversity {
+  id: string;
+  course: string | Course;
+  university: string | University;
+  fees_ksh: number;
+  cutoff_points: number;
+  application_deadline?: string | null;
+  course_url?: string | null;
 }
 
 export interface University {
@@ -247,16 +258,6 @@ export interface University {
   description: string;
   facilities: string[];
   accreditation: string;
-}
-
-export interface CourseUniversity {
-  id: string;
-  course: string; // course id
-  university: string; // university id
-  fees_ksh: number;
-  cutoff_points: number;
-  application_deadline?: string | null;
-  course_url?: string | null;
 }
 
 export const coursesAPI = {
@@ -293,11 +294,11 @@ export const coursesAPI = {
   listCourseUniversities: async (params?: { course?: string; university?: string }) => {
     const data = await apiRequest<any>(`/courses/course-universities/?${new URLSearchParams(params as any)}`, { includeAuth: false })
     const raw: any[] = Array.isArray(data) ? data : (data?.results || [])
-    // Normalize nested course/university into ids if backend returns nested objects
+    // Keep nested objects as they are for CourseDetailCard compatibility
     const results: CourseUniversity[] = raw.map((item: any) => ({
       id: String(item.id),
-      course: typeof item.course === 'object' ? String(item.course.id) : String(item.course),
-      university: typeof item.university === 'object' ? String(item.university.id) : String(item.university),
+      course: item.course, // Keep as object or string
+      university: item.university, // Keep as object or string
       fees_ksh: Number(item.fees_ksh),
       cutoff_points: Number(item.cutoff_points),
       application_deadline: item.application_deadline ?? null,
@@ -630,6 +631,15 @@ export const societiesAPI = {
       post: normalizeSocietyPost(data.post),
     };
   },
+};
+
+// Export all types
+export type {
+  Course,
+  CourseUniversity,
+  University,
+  KCSEGrade,
+  SocietyPostType
 };
 
 export default {

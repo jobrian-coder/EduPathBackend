@@ -16,9 +16,15 @@ class UniversityListSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
+    universities = serializers.SerializerMethodField()
+    
     class Meta:
         model = Course
         fields = '__all__'
+    
+    def get_universities(self, obj):
+        course_universities = CourseUniversity.objects.filter(course=obj).select_related('university')
+        return CourseUniversitySerializer(course_universities, many=True).data
 
 
 class CourseListSerializer(serializers.ModelSerializer):
@@ -29,7 +35,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
 
 class CourseUniversitySerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
+    course = CourseListSerializer(read_only=True)  # Use lightweight serializer to avoid circular reference
     university = UniversitySerializer(read_only=True)
     
     class Meta:

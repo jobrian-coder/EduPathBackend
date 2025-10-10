@@ -433,7 +433,7 @@ export default function HubFeedV2() {
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px] gap-4 p-2 md:p-4 max-w-[1800px] mx-auto">
         
         {/* Left Sidebar - Hub Navigator (Hidden on mobile, visible on large screens) */}
-        <aside className="hidden lg:block lg:h-[calc(100vh-2rem)] lg:sticky lg:top-4 overflow-y-auto custom-scrollbar">
+        <aside className="hidden lg:block lg:h-[calc(100vh-2rem)] lg:sticky lg:top-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-3 md:p-4 space-y-2">
             <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold px-2 mb-3">
               Communities

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import AdsCarousel from '../../../components/common/AdsCarousel'
 import { Link, useLocation } from 'react-router-dom'
 import { toggleBookmark, isBookmarked } from '../../../lib/bookmarks'
+import { CourseDetailCard } from '../../courses/components/CourseDetailCard'
 import api, { type Course, type University, type CourseUniversity } from '../../../services/api'
 
 export default function Directory() {
@@ -24,6 +25,9 @@ export default function Directory() {
   const [tuitionMax, setTuitionMax] = useState<number>(1000000)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [compare, setCompare] = useState<Record<string, boolean>>({})
+  
+  // course detail view
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
 
   useEffect(() => {
     (async () => {
@@ -184,6 +188,7 @@ export default function Directory() {
                           <input type="checkbox" checked={!!compare[c.id]} onChange={()=>toggleCompare(c.id)} /> Compare
                         </label>
                         <button onClick={()=>saveCourse(c)} className={`text-xs px-2 py-1 rounded-full border ${isBookmarked(`course:${c.id}`,'course') ? 'bg-blue-600/20 border-blue-600 text-blue-300' : 'border-slate-600 hover:bg-blue-600/10 hover:text-blue-400'}`}>{isBookmarked(`course:${c.id}`,'course') ? '✓ Saved' : 'Save'}</button>
+                        <button onClick={()=>setSelectedCourse(c)} className="text-xs px-2 py-1 rounded-full border border-purple-600 hover:bg-purple-600/10 hover:text-purple-400">View Course</button>
                       </div>
                     </div>
                     {/* Quick info hover */}
@@ -269,6 +274,14 @@ export default function Directory() {
               <Link to={'/courses/compare'} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">Compare</Link>
             </div>
           </div>
+        )}
+
+        {/* Course Detail Card Modal */}
+        {selectedCourse && (
+          <CourseDetailCard
+            course={selectedCourse}
+            onClose={() => setSelectedCourse(null)}
+          />
         )}
 
       </div>
