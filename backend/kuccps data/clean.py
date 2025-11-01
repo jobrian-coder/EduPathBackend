@@ -9,7 +9,7 @@ df = pd.read_excel(file_path)
 df.columns = df.columns.str.strip()
 
 # --- 3. Output file path (same folder) ---
-output_path = os.path.join("kuccps data", "Programmes_By_Category_Full.xlsx")
+output_path = os.path.join("kuccps data", "Programmes_By_Category_Full_CLEANED.xlsx")
 
 # --- 4. Group rows by category ---
 groups = {}

@@ -31,6 +31,40 @@ class UniversityViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'list':
             return UniversityListSerializer
         return UniversitySerializer
+    
+    @action(detail=True, methods=['get'])
+    def programs(self, request, pk=None):
+        """Get all programs offered by a specific university"""
+        university = self.get_object()
+        
+        # Get all CourseUniversity relationships for this university
+        course_universities = CourseUniversity.objects.filter(university=university).select_related('course')
+        
+        # Apply filters if provided
+        category = request.query_params.get('category')
+        if category:
+            course_universities = course_universities.filter(course__category=category)
+        
+        # Apply search if provided
+        search = request.query_params.get('search')
+        if search:
+            course_universities = course_universities.filter(
+                course__name__icontains=search
+            )
+        
+        # Apply ordering
+        ordering = request.query_params.get('ordering', 'course__name')
+        if ordering in ['course__name', '-course__name', 'fees_ksh', '-fees_ksh', 'cutoff_points', '-cutoff_points']:
+            course_universities = course_universities.order_by(ordering)
+        
+        # Serialize the data
+        serializer = CourseUniversitySerializer(course_universities, many=True)
+        
+        return Response({
+            'university': UniversitySerializer(university).data,
+            'programs': serializer.data,
+            'total_programs': course_universities.count()
+        })
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):

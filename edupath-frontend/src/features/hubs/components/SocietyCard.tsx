@@ -30,7 +30,7 @@ export const SocietyCard: React.FC<SocietyCardProps> = ({
           {society.careers.map((career, idx) => (
             <span 
               key={idx} 
-              className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+              className="px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-sm"
             >
               {career}
             </span>

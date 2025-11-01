@@ -6,10 +6,10 @@ interface PostTypeBadgeProps {
 }
 
 const typeColors = {
-  question: 'bg-blue-100 text-blue-800',
-  guide: 'bg-green-100 text-green-800',
-  success_story: 'bg-purple-100 text-purple-800',
-  news: 'bg-orange-100 text-orange-800',
+  question: 'bg-teal-100 text-teal-800',
+  guide: 'bg-cyan-100 text-cyan-800',
+  success_story: 'bg-emerald-100 text-emerald-800',
+  news: 'bg-sky-100 text-sky-800',
 };
 
 export const PostTypeBadge: React.FC<PostTypeBadgeProps> = ({ type }) => (

@@ -1,14 +1,14 @@
 import { Link, NavLink } from 'react-router-dom'
-import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal } from 'lucide-react'
+import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
 export function Navbar() {
-  const navLink = 'inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20'
-  const active = 'bg-gradient-to-r from-blue-100 to-purple-100 text-slate-900 dark:from-blue-900/30 dark:to-purple-900/30 dark:text-slate-100 shadow-sm'
+  const navLink = 'inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-teal-50 text-gray-700 hover:text-teal-700'
+  const active = 'bg-teal-100 text-teal-800 shadow-sm'
   const [theme, setTheme] = useState<'light'|'dark'>(() => {
     const saved = localStorage.getItem('edupath.theme') as 'light'|'dark' | null
-    return saved ?? 'dark'
+    return saved ?? 'light'
   })
   const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, logout } = useAuth()
@@ -21,13 +21,13 @@ export function Navbar() {
   }, [theme])
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-black/80 backdrop-blur-xl shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl group">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md group-hover:shadow-lg transition-shadow">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-md group-hover:shadow-lg transition-shadow">
             <GraduationCap size={20} />
           </div>
-          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">EduPath</span>
+          <span className="bg-gradient-to-r from-teal-600 to-teal-700 bg-clip-text text-transparent">EduPath</span>
         </Link>
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
@@ -46,59 +46,63 @@ export function Navbar() {
           {isAuthenticated ? (
             <>
               <NavLink to="/profile" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
-                <img src="/profile-pics/default.svg" className="w-5 h-5 rounded-full"/>
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+                  <User size={12} className="text-white"/>
+                </div>
                 Profile
               </NavLink>
-              <button onClick={logout} className="ml-1 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <button onClick={logout} className="ml-1 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 hover:bg-gray-100 transition text-gray-700">
                 Sign out
               </button>
             </>
           ) : (
             <NavLink to="/auth" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
-              <img src="/profile-pics/default.svg" className="w-5 h-5 rounded-full"/>
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+                <User size={12} className="text-white"/>
+              </div>
               Sign in
             </NavLink>
           )}
-          <button aria-label="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="ml-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all">
+          <button aria-label="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="ml-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 border-teal-200 bg-teal-50 hover:bg-teal-100 transition-all text-teal-700">
             {theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}
             <span className="hidden md:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
         </nav>
         {/* Mobile overflow menu */}
         <div className="md:hidden">
-          <button aria-label="Open menu" onClick={() => setMenuOpen(v => !v)} className="inline-flex items-center px-3 py-2 rounded-lg border border-slate-800 bg-black text-slate-100 hover:bg-slate-900">
+          <button aria-label="Open menu" onClick={() => setMenuOpen(v => !v)} className="inline-flex items-center px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">
             <MoreHorizontal size={18} />
           </button>
           {menuOpen && (
-            <div className="absolute right-4 top-full mt-2 w-56 rounded-lg border border-slate-800 bg-black shadow-xl p-2">
+            <div className="absolute right-4 top-full mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-xl p-2">
               <div className="flex flex-col">
-                <NavLink to="/" end onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                <NavLink to="/" end onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                   Home
                 </NavLink>
-                <NavLink to="/directory" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                <NavLink to="/directory" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                   Directory
                 </NavLink>
-                <NavLink to="/courses/compare" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                <NavLink to="/courses/compare" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                   Courses
                 </NavLink>
-                <NavLink to="/societies" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                <NavLink to="/societies" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                   Societies
                 </NavLink>
                 {isAuthenticated ? (
                   <>
-                    <NavLink to="/profile" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                    <NavLink to="/profile" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                       Profile
                     </NavLink>
-                    <button onClick={() => { logout(); setMenuOpen(false); }} className="mt-1 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-800 hover:bg-slate-900">
+                    <button onClick={() => { logout(); setMenuOpen(false); }} className="mt-1 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 text-gray-700">
                       Sign out
                     </button>
                   </>
                 ) : (
-                  <NavLink to="/auth" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md ${isActive ? 'bg-slate-800 text-white' : 'hover:bg-slate-900'}`}>
+                  <NavLink to="/auth" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                     Sign in
                   </NavLink>
                 )}
-                <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setMenuOpen(false); }} className="mt-1 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-800 hover:bg-slate-900">
+                <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setMenuOpen(false); }} className="mt-1 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700">
                   {theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}
                   <span>{theme === 'dark' ? 'Light' : 'Dark'} mode</span>
                 </button>

@@ -9,7 +9,7 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => (
   <div 
-    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+    className="flex items-center justify-between p-4 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors cursor-pointer"
     onClick={() => onClick(event.id)}
   >
     <div>

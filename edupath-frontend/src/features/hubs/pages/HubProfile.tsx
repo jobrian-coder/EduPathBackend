@@ -79,7 +79,7 @@ export default function HubProfile() {
                 )}
               </div>
               <div className="mt-4">
-                <button className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 font-medium">
+                <button className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-teal-600 text-white hover:from-blue-700 hover:to-teal-700 font-medium">
                   Join Community
                 </button>
               </div>
@@ -150,7 +150,7 @@ export default function HubProfile() {
                 <option value="guide">Guide</option>
                 <option value="success_story">Success Story</option>
               </select>
-              <button onClick={createPost} className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">Post</button>
+              <button onClick={createPost} className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-teal-600 text-white hover:from-blue-700 hover:to-teal-700">Post</button>
             </CardContent>
           </Card>
 

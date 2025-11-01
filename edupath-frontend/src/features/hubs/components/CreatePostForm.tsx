@@ -80,7 +80,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               type="button"
               onClick={() => setIsExpertPost(true)}
               className={`px-4 py-2 text-sm font-medium transition ${
-                isExpertPost ? 'bg-sky-500 text-white' : 'bg-white text-gray-700'
+                isExpertPost ? 'bg-teal-500 text-white' : 'bg-white text-gray-700'
               }`}
             >
               Expert
@@ -158,7 +158,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             {tags.map((tag) => (
               <span 
                 key={tag} 
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-teal-700"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700"
               >
                 {tag}
                 <button

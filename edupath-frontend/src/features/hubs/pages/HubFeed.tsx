@@ -150,12 +150,12 @@ export default function HubFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50">
       <div className="grid grid-cols-[280px_1fr_320px] gap-4 p-4 max-w-[1800px] mx-auto">
         {/* Left Sidebar - Hub Navigator */}
         <aside className="h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto custom-scrollbar">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 space-y-2">
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold px-2 mb-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4 space-y-2">
+            <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
               Your Hubs
             </div>
             
@@ -163,29 +163,29 @@ export default function HubFeed() {
               <button
                 key={hub.id}
                 onClick={() => handleHubClick(hub)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-teal-50 ${
                   selectedHub?.id === hub.id 
-                    ? 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800' 
+                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200' 
                     : 'border border-transparent'
                 }`}
               >
                 <div className="text-2xl">{hub.icon}</div>
                 <div className="flex-1 text-left">
-                  <div className="text-sm font-medium text-slate-900 dark:text-white">
+                  <div className="text-sm font-medium text-slate-800">
                     {hub.name}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className="text-xs text-teal-600">
                     {hub.active_posts} posts
                   </div>
                 </div>
                 {selectedHub?.id === hub.id && (
-                  <Circle className="w-2 h-2 fill-blue-500 text-blue-500" />
+                  <Circle className="w-2 h-2 fill-teal-500 text-teal-500" />
                 )}
               </button>
             ))}
 
-            <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold px-2 mb-3">
+            <div className="pt-4 mt-4 border-t border-teal-200">
+              <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
                 Discover
               </div>
               
@@ -193,12 +193,12 @@ export default function HubFeed() {
                 <button
                   key={hub.id}
                   onClick={() => handleHubClick(hub)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-teal-50 text-teal-600"
                 >
                   <div className="text-2xl">{hub.icon}</div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{hub.name}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                    <div className="text-xs text-teal-600">
                       {hub.member_count} members
                     </div>
                   </div>
@@ -206,7 +206,7 @@ export default function HubFeed() {
               ))}
             </div>
 
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mt-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-all">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mt-4 rounded-xl border-2 border-dashed border-teal-200 text-teal-600 hover:border-teal-400 hover:text-teal-700 transition-all">
               <Plus className="w-4 h-4" />
               <span className="text-sm font-medium">Create Hub</span>
             </button>
@@ -216,14 +216,14 @@ export default function HubFeed() {
         {/* Center - The Feed */}
         <main className="space-y-3">
           {selectedHub && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 mb-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4 mb-4">
               <div className="flex items-center gap-3">
                 <div className="text-4xl">{selectedHub.icon}</div>
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <h1 className="text-2xl font-bold text-slate-800">
                     {selectedHub.name}
                   </h1>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                  <div className="text-sm text-teal-600">
                     {selectedHub.member_count.toLocaleString()} members · {selectedHub.active_posts} posts
                   </div>
                 </div>
@@ -235,30 +235,30 @@ export default function HubFeed() {
             <article
               key={post.id}
               onClick={() => handlePostClick(post.id)}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+              className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-teal-100 hover:border-teal-200"
             >
               <div className="p-4">
                 {/* Post Header */}
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
                     {selectedHub?.name}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-teal-600">
                     by {post.author?.username || 'Anonymous'}
                   </span>
-                  <span className="text-xs text-slate-400">·</span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-teal-400">·</span>
+                  <span className="text-xs text-teal-400">
                     {new Date(post.created_at).toLocaleDateString()}
                   </span>
                 </div>
 
                 {/* Post Title */}
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">
+                <h2 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2">
                   {post.title}
                 </h2>
 
                 {/* Post Preview */}
-                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-3">
+                <p className="text-sm text-slate-700 line-clamp-3 mb-3">
                   {post.content}
                 </p>
 
@@ -271,8 +271,8 @@ export default function HubFeed() {
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       post.user_vote === 'upvote'
-                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                        ? 'bg-teal-200 text-teal-700'
+                        : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
                     }`}
                   >
                     <ThumbsUp className="w-4 h-4" />
@@ -286,19 +286,19 @@ export default function HubFeed() {
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       post.user_vote === 'downvote'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        ? 'bg-cyan-200 text-cyan-700'
+                        : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'
                     }`}
                   >
                     <ThumbsDown className="w-4 h-4" />
                   </button>
 
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
                     <MessageSquare className="w-4 h-4" />
                     {post.comment_count}
                   </button>
 
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -310,27 +310,27 @@ export default function HubFeed() {
         {/* Right Sidebar - People & Trending */}
         <aside className="h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto custom-scrollbar space-y-4">
           {/* Who's Here */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
+            <h3 className="text-sm font-semibold text-slate-800 mb-3">
               Who's Here
             </h3>
             <div className="space-y-2">
               {activeUsers.map(user => (
-                <div key={user.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer">
+                <div key={user.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-teal-50 transition-all cursor-pointer">
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-sm font-medium">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center text-white text-sm font-medium">
                       {user.username[0].toUpperCase()}
                     </div>
                     {user.is_active && (
-                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                    <div className="text-sm font-medium text-slate-800">
                       {user.username}
                     </div>
                     {!user.is_active && user.last_seen && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                      <div className="text-xs text-teal-600">
                         {user.last_seen}
                       </div>
                     )}
@@ -341,10 +341,10 @@ export default function HubFeed() {
           </div>
 
           {/* Trending */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-orange-500" />
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <TrendingUp className="w-4 h-4 text-teal-500" />
+              <h3 className="text-sm font-semibold text-slate-800">
                 Trending Now
               </h3>
             </div>
@@ -353,17 +353,17 @@ export default function HubFeed() {
                 <div
                   key={post.id}
                   onClick={() => handlePostClick(post.id)}
-                  className="p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  className="p-2 rounded-lg hover:bg-teal-50 transition-all cursor-pointer"
                 >
                   <div className="flex gap-2">
-                    <div className="text-lg font-bold text-slate-400">
+                    <div className="text-lg font-bold text-teal-500">
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">
+                      <div className="text-sm font-medium text-slate-800 line-clamp-2">
                         {post.title}
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-teal-600">
                         <span>{post.upvotes} upvotes</span>
                         <span>·</span>
                         <span>{post.comment_count} comments</span>

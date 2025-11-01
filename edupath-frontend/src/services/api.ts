@@ -291,6 +291,15 @@ export const coursesAPI = {
   getUniversity: (id: string) =>
     apiRequest<University>(`/courses/universities/${id}/`),
 
+  getUniversityPrograms: async (universityId: string, params?: { category?: string; search?: string; ordering?: string }) => {
+    const data = await apiRequest<{
+      university: University;
+      programs: CourseUniversity[];
+      total_programs: number;
+    }>(`/courses/universities/${universityId}/programs/?${new URLSearchParams(params as any)}`, { includeAuth: false })
+    return data
+  },
+
   listCourseUniversities: async (params?: { course?: string; university?: string }) => {
     const data = await apiRequest<any>(`/courses/course-universities/?${new URLSearchParams(params as any)}`, { includeAuth: false })
     const raw: any[] = Array.isArray(data) ? data : (data?.results || [])
@@ -376,9 +385,17 @@ export interface Comment {
   author: User;
   parent_comment?: string;
   content: string;
+  depth?: number;
+  path?: string;
   upvotes: number;
   downvotes: number;
+  score?: number;
+  reply_count?: number;
+  is_deleted?: boolean;
+  is_edited?: boolean;
+  edited_at?: string;
   created_at: string;
+  updated_at?: string;
   replies?: Comment[];
 }
 

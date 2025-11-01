@@ -10,6 +10,7 @@ import HubProfile from '../features/hubs/pages/HubProfile'
 import HubFeedV2 from '../features/hubs/pages/HubFeedV2'
 import AuthPage from '../features/auth/pages/Auth'
 import PostDetail from '../features/posts/pages/PostDetail'
+import UniversityPrograms from '../features/universities/pages/UniversityPrograms'
 import { HomeGate, RequireAuth } from './guards'
 
 export const AppRoutes: RouteObject[] = [
@@ -21,6 +22,7 @@ export const AppRoutes: RouteObject[] = [
       { path: 'courses/compare', element: <CourseCompare /> },
       { path: 'courses/:id', element: <CourseDetail /> },
       { path: 'directory', element: <Directory /> },
+      { path: 'universities/:id/programs', element: <UniversityPrograms /> },
       { path: 'societies', element: <Societies /> },
       { path: 'hubs', element: <HubFeedV2 /> },
       { path: 'hubs/:slug', element: <HubFeedV2 /> },

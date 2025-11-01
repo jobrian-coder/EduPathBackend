@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, MessageSquare, Plus, ThumbsUp, Users } from 'lucide-react'
 import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
@@ -8,7 +8,6 @@ import { Dialog } from '../../../components/common/Dialog'
 import AdSpace from '../../../components/common/AdSpace'
 import { toggleBookmark, isBookmarked } from '../../../lib/bookmarks'
 import api, {
-  type Society,
   type SocietyPost,
   type SocietyPostType,
 } from '../../../services/api'
@@ -101,7 +100,7 @@ const SocietyPostForm = ({
                 onClick={() => setPostType(type.value)}
                 className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm transition ${
                   postType === type.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    ? 'border-teal-500 bg-teal-50 text-teal-600'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -121,7 +120,7 @@ const SocietyPostForm = ({
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200"
             placeholder="What would you like to share?"
             maxLength={300}
             required
@@ -137,7 +136,7 @@ const SocietyPostForm = ({
             value={content}
             onChange={(event) => setContent(event.target.value)}
             rows={6}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200"
             placeholder="Share more context, links, or resources..."
             required
           />
@@ -149,11 +148,11 @@ const SocietyPostForm = ({
           </label>
           <div className="flex flex-wrap gap-2 pb-2">
             {tags.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+              <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-xs text-teal-700">
                 #{tag}
                 <button
                   type="button"
-                  className="rounded-full bg-blue-200 px-1 text-blue-600 hover:bg-blue-300"
+                  className="rounded-full bg-teal-200 px-1 text-teal-600 hover:bg-teal-300"
                   onClick={() => setTags((prev) => prev.filter((item) => item !== tag))}
                 >
                   ×
@@ -167,7 +166,7 @@ const SocietyPostForm = ({
             value={tagInput}
             onChange={(event) => setTagInput(event.target.value)}
             onKeyDown={handleAddTag}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200"
             placeholder="Press Enter to add a tag"
           />
         </div>
@@ -178,7 +177,7 @@ const SocietyPostForm = ({
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" loading={isSubmitting} disabled={isSubmitting}>
+          <Button type="submit" variant="default" disabled={isSubmitting}>
             Post
           </Button>
         </div>
@@ -287,7 +286,7 @@ export default function Societies() {
     <PageContainer title="Communities">
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          <Card className="border-t-4 border-t-purple-500">
+          <Card className="border-t-4 border-t-teal-500">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="font-semibold">Explore Communities</div>
@@ -318,8 +317,8 @@ export default function Societies() {
                   key={society.id}
                   className={`cursor-pointer rounded-lg border p-3 transition-all ${
                     selectedSocietyId === String(society.id)
-                      ? 'border-blue-400 bg-blue-50'
-                      : 'border-slate-200 hover:border-blue-300'
+                      ? 'border-teal-400 bg-teal-50'
+                      : 'border-slate-200 hover:border-teal-300'
                   }`}
                   onClick={() => setSelectedSocietyId(String(society.id))}
                 >
@@ -339,7 +338,7 @@ export default function Societies() {
                       <div className="flex items-center justify-between">
                         <div>
                           <div 
-                            className="font-medium text-lg cursor-pointer hover:text-blue-600 transition"
+                            className="font-medium text-lg cursor-pointer hover:text-teal-600 transition"
                             onClick={(event) => {
                               event.stopPropagation()
                               navigate(`/hubs/${society.slug}`)
@@ -356,7 +355,7 @@ export default function Societies() {
                               event.stopPropagation()
                               navigate(`/hubs/${society.slug}`)
                             }}
-                            className="rounded-full border border-blue-600 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 transition"
+                            className="rounded-full border border-teal-600 px-3 py-1 text-xs text-teal-600 hover:bg-teal-50 transition"
                           >
                             View
                           </button>
@@ -369,7 +368,7 @@ export default function Societies() {
                             className={`rounded-full px-2 py-1 text-xs transition ${
                               joined[String(society.id)]
                                 ? 'border border-slate-600 bg-slate-800 text-slate-100'
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                                : 'bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800'
                             }`}
                           >
                             {joined[String(society.id)] ? 'Joined' : 'Join'}
@@ -384,7 +383,7 @@ export default function Societies() {
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-blue-500">
+          <Card className="border-t-4 border-t-teal-500">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -393,7 +392,7 @@ export default function Societies() {
                   </div>
                   <h2 className="text-xl font-semibold text-slate-900">Community Feed</h2>
                 </div>
-                <Button variant="primary" onClick={handleCreatePostClick} disabled={!selectedSocietyId}>
+                <Button variant="default" onClick={handleCreatePostClick} disabled={!selectedSocietyId}>
                   <Plus className="mr-2 h-4 w-4" /> Share Post
                 </Button>
               </div>
@@ -443,11 +442,11 @@ export default function Societies() {
                   : 'Anonymous'
 
                 return (
-                  <div key={post.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-blue-400">
+                  <div key={post.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-teal-400">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between text-sm text-slate-500">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-600">
                             {post.post_type}
                           </span>
                           <span>By {authorName}</span>
@@ -474,8 +473,8 @@ export default function Societies() {
                           disabled={isVoting}
                           className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm transition ${
                             post.user_vote === 'upvote'
-                              ? 'border-orange-600 bg-orange-100 text-orange-700'
-                              : 'border-slate-200 hover:border-orange-400 hover:text-orange-500'
+                              ? 'border-teal-600 bg-teal-100 text-teal-700'
+                              : 'border-slate-200 hover:border-teal-400 hover:text-teal-500'
                           }`}
                         >
                           <ThumbsUp className="h-4 w-4" /> {post.upvotes}
@@ -506,7 +505,7 @@ export default function Societies() {
         <div className="space-y-4">
           <AdSpace title="Sponsored Schools & Bootcamps" />
 
-          <Card className="border-t-4 border-t-blue-500">
+          <Card className="border-t-4 border-t-teal-500">
             <CardHeader>
               <div className="font-semibold">✍️ Share a community post</div>
             </CardHeader>
@@ -536,7 +535,7 @@ export default function Societies() {
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-purple-500">
+          <Card className="border-t-4 border-t-teal-500">
             <CardHeader>
               <div className="font-semibold">🔥 Popular Communities</div>
             </CardHeader>
@@ -544,7 +543,7 @@ export default function Societies() {
               {societies.slice(0, 5).map((society) => (
                 <div
                   key={society.id}
-                  className="rounded-lg border border-slate-200 p-3 hover:border-purple-300"
+                  className="rounded-lg border border-slate-200 p-3 hover:border-teal-300"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">

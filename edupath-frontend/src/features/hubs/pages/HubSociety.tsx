@@ -100,7 +100,7 @@ export const HubSociety: React.FC = () => {
   if (isLoadingHub) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
       </div>
     );
   }
@@ -248,7 +248,7 @@ export const HubSociety: React.FC = () => {
             <TabsContent value="feed" className="space-y-6">
               {isLoadingPosts ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
                 </div>
               ) : isPostsError ? (
                 <Alert variant="destructive">
@@ -315,7 +315,7 @@ export const HubSociety: React.FC = () => {
             <TabsContent value="events">
               {isLoadingEvents ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
                 </div>
               ) : isEventsError ? (
                 <Alert variant="destructive">
@@ -341,7 +341,7 @@ export const HubSociety: React.FC = () => {
                             <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
                             <p className="text-sm text-gray-500 mt-1">{event.society} • {event.type}</p>
                           </div>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                             {event.date}
                           </span>
                         </div>
@@ -373,7 +373,7 @@ export const HubSociety: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white font-semibold">
                         JD
                       </div>
                       <div>
@@ -413,7 +413,7 @@ export const HubSociety: React.FC = () => {
                         <span>•</span>
                         <span>{resource.source}</span>
                       </div>
-                      <Button variant="ghost" className="p-0 h-auto mt-3 text-blue-600 hover:text-blue-800">
+                      <Button variant="ghost" className="p-0 h-auto mt-3 text-teal-600 hover:text-teal-800">
                         View Resource
                       </Button>
                     </div>

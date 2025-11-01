@@ -20,7 +20,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between mb-3">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+        <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-semibold">
           {post.author[0]}
         </div>
         <div>
@@ -32,7 +32,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </div>
       {post.isPinned && (
-        <Pin className="w-5 h-5 text-blue-600 fill-current" />
+        <Pin className="w-5 h-5 text-teal-600 fill-current" />
       )}
     </div>
 
@@ -72,7 +72,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </button>
       <button 
         onClick={() => onComment(post.id)}
-        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+        className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors"
       >
         <MessageCircle className="w-4 h-4" />
         <span className="font-medium">{post.comments} comments</span>

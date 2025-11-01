@@ -211,9 +211,9 @@ export default function Profile() {
           {/* Bio Card (persistent) */}
           <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-lg">
             <div className="absolute inset-0">
-              <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
-              <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/20 dark:via-transparent dark:to-purple-900/20" />
+              <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
+              <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-teal-500/10 blur-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-teal-50/50 dark:from-blue-900/20 dark:via-transparent dark:to-teal-900/20" />
             </div>
           <CardContent className="relative z-10 p-6 md:p-8 flex flex-col gap-6 md:flex-row md:items-center">
             <div className="flex items-center gap-6 md:flex-1">
@@ -270,7 +270,7 @@ export default function Profile() {
                 ))}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button className="flex-1 rounded-lg bg-blue-500 px-4 py-2 font-medium tracking-wide hover:bg-blue-600 transition text-white">Follow</button>
+                <button className="flex-1 rounded-lg bg-teal-500 px-4 py-2 font-medium tracking-wide hover:bg-teal-600 transition text-white">Follow</button>
                 <button className="flex-1 rounded-lg bg-slate-200 dark:bg-slate-700 px-4 py-2 font-medium tracking-wide hover:bg-slate-300 dark:hover:bg-slate-600 transition text-slate-700 dark:text-slate-300">Message</button>
                 {!editing ? (
                   <button onClick={()=>{ setEditing(true); setBioDraft(user?.bio ?? ''); setLocationDraft(user?.location ?? '') }} className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 font-medium tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition text-slate-700 dark:text-slate-300">Edit Profile</button>
@@ -311,7 +311,7 @@ export default function Profile() {
                 {/* Progress Bar */}
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
                   <div 
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${user?.profile_completion || 0}%` }}
                   ></div>
                 </div>
@@ -378,8 +378,8 @@ export default function Profile() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-center p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20">
+                  <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                     {analytics.total_posts || 0}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">Posts Created</div>
@@ -390,8 +390,8 @@ export default function Profile() {
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">Comments Made</div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-center p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20">
+                  <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                     {analytics.upvotes_received || 0}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">Upvotes Received</div>
@@ -417,7 +417,7 @@ export default function Profile() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`px-4 py-2 rounded-full text-sm border transition ${activeTab === (t.id as any) ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
+              className={`px-4 py-2 rounded-full text-sm border transition ${activeTab === (t.id as any) ? 'bg-teal-600 text-white border-teal-600' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
             >
               {t.label}
             </button>
@@ -435,7 +435,7 @@ export default function Profile() {
                   Add your KCSE subjects and grades to unlock accurate course eligibility checks and better recommendations.
                 </div>
                 <div>
-                  <Link to="/profile/academic" className="inline-block px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                  <Link to="/profile/academic" className="inline-block px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700">
                     Complete Academic Profile
                   </Link>
                 </div>
@@ -474,7 +474,7 @@ export default function Profile() {
               <CardHeader><div className="font-semibold">Interests</div></CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 {DEFAULT_INTERESTS.map((interest, i) => (
-                  <span key={i} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-sm">{interest}</span>
+                  <span key={i} className="px-3 py-1 rounded-full bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-sm">{interest}</span>
                 ))}
                 <button className="px-3 py-1 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-sm text-slate-600 dark:text-slate-300">+ Add interest</button>
               </CardContent>
@@ -485,7 +485,7 @@ export default function Profile() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="font-semibold">Joined Communities</div>
-                  <Link to="/hubs" className="text-sm text-blue-600 hover:text-blue-700">View all →</Link>
+                  <Link to="/hubs" className="text-sm text-teal-600 hover:text-teal-700">View all →</Link>
                 </div>
               </CardHeader>
               <CardContent>
@@ -495,7 +495,7 @@ export default function Profile() {
                       <Link 
                         key={hub.id}
                         to={`/hubs/${hub.slug}`}
-                        className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-all group"
+                        className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all group"
                       >
                         {hub.icon_url ? (
                           <img 
@@ -507,7 +507,7 @@ export default function Profile() {
                           <div className="text-2xl">{hub.icon}</div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-blue-600">
+                          <div className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-teal-600">
                             {hub.name}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -518,7 +518,7 @@ export default function Profile() {
                     ))
                   ) : (
                     <div className="col-span-full text-sm text-slate-500 dark:text-slate-400 text-center py-4">
-                      You haven't joined any communities yet. <Link to="/hubs" className="text-blue-600 hover:underline">Explore hubs</Link>
+                      You haven't joined any communities yet. <Link to="/hubs" className="text-teal-600 hover:underline">Explore hubs</Link>
                     </div>
                   )}
                 </div>
@@ -544,7 +544,7 @@ export default function Profile() {
                       <Link
                         key={post.id}
                         to={`/posts/${post.id}`}
-                        className="block p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-all group"
+                        className="block p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all group"
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
@@ -554,8 +554,8 @@ export default function Profile() {
                               </span>
                               <span className={`text-xs px-2 py-0.5 rounded-full ${
                                 post.is_expert_post 
-                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' 
-                                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                  ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' 
+                                  : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
                               }`}>
                                 {post.is_expert_post ? '⭐ Expert' : '👤 Rookie'}
                               </span>
@@ -563,7 +563,7 @@ export default function Profile() {
                                 {new Date(post.created_at).toLocaleDateString()}
                               </span>
                             </div>
-                            <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors mb-1 line-clamp-1">
+                            <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-teal-600 transition-colors mb-1 line-clamp-1">
                               {post.title}
                             </h3>
                             <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
@@ -581,7 +581,7 @@ export default function Profile() {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                    You haven't created any posts yet. <Link to="/hubs" className="text-blue-600 hover:underline">Start contributing!</Link>
+                    You haven't created any posts yet. <Link to="/hubs" className="text-teal-600 hover:underline">Start contributing!</Link>
                   </div>
                 )}
               </CardContent>
@@ -602,7 +602,7 @@ export default function Profile() {
                       <div className="text-sm">{eligibilityBadge(item)}</div>
                     </div>
                     {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-blue-500 hover:text-blue-600 cursor-pointer">View course</div>
+                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">View course</div>
                   </div>
                 ))}
               </CardContent>
@@ -616,7 +616,7 @@ export default function Profile() {
                   <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
                     <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
                     {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-blue-500 hover:text-blue-600 cursor-pointer">View university</div>
+                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">View university</div>
                   </div>
                 ))}
               </CardContent>
@@ -630,7 +630,7 @@ export default function Profile() {
                   <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
                     <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
                     {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-blue-500 hover:text-blue-600 cursor-pointer">Open discussion</div>
+                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">Open discussion</div>
                   </div>
                 ))}
               </CardContent>
@@ -655,7 +655,7 @@ export default function Profile() {
                       try { setIsRequestingUpgrade(true); await new Promise(r => setTimeout(r, 800)); setUpgradeStatus('requested') }
                       catch (e) { console.error(e); setUpgradeStatus('error') }
                       finally { setIsRequestingUpgrade(false) }
-                    }} className={`px-4 py-2 rounded-lg font-medium transition ${upgradeStatus === 'requested' ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+                    }} className={`px-4 py-2 rounded-lg font-medium transition ${upgradeStatus === 'requested' ? 'bg-green-600 text-white' : 'bg-teal-600 hover:bg-teal-700 text-white'}`}>
                       {upgradeStatus === 'requested' ? 'Upgrade Request Sent' : isRequestingUpgrade ? 'Requesting…' : 'Request Upgrade'}
                     </button>
                   </div>
@@ -676,10 +676,10 @@ export default function Profile() {
             <Card>
               <CardHeader><div className="font-semibold">Contact & Social</div></CardHeader>
               <CardContent className="space-y-3 text-sm text-slate-700 dark:text-slate-200">
-                <div className="flex justify-between gap-4"><span className="font-semibold">Website</span><a className="text-blue-500" href={DEFAULT_SOCIAL.website} target="_blank" rel="noreferrer">Visit</a></div>
-                <div className="flex justify-between gap-4"><span className="font-semibold">LinkedIn</span><a className="text-blue-500" href={DEFAULT_SOCIAL.linkedin} target="_blank" rel="noreferrer">Open</a></div>
-                <div className="flex justify-between gap-4"><span className="font-semibold">Twitter</span><a className="text-blue-500" href={`https://twitter.com/${DEFAULT_SOCIAL.twitter.replace('@','')}`} target="_blank" rel="noreferrer">Follow</a></div>
-                <div className="flex justify-between gap-4"><span className="font-semibold">Email</span><a className="text-blue-500" href={`mailto:${DEFAULT_SOCIAL.email}`}>Send</a></div>
+                <div className="flex justify-between gap-4"><span className="font-semibold">Website</span><a className="text-teal-500" href={DEFAULT_SOCIAL.website} target="_blank" rel="noreferrer">Visit</a></div>
+                <div className="flex justify-between gap-4"><span className="font-semibold">LinkedIn</span><a className="text-teal-500" href={DEFAULT_SOCIAL.linkedin} target="_blank" rel="noreferrer">Open</a></div>
+                <div className="flex justify-between gap-4"><span className="font-semibold">Twitter</span><a className="text-teal-500" href={`https://twitter.com/${DEFAULT_SOCIAL.twitter.replace('@','')}`} target="_blank" rel="noreferrer">Follow</a></div>
+                <div className="flex justify-between gap-4"><span className="font-semibold">Email</span><a className="text-teal-500" href={`mailto:${DEFAULT_SOCIAL.email}`}>Send</a></div>
               </CardContent>
             </Card>
 
@@ -693,9 +693,9 @@ export default function Profile() {
                 ) : (
                   userPosts.map((post) => (
                     <Link to={`/posts/${post.id}`} key={post.id} className="block hover:no-underline">
-                      <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-blue-500/50 transition">
+                      <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-teal-500/50 transition">
                         <div className="text-lg font-semibold text-black dark:text-white">{post.title}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Posted in <span className="text-blue-500">{post.hub_name || 'a hub'}</span> • {new Date(post.created_at).toLocaleDateString()}</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Posted in <span className="text-teal-500">{post.hub_name || 'a hub'}</span> • {new Date(post.created_at).toLocaleDateString()}</div>
                         <div className="flex flex-wrap items-center gap-2 text-sm">
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{post.post_type?.replace('_', ' ') || 'Post'}</span>
                           <span className="text-slate-500 dark:text-slate-400">{post.comment_count || 0} comments • {post.upvotes || 0} upvotes</span>

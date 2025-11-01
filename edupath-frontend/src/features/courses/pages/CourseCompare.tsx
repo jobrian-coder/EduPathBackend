@@ -3,6 +3,7 @@ import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts'
 import api, { type Course, type CourseUniversity } from '../../../services/api'
+import ProsConsGenerator from '../../chatbot/components/ProsConsGenerator'
 
 export default function CourseCompare() {
   // Up to 3 selections
@@ -114,25 +115,25 @@ export default function CourseCompare() {
         key: 'duration', 
         label: 'Duration', 
         accessor: (r: any) => 100 - r.norm.duration, 
-        color: '#3b82f6' 
+        color: '#14b8a6' 
       },
       { 
         key: 'entry', 
         label: 'Entry Flexibility', 
         accessor: (r: any) => 100 - r.norm.cluster, 
-        color: '#10b981' 
+        color: '#0d9488' 
       },
       { 
         key: 'availability', 
         label: 'Availability', 
         accessor: (r: any) => r.norm.availability, 
-        color: '#8b5cf6' 
+        color: '#0f766e' 
       },
       { 
         key: 'cost', 
         label: 'Cost Efficiency', 
         accessor: (r: any) => 100 - r.norm.cost, 
-        color: '#ec4899' 
+        color: '#d8b4fe' 
       },
     ]
 
@@ -191,24 +192,24 @@ export default function CourseCompare() {
       {/* Selection row */}
       <div className="grid gap-4 lg:grid-cols-3">
         {[0,1,2].map(i => (
-          <Card key={i} className={`border-l-4 ${i===0?'border-l-blue-500':i===1?'border-l-purple-500':'border-l-emerald-500'}`}>
-            <CardHeader>
+          <Card key={i} className={`border-l-4 ${i===0?'border-l-teal-400':i===1?'border-l-teal-500':'border-l-teal-600'} bg-white border-gray-200 shadow-sm`}>
+            <CardHeader className="bg-gray-50">
               <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full ${i===0?'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400':i===1?'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400':'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'} flex items-center justify-center font-bold`}>{i+1}</div>
-                <div className="font-semibold">Select Course {i+1}</div>
+                <div className={`w-8 h-8 rounded-full ${i===0?'bg-teal-100 text-teal-600':i===1?'bg-teal-200 text-teal-700':'bg-teal-300 text-purple-800'} flex items-center justify-center font-bold`}>{i+1}</div>
+                <div className="font-semibold text-gray-800">Select Course {i+1}</div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="bg-white">
               <input
                 value={queries[i]}
                 onChange={e=>setQueryAt(i, e.target.value)}
                 onDragOver={onDragOver}
                 placeholder="Search or drop a course here..."
-                className="w-full border-2 border-slate-700 focus:border-blue-500 bg-slate-900 text-black p-3 rounded-lg transition"
+                className="w-full border-2 border-gray-300 focus:border-teal-500 bg-white text-gray-900 p-3 rounded-lg transition"
               />
               <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
                 {queries[i] && options[i].map(c => (
-                  <button key={c.id} className="block w-full text-left px-3 py-2 hover:bg-slate-800 rounded-lg transition" onClick={()=>pickCourse(i, c)}>{c.name}</button>
+                  <button key={c.id} className="block w-full text-left px-3 py-2 hover:bg-teal-50 rounded-lg transition text-gray-700 hover:text-teal-500" onClick={()=>pickCourse(i, c)}>{c.name}</button>
                 ))}
               </div>
             </CardContent>
@@ -217,50 +218,50 @@ export default function CourseCompare() {
       </div>
 
       {/* Mode toggles */}
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div className="flex items-center gap-2">
-          <button onClick={()=>setView('table')} className={`px-3 py-1.5 rounded-lg border ${view==='table'?'bg-blue-600 text-white border-blue-600':'border-slate-600 hover:bg-slate-800'}`}>Table View</button>
-          <button onClick={()=>setView('visual')} className={`px-3 py-1.5 rounded-lg border ${view==='visual'?'bg-blue-600 text-white border-blue-600':'border-slate-600 hover:bg-slate-800'}`}>Visual View</button>
+          <button onClick={()=>setView('table')} className={`px-3 py-1.5 rounded-lg border ${view==='table'?'bg-teal-600 text-white border-teal-600':'border-gray-300 hover:bg-teal-50 text-gray-700 hover:text-teal-500'}`}>Table View</button>
+          <button onClick={()=>setView('visual')} className={`px-3 py-1.5 rounded-lg border ${view==='visual'?'bg-teal-600 text-white border-teal-600':'border-gray-300 hover:bg-teal-50 text-gray-700 hover:text-teal-500'}`}>Visual View</button>
           {view==='visual' && (
             <div className="ml-2">
-              <button onClick={()=>setChartType('bar')} className={`px-3 py-1.5 rounded-l-lg border ${chartType==='bar'?'bg-purple-600 text-white border-purple-600':'border-slate-600 hover:bg-slate-800'}`}>Bar</button>
-              <button onClick={()=>setChartType('radar')} className={`px-3 py-1.5 rounded-r-lg border ${chartType==='radar'?'bg-purple-600 text-white border-purple-600':'border-slate-600 hover:bg-slate-800'}`}>Radar</button>
+              <button onClick={()=>setChartType('bar')} className={`px-3 py-1.5 rounded-l-lg border ${chartType==='bar'?'bg-teal-700 text-white border-teal-700':'border-gray-300 hover:bg-teal-50 text-gray-700 hover:text-teal-500'}`}>Bar</button>
+              <button onClick={()=>setChartType('radar')} className={`px-3 py-1.5 rounded-r-lg border ${chartType==='radar'?'bg-teal-700 text-white border-teal-700':'border-gray-300 hover:bg-teal-50 text-gray-700 hover:text-teal-500'}`}>Radar</button>
             </div>
           )}
         </div>
-        <button onClick={saveComparison} className="px-3 py-1.5 rounded-lg border border-slate-600 hover:bg-slate-800">Save Comparison</button>
+        <button onClick={saveComparison} className="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-teal-50 text-gray-700 hover:text-teal-500">Save Comparison</button>
       </div>
 
       {/* Comparison content */}
       {metrics.rows.length >= 2 ? (
         <div className="mt-6 space-y-6">
           {view==='table' ? (
-            <Card>
-              <CardHeader>
-                <div className="font-semibold text-lg">📋 Side-by-Side</div>
+            <Card className="bg-white border-gray-200 shadow-sm">
+              <CardHeader className="bg-gray-50">
+                <div className="font-semibold text-lg text-gray-800">📋 Side-by-Side</div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="bg-white">
                 <div className="overflow-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr>
-                        <th className="text-left p-2">Metric</th>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left p-2 text-gray-700 font-semibold">Metric</th>
                         {metrics.rows.map(r => (
-                          <th key={r.id} className="text-left p-2">{r.name}{metrics.bestId===r.id && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">Best Value</span>}</th>
+                          <th key={r.id} className="text-left p-2 text-gray-700 font-semibold">{r.name}{metrics.bestId===r.id && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">Best Value</span>}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {[{key:'cost',label:'Cost (min fee, KSh)',invert:true}, {key:'duration',label:'Duration (years)',invert:true}, {key:'cluster',label:'Entry Points (lower easier)',invert:true}, {key:'availability',label:'Universities offering',invert:false}].map(row => (
-                        <tr key={row.key} className={`${highlightMetric===row.key? 'bg-slate-800/60' : ''}`} onMouseEnter={()=>setHighlightMetric(row.key)} onMouseLeave={()=>setHighlightMetric(null)}>
-                          <td className="p-2 font-medium">{row.label}</td>
+                        <tr key={row.key} className={`border-b border-gray-100 ${highlightMetric===row.key? 'bg-teal-50' : 'hover:bg-gray-50'}`} onMouseEnter={()=>setHighlightMetric(row.key)} onMouseLeave={()=>setHighlightMetric(null)}>
+                          <td className="p-2 font-medium text-gray-700">{row.label}</td>
                           {metrics.rows.map(r => (
                             <td key={r.id} className="p-2 align-middle">
                               <div className="flex items-center gap-2">
-                                <div className="w-28 h-2 rounded bg-slate-800 overflow-hidden">
-                                  <div className={`h-full ${row.invert?'bg-emerald-500':'bg-blue-500'}`} style={{ width: `${Math.round(row.key==='cost'? (100 - r.norm.cost) : row.key==='duration'? (100 - r.norm.duration) : row.key==='cluster'? (100 - r.norm.cluster) : r.norm.availability)}%` }} />
+                                <div className="w-28 h-2 rounded bg-gray-200 overflow-hidden">
+                                  <div className={`h-full ${row.invert?'bg-teal-500':'bg-teal-400'}`} style={{ width: `${Math.round(row.key==='cost'? (100 - r.norm.cost) : row.key==='duration'? (100 - r.norm.duration) : row.key==='cluster'? (100 - r.norm.cluster) : r.norm.availability)}%` }} />
                                 </div>
-                                <div className="text-xs text-slate-400">
+                                <div className="text-xs text-gray-600">
                                   {row.key==='cost' ? (r.raw.cost?.toLocaleString() ?? '—') : row.key==='duration' ? (r.raw.duration ?? '—') : row.key==='cluster' ? (r.raw.cluster ?? '—') : r.raw.availability}
                                 </div>
                               </div>
@@ -274,11 +275,11 @@ export default function CourseCompare() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <div className="font-semibold text-lg">📈 Visual Comparison</div>
+            <Card className="bg-white border-gray-200 shadow-sm">
+              <CardHeader className="bg-gray-50">
+                <div className="font-semibold text-lg text-gray-800">📈 Visual Comparison</div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="bg-white">
                 {chartType==='bar' ? (
                   <div className="h-[380px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -287,24 +288,26 @@ export default function CourseCompare() {
                         layout="vertical" 
                         margin={{ top: 8, right: 16, bottom: 16, left: 16 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                         <XAxis 
                           type="number" 
                           domain={[0, visualData.METRIC_MAX]} 
                           hide={false}
-                          tick={{ fill: '#cbd5e1' }}
+                          tick={{ fill: '#6b7280' }}
                         />
                         <YAxis 
                           dataKey="metric" 
                           type="category" 
-                          tick={{ fill: '#cbd5e1' }} 
+                          tick={{ fill: '#6b7280' }} 
                           width={140} 
                         />
                         <Tooltip 
                           contentStyle={{ 
-                            background: '#0f172a', 
-                            border: '1px solid #334155', 
-                            color: '#e2e8f0' 
+                            background: '#ffffff', 
+                            border: '1px solid #d1d5db', 
+                            color: '#374151',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                           }}
                           formatter={(value: number) => [`${value} / ${visualData.METRIC_MAX}`, 'Score']}
                         />
@@ -313,7 +316,7 @@ export default function CourseCompare() {
                             key={r.id} 
                             dataKey={`c${i+1}`} 
                             name={r.name} 
-                            fill={i===0?'#3b82f6':i===1?'#a855f7':'#10b981'} 
+                            fill={i===0?'#14b8a6':i===1?'#0d9488':'#0f766e'} 
                             opacity={highlightMetric? 0.4:1}
                             maxBarSize={40}
                           />
@@ -328,10 +331,10 @@ export default function CourseCompare() {
                         outerRadius={150} 
                         data={visualData.radar.length > 0 ? visualData.radar : []}
                       >
-                        <PolarGrid stroke="#334155" />
+                        <PolarGrid stroke="#d1d5db" />
                         <PolarAngleAxis 
                           dataKey="metric" 
-                          tick={{ fill: '#cbd5e1', fontSize: 11 }} 
+                          tick={{ fill: '#6b7280', fontSize: 11 }} 
                         />
                         <PolarRadiusAxis 
                           angle={30} 
@@ -340,9 +343,11 @@ export default function CourseCompare() {
                         />
                         <Tooltip 
                           contentStyle={{ 
-                            background: '#0f172a', 
-                            border: '1px solid #334155', 
-                            color: '#e2e8f0' 
+                            background: '#ffffff', 
+                            border: '1px solid #d1d5db', 
+                            color: '#374151',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                           }}
                           formatter={(value: number) => [`${value} / ${visualData.METRIC_MAX}`, 'Score']}
                         />
@@ -352,12 +357,12 @@ export default function CourseCompare() {
                             key={r.id} 
                             name={r.name} 
                             dataKey={r.name}
-                            stroke={i===0?'#3b82f6':i===1?'#a855f7':'#10b981'}
-                            fill={i===0?'#3b82f6':i===1?'#a855f7':'#10b981'}
+                            stroke={i===0?'#14b8a6':i===1?'#0d9488':'#0f766e'}
+                            fill={i===0?'#14b8a6':i===1?'#0d9488':'#0f766e'}
                             fillOpacity={0.2}
                             strokeWidth={2}
                             dot={{ 
-                              fill: i===0?'#3b82f6':i===1?'#a855f7':'#10b981', 
+                              fill: i===0?'#14b8a6':i===1?'#0d9488':'#0f766e', 
                               strokeWidth: 2 
                             }}
                             isAnimationActive={false}
@@ -376,23 +381,23 @@ export default function CourseCompare() {
             {metrics.rows.map((r, i) => {
               const { pros, cons } = getProsCons(courses[i])
               return (
-                <Card key={r.id} className={`border-t-4 ${i===0?'border-t-blue-500':i===1?'border-t-purple-500':'border-t-emerald-500'}`}>
-                  <CardHeader>
-                    <div className="font-semibold text-lg">{r.name}</div>
+                <Card key={r.id} className={`border-t-4 bg-white border-gray-200 shadow-sm ${i===0?'border-t-teal-400':i===1?'border-t-teal-500':'border-t-teal-600'}`}>
+                  <CardHeader className="bg-gray-50">
+                    <div className="font-semibold text-lg text-gray-800">{r.name}</div>
                     {metrics.bestId === r.id && (
-                      <div className="text-xs px-2 py-1 bg-emerald-600/20 text-emerald-300 rounded-full inline-flex items-center">
+                      <div className="text-xs px-2 py-1 bg-teal-100 text-teal-700 rounded-full inline-flex items-center">
                         🏆 Best Value
                       </div>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 bg-white">
                     {pros.length > 0 && (
                       <div>
-                        <div className="text-xs font-semibold uppercase tracking-wide text-green-500 mb-1">✅ Pros</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-green-600 mb-1">✅ Pros</div>
                         <ul className="space-y-1 text-sm">
                           {pros.map((p: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-green-500 mt-0.5">•</span>
+                            <li key={idx} className="flex items-start gap-2 text-gray-700">
+                              <span className="text-green-600 mt-0.5">•</span>
                               <span>{p}</span>
                             </li>
                           ))}
@@ -401,11 +406,11 @@ export default function CourseCompare() {
                     )}
                     {cons.length > 0 && (
                       <div>
-                        <div className="text-xs font-semibold uppercase tracking-wide text-red-500 mb-1">⚠️ Cons</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-red-600 mb-1">⚠️ Cons</div>
                         <ul className="space-y-1 text-sm">
                           {cons.map((c: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-red-500 mt-0.5">•</span>
+                            <li key={idx} className="flex items-start gap-2 text-gray-700">
+                              <span className="text-red-600 mt-0.5">•</span>
                               <span>{c}</span>
                             </li>
                           ))}
@@ -413,7 +418,7 @@ export default function CourseCompare() {
                       </div>
                     )}
                     {pros.length === 0 && cons.length === 0 && (
-                      <div className="text-sm text-slate-400 italic">No pros/cons data available for this course.</div>
+                      <div className="text-sm text-gray-500 italic">No pros/cons data available for this course.</div>
                     )}
                   </CardContent>
                 </Card>
@@ -422,11 +427,29 @@ export default function CourseCompare() {
           </div>
         </div>
       ) : (
-        <div className="mt-6 p-8 text-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700">
+        <div className="mt-6 p-8 text-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
           <div className="text-4xl mb-2">📚</div>
-          <div className="text-slate-600 dark:text-slate-300 font-medium">Select at least two courses above to see comparison</div>
+          <div className="text-gray-600 font-medium">Select at least two courses above to see comparison</div>
         </div>
       )}
+
+      {/* AI Pros/Cons Generator */}
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold text-gray-800">🤖 AI Career Analysis</h2>
+            <p className="text-sm text-gray-600">
+              Get AI-generated pros and cons for any career or course to help with your decision making
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ProsConsGenerator 
+              careerName={courses[0]?.name || ''}
+              courseName={courses[0]?.name || ''}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </PageContainer>
   )
 }
