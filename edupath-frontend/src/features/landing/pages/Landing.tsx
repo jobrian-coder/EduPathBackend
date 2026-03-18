@@ -2,21 +2,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { PageContainer } from '../../../components/layout/PageContainer'
 
-// Import hub icons
-import agricultureIcon from '../../../assets/hubs/agriculturehubicon.jpeg'
-import aviationIcon from '../../../assets/hubs/aviationhubicon.jpeg'
 import businessIcon from '../../../assets/hubs/businesshubicon.png'
-import creativeIcon from '../../../assets/hubs/creativehubicon.jpeg'
-import eduIcon from '../../../assets/hubs/eduhubicon.jpeg'
 import engineeringIcon from '../../../assets/hubs/engineeringhubicon.png'
-import healthIcon from '../../../assets/hubs/healthhubicon.png'
-import hospitalityIcon from '../../../assets/hubs/hospitalityhubicon.png'
-import lawIcon from '../../../assets/hubs/lawhubicon.png'
 import techIcon from '../../../assets/hubs/techhubicon.jpeg'
+
+import edupathIcon from '../../../assets/login/edupathicong.png'
 
 // Import university icon utility
 import { getUniversityIcon } from '../../../utils/universityIcons'
-import defaultUniIcon from '../../../assets/universitiesicon/Open University of Kenya.jpg'
 
 // Hub data with icons and descriptions (top 3 only)
 const hubData = [
@@ -108,57 +101,112 @@ export default function Landing() {
   }
   return (
     <PageContainer>
-      <section className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
-        <div className="absolute -top-40 -right-20 h-96 w-96 rounded-full bg-gradient-to-tr from-teal-100/50 to-teal-200/50 blur-3xl" />
-        <div className="absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-gradient-to-tr from-teal-200/30 to-cyan-300/30 blur-3xl" />
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/95 shadow-xl dark:border-slate-700 dark:bg-slate-900/60">
+        <div className="absolute inset-0">
+          <div className="absolute -top-52 -right-40 h-[34rem] w-[34rem] rounded-full bg-gradient-to-tr from-teal-100/60 to-cyan-200/50 blur-3xl" />
+          <div className="absolute -bottom-60 -left-40 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-teal-200/40 to-emerald-200/40 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(13,148,136,0.10),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(6,182,212,0.10),transparent_55%),radial-gradient(circle_at_60%_90%,rgba(16,185,129,0.10),transparent_55%)]" />
+        </div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-20 md:py-28">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+        <div className="relative mx-auto max-w-7xl px-6 py-14 md:py-20">
+          <div className="grid items-center gap-12 md:grid-cols-[1.15fr_0.85fr]">
             <div>
-              <div className="text-5xl md:text-7xl font-extrabold tracking-tight">
-                <span className="text-gray-900">Welcome</span>
-                <span className="text-teal-600">.</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                Your next step after KCSE starts here
               </div>
-              <p className="mt-6 text-gray-600 max-w-xl">
-                Discover courses, universities, hubs and career paths tailored to you. Compare options and plan your journey.
+
+              <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-gray-900 md:text-6xl">
+                Plan your future with <span className="text-teal-700">clarity</span>.
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-lg text-gray-600">
+                Discover courses, universities, hubs and career paths tailored to you. Compare options, then get guided recommendations with <span className="font-semibold text-teal-700">EduGuide</span>.
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-stretch gap-3 max-w-xl">
-                <input 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search courses, universities..." 
-                  className="flex-1 rounded-xl bg-white text-gray-900 placeholder-gray-500 border-2 border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition" 
-                />
-                <button 
+              <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                <div className="flex flex-1 items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-200 transition dark:border-slate-700 dark:bg-slate-900/40">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Search courses, universities..."
+                    className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
                   onClick={handleSearch}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 font-medium text-white shadow-lg hover:shadow-xl transition-all"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 font-semibold text-white shadow-lg hover:shadow-xl transition-all"
                 >
                   Search
                 </button>
               </div>
 
-              <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <Link to="/directory" className="text-center px-6 py-3 rounded-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-medium shadow-lg hover:shadow-xl transition-all">Explore Directory</Link>
-                <Link to="/courses/compare" className="text-center px-6 py-3 rounded-full border-2 border-gray-300 hover:bg-teal-50 hover:border-teal-600 transition-all text-gray-700 hover:text-teal-700">Compare Courses</Link>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  to="/advisor"
+                  className="text-center px-6 py-3 rounded-full bg-gray-900 hover:bg-black text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Explore EduGuide
+                </Link>
+                <Link
+                  to="/directory"
+                  className="text-center px-6 py-3 rounded-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Explore Directory
+                </Link>
+                <Link
+                  to="/courses/compare"
+                  className="text-center px-6 py-3 rounded-full border-2 border-gray-300 hover:bg-teal-50 hover:border-teal-600 transition-all text-gray-700 hover:text-teal-700 font-semibold"
+                >
+                  Compare Courses
+                </Link>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-4 md:max-w-2xl md:grid-cols-4">
+                {[
+                  { label: 'Courses & programs', value: 'Search fast' },
+                  { label: 'Universities', value: 'Explore options' },
+                  { label: 'Hubs', value: 'Find your people' },
+                  { label: 'EduGuide', value: 'AI guidance' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/40">
+                    <div className="text-xs font-semibold text-gray-500">{item.label}</div>
+                    <div className="mt-1 text-sm font-bold text-gray-900">{item.value}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="justify-self-center">
-              <div className="relative h-72 w-72 md:h-96 md:w-96">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-teal-500 to-teal-700" />
-                <div className="absolute inset-8 rounded-full bg-white" />
-                <div className="absolute inset-0 animate-pulse opacity-20">
-                  <svg viewBox="0 0 200 200" className="h-full w-full text-teal-400/40">
-                    <defs>
-                      <radialGradient id="grad" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="currentColor" />
-                        <stop offset="100%" stopColor="transparent" />
-                      </radialGradient>
-                    </defs>
-                    <circle cx="100" cy="100" r="90" fill="url(#grad)" />
-                  </svg>
+              <div className="relative">
+                <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-tr from-teal-500/25 via-cyan-400/10 to-emerald-400/25 blur-2xl" />
+                <div className="relative overflow-hidden rounded-[2.5rem] border border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900/40">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(13,148,136,0.15),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.12),transparent_55%)]" />
+                  <div className="relative p-8 md:p-10">
+                    <img
+                      src={edupathIcon}
+                      alt="EduPath"
+                      className="h-56 w-56 md:h-72 md:w-72 object-contain drop-shadow-[0_22px_35px_rgba(0,0,0,0.18)]"
+                    />
+                    <div className="mt-6 rounded-2xl bg-gray-900/95 px-5 py-4 text-white shadow-lg">
+                      <div className="text-sm font-semibold text-teal-200">Try EduGuide in 30 seconds</div>
+                      <div className="mt-1 text-lg font-bold">Answer a few questions → get course ideas</div>
+                      <button
+                        onClick={() => navigate('/advisor')}
+                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-gray-900 hover:bg-gray-100 transition dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                      >
+                        Start EduGuide
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,11 +228,11 @@ export default function Landing() {
         <div className="flex flex-col lg:flex-row items-center gap-8">
           {/* Hub Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-            {hubData.map((hub, index) => (
+            {hubData.map((hub) => (
               <div
                 key={hub.slug}
                 onClick={() => handleHubClick(hub.slug)}
-                className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-teal-300 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-teal-300 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden dark:bg-slate-900/40 dark:border-slate-700"
               >
                 {/* Hub Icon */}
                 <div className="h-24 bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center relative overflow-hidden">
@@ -250,14 +298,14 @@ export default function Landing() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {universityData.map((university, index) => (
+          {universityData.map((university) => (
             <div
               key={university.shortName}
               onClick={() => handleUniversityClick(university.name)}
-              className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-teal-300 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-teal-300 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden dark:bg-slate-900/40 dark:border-slate-700"
             >
               {/* Top Half - University Icon */}
-              <div className="h-40 bg-gradient-to-br from-teal-50 to-cyan-50 flex items-center justify-center relative overflow-hidden">
+              <div className="h-40 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-100/30 to-cyan-100/30 group-hover:from-teal-100/50 group-hover:to-cyan-100/50 transition-colors" />
                 <img 
                   src={university.icon} 
@@ -271,7 +319,7 @@ export default function Landing() {
               </div>
 
               {/* Bottom Half - Teal Information Display */}
-              <div className="h-40 bg-gradient-to-br from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden">
+              <div className="h-40 bg-gradient-to-br from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden dark:from-teal-500 dark:to-cyan-600">
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-600/20 to-teal-700/20 group-hover:from-teal-600/30 group-hover:to-teal-700/30 transition-colors" />
                 <div className="relative z-10 h-full flex flex-col justify-between">
                   <div>

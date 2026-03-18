@@ -31,7 +31,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for listing courses"""
     class Meta:
         model = Course
-        fields = ['id', 'name', 'category', 'duration', 'cluster_points']
+        fields = ['id', 'name', 'category', 'duration', 'cluster_points', 'description', 'pros', 'cons', 'careers', 'mandatory_subjects', 'career_paths', 'modules']
 
 
 class CourseUniversitySerializer(serializers.ModelSerializer):

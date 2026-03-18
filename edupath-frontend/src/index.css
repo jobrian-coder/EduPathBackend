@@ -121,3 +121,31 @@ body {
   }
 }
 
+/* Dark-mode readability fallback
+   Some pages still use light-only text utilities (e.g. `text-slate-900`) without `dark:text-*`.
+   This ensures text stays readable across the whole app when `html.dark` is enabled. */
+html.dark .text-gray-900:not([class*="dark:text-"]),
+html.dark .text-slate-900:not([class*="dark:text-"]) {
+  color: #f1f5f9; /* slate-100 */
+}
+
+html.dark .text-gray-800:not([class*="dark:text-"]),
+html.dark .text-slate-800:not([class*="dark:text-"]) {
+  color: #e2e8f0; /* slate-200 */
+}
+
+html.dark .text-gray-700:not([class*="dark:text-"]),
+html.dark .text-slate-700:not([class*="dark:text-"]) {
+  color: #cbd5e1; /* slate-300 */
+}
+
+html.dark .text-gray-600:not([class*="dark:text-"]),
+html.dark .text-slate-600:not([class*="dark:text-"]) {
+  color: #94a3b8; /* slate-400 */
+}
+
+html.dark .text-gray-500:not([class*="dark:text-"]),
+html.dark .text-slate-500:not([class*="dark:text-"]) {
+  color: #94a3b8; /* slate-400 */
+}
+

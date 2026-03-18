@@ -303,30 +303,30 @@ export default function HubFeedV2() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="text-slate-600">Loading hubs...</div>
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-slate-900">
+        <div className="text-slate-600 dark:text-slate-300">Loading hubs...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-900/60 dark:to-teal-950/60">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px] gap-4 p-2 md:p-4 max-w-[1800px] mx-auto">
         
         {/* Left Sidebar - Hub Navigator (Hidden on mobile, visible on large screens) */}
         <aside className="hidden lg:block lg:h-[calc(100vh-2rem)] lg:sticky lg:top-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-3 md:p-4 space-y-2">
+          <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 md:p-4 space-y-2">
             <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
               Communities
             </div>
             
             {hubs.map(hub => (
-              <button
+                  <button
                 key={hub.id}
                 onClick={() => handleHubSwitch(hub)}
-                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 ${
+                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 dark:hover:bg-slate-800/60 dark:text-slate-200 ${
                   selectedHub?.id === hub.id 
-                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200' 
+                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200 dark:border-teal-800 dark:bg-gradient-to-r dark:from-teal-950/40 dark:to-cyan-950/30' 
                     : 'border border-transparent'
                 }`}
               >
@@ -340,7 +340,7 @@ export default function HubFeedV2() {
                   <div className="text-xl md:text-2xl">{hub.icon}</div>
                 )}
                 <div className="flex-1 text-left min-w-0">
-                  <div className="text-xs md:text-sm font-medium text-slate-800 truncate">
+                  <div className="text-xs md:text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                     {hub.name}
                   </div>
                   <div className="text-xs text-teal-600 hidden md:block">
@@ -365,7 +365,7 @@ export default function HubFeedV2() {
         <main className="space-y-3 min-w-0">
           {/* Hub Header */}
           {selectedHub && (
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 overflow-hidden mb-3 md:mb-4">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 overflow-hidden mb-3 md:mb-4">
               {/* Background Image */}
               {(selectedHub as any).icon_url && (
                 <div 
@@ -412,9 +412,9 @@ export default function HubFeedV2() {
                   )}
                 
                   {/* Mobile Menu Button */}
-                    <button
+                  <button
                     onClick={() => setShowMobileMenu(!showMobileMenu)}
-                    className="lg:hidden p-2 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all"
+                    className="lg:hidden p-2 rounded-lg bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-all"
                   >
                     <Menu className="w-5 h-5" />
                   </button>
@@ -442,7 +442,7 @@ export default function HubFeedV2() {
             <article
               key={post.id}
               onClick={() => navigate(`/posts/${post.id}`)}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-teal-100 hover:border-teal-200"
+              className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-teal-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-400/40"
             >
               <div className="p-3 md:p-4">
                 {/* Post Header */}
@@ -475,7 +475,7 @@ export default function HubFeedV2() {
 
                 {/* Post Title */}
                 <h2 
-                  className="text-base md:text-lg font-bold text-slate-800 mb-2 line-clamp-2 hover:text-teal-600 cursor-pointer transition-colors"
+                  className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 line-clamp-2 hover:text-teal-600 dark:hover:text-teal-300 cursor-pointer transition-colors"
                 >
                   {post.title}
                   {(post as any).is_edited && (
@@ -486,7 +486,7 @@ export default function HubFeedV2() {
                 </h2>
 
                 {/* Post Preview */}
-                <p className="text-sm text-slate-700 line-clamp-3 mb-3">
+                <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3 mb-3">
                   {post.content}
                 </p>
 
@@ -554,9 +554,9 @@ export default function HubFeedV2() {
 
           {/* Create Post Form - Now Below Posts */}
           {showCreatePost && selectedHub && (
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-3 md:p-4 mb-3 md:mb-4">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 md:p-4 mb-3 md:mb-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-800">Create Post</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Create Post</h3>
                 <button
                   onClick={() => setShowCreatePost(false)}
                   className="text-teal-600 hover:text-teal-700"
@@ -572,7 +572,7 @@ export default function HubFeedV2() {
                   value={newPostTitle}
                   onChange={(e) => setNewPostTitle(e.target.value)}
                   placeholder="Post title..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-teal-200 bg-white text-slate-800 font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900/40 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 />
                 
                 {/* Content */}
@@ -580,13 +580,13 @@ export default function HubFeedV2() {
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
                   placeholder="Share your thoughts, ask a question, or start a discussion..."
-                  className="w-full px-4 py-3 rounded-lg border border-teal-200 bg-white text-slate-800 resize-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900/40 text-slate-800 dark:text-slate-100 resize-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   rows={5}
                 />
                 
                 {/* Program Tagging */}
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
                     <BookOpen className="w-4 h-4 text-teal-600" />
                     Tag Programs (Optional)
                   </label>
@@ -603,7 +603,7 @@ export default function HubFeedV2() {
                   <select
                     value={newPostType}
                     onChange={(e) => setNewPostType(e.target.value)}
-                    className="px-4 py-2.5 rounded-lg border border-teal-200 bg-white text-slate-800 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="px-4 py-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900/40 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="question">❓ Question</option>
                     <option value="discussion">💬 Discussion</option>
@@ -612,14 +612,14 @@ export default function HubFeedV2() {
                   </select>
                   
                   {/* Contributor Level */}
-                  <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-teal-200 bg-white cursor-pointer hover:border-teal-400 transition-all">
+                  <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900/40 cursor-pointer hover:border-teal-400 transition-all">
                     <input
                       type="checkbox"
                       checked={isExpertPost}
                       onChange={(e) => setIsExpertPost(e.target.checked)}
                       className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                     />
-                    <span className="text-sm text-slate-800 font-medium">
+                    <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
                       {isExpertPost ? '⭐ Expert Post' : '👤 Regular Post'}
                     </span>
                   </label>
@@ -650,19 +650,19 @@ export default function HubFeedV2() {
         {selectedHub && (
           <aside className="hidden lg:block h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto custom-scrollbar space-y-4">
             {/* Related Professional Societies */}
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-3">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-4">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">
                 Related Hubs
               </h3>
               <div className="space-y-3">
                 {selectedHub?.related_societies?.slice(0, 4).map((society: any, index: number) => (
-                  <div key={index} className="p-3 rounded-lg hover:bg-teal-50 transition-all border border-teal-100">
+                  <div key={index} className="p-3 rounded-lg hover:bg-teal-50 dark:hover:bg-slate-800/60 transition-all border border-teal-100 dark:border-teal-800">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
                         {society.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-800 line-clamp-1">
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">
                           {society.name}
                         </div>
                         <div className="text-xs text-teal-600 line-clamp-2 mt-1">
@@ -692,10 +692,10 @@ export default function HubFeedV2() {
             </div>
 
             {/* Trending - Using real post data */}
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="w-4 h-4 text-teal-500" />
-                <h3 className="text-sm font-semibold text-slate-800">
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                   Trending Now
                 </h3>
               </div>
@@ -704,14 +704,14 @@ export default function HubFeedV2() {
                   <div
                     key={post.id}
                     onClick={() => navigate(`/posts/${post.id}`)}
-                    className="p-2 rounded-lg hover:bg-teal-50 transition-all cursor-pointer"
+                      className="p-2 rounded-lg hover:bg-teal-50 dark:hover:bg-slate-800/60 transition-all cursor-pointer"
                   >
                     <div className="flex gap-2">
                       <div className="text-lg font-bold text-teal-500">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-800 line-clamp-2">
+                          <div className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
                           {post.title}
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-teal-600">
@@ -731,11 +731,11 @@ export default function HubFeedV2() {
         {/* Mobile Menu Overlay */}
         {showMobileMenu && (
           <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobileMenu(false)}>
-            <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-slate-900/70 shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="p-4">
                 {/* Close Button */}
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800">Hub Menu</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Hub Menu</h3>
                   <button
                     onClick={() => setShowMobileMenu(false)}
                     className="p-2 rounded-lg hover:bg-teal-50 transition-all"
@@ -748,7 +748,7 @@ export default function HubFeedV2() {
                 <div className="space-y-4">
                   {/* Related Professional Societies */}
                   <div className="bg-teal-50 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-800 mb-3">
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">
                       Related Hubs
                     </h4>
                     <div className="space-y-3">
@@ -759,7 +759,7 @@ export default function HubFeedV2() {
                               {society.name.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-slate-800 line-clamp-1">
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">
                                 {society.name}
                               </div>
                               <div className="text-xs text-teal-600 line-clamp-2 mt-1">
@@ -795,7 +795,7 @@ export default function HubFeedV2() {
                   <div className="bg-teal-50 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <TrendingUp className="w-4 h-4 text-teal-500" />
-                      <h4 className="text-sm font-semibold text-slate-800">
+                      <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         Trending Now
                       </h4>
                     </div>
@@ -814,7 +814,7 @@ export default function HubFeedV2() {
                               {index + 1}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-slate-800 line-clamp-2">
+                                <div className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
                                 {post.title}
                               </div>
                               <div className="flex items-center gap-2 mt-1 text-xs text-teal-600">

@@ -1,1 +1,22 @@
- 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+.next/
+.DS_Store
+
+# DB
+db.sqlite3
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log

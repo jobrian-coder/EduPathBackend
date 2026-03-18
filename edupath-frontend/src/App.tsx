@@ -26,15 +26,15 @@ function App() {
   return (
     <>
       {showLandingBackground && <div style={landingPageStyle} />}
-      <div className={"min-h-screen text-gray-900 " + (showLandingBackground ? 'bg-black bg-opacity-50 ' : '') + (hideSidebar ? '' : 'grid grid-cols-1 md:grid-cols-[64px_1fr]') }>
+      <div className={"min-h-screen text-gray-900 dark:text-slate-100 " + (showLandingBackground ? 'bg-black bg-opacity-50 ' : '') + (hideSidebar ? '' : 'grid grid-cols-1 md:grid-cols-[64px_1fr]') }>
         {!hideSidebar && (
-          <aside className="hidden md:block bg-white bg-opacity-90 border-r border-gray-200 pt-20">
+          <aside className="hidden md:block bg-white bg-opacity-90 border-r border-gray-200 pt-20 dark:bg-slate-900/60 dark:border-slate-700">
             <CompactSidebar />
           </aside>
         )}
         <div className="flex min-h-screen flex-col">
           <Navbar />
-          <main className="flex-1 p-4 md:p-6 bg-white bg-opacity-90">
+          <main className="flex-1 p-4 md:p-6 bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl">
             <Outlet />
           </main>
         </div>

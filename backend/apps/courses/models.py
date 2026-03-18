@@ -53,13 +53,16 @@ class Course(models.Model):
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
     duration = models.CharField(max_length=20)  # "4 years"
     cluster_points = models.DecimalField(max_digits=5, decimal_places=2)
-    description = models.TextField()
-    modules = models.JSONField(default=list)
-    career_paths = models.JSONField(default=list)
-    mandatory_subjects = models.JSONField(default=list)
-    alternative_subjects = models.JSONField(default=list)
-    cluster_subjects = models.JSONField(default=list)  # e.g., ["MAT", "PHY", "CHE", "ENG"]
-    cluster_formula = models.JSONField(default=dict, blank=True)  # optional metadata (weights, notes)
+    description = models.TextField(blank=True, null=True)
+    pros = models.JSONField(default=list, blank=True)
+    cons = models.JSONField(default=list, blank=True)
+    careers = models.JSONField(default=list, blank=True)
+    modules = models.JSONField(default=list, blank=True)
+    career_paths = models.JSONField(default=list, blank=True)
+    mandatory_subjects = models.JSONField(default=list, blank=True)
+    alternative_subjects = models.JSONField(default=list, blank=True)
+    cluster_subjects = models.JSONField(default=list, blank=True)
+    cluster_formula = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -85,9 +88,13 @@ class CourseUniversity(models.Model):
     application_deadline = models.DateField(blank=True, null=True)
     course_url = models.URLField(blank=True, null=True)
     
-    # New fields from Excel data
+    # New fields from KUCCPS data
     program_code = models.CharField(max_length=20, blank=True, null=True, help_text='KUCCPS program code')
+    programme_name = models.CharField(max_length=300, blank=True, null=True, help_text='Specific programme name e.g., BACHELOR OF ARTS (WITH IT)')
+    requirements = models.JSONField(default=dict, blank=True, help_text='Subject requirements')
+    cutoffs = models.JSONField(default=dict, blank=True, help_text='Cutoff points per year')
     cutoff_2022 = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, help_text='2022 cutoff points')
+    cutoff_2023 = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, help_text='2023 cutoff points')
     cluster_subjects = models.JSONField(default=list, blank=True, help_text='List of cluster subjects')
     all_subjects = models.TextField(blank=True, null=True, help_text='All subjects as text')
     
