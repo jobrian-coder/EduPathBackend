@@ -512,7 +512,7 @@ export default function PostDetail() {
 
               {(hub as any).related_societies && (hub as any).related_societies.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-teal-100">
-                  <h4 className="text-sm font-semibold text-slate-800 mb-3">Related Societies</h4>
+                  <h4 className="text-sm font-semibold text-slate-800 mb-3">Related Hubs</h4>
                   <div className="space-y-2">
                     {(hub as any).related_societies.slice(0, 3).map((society: any, index: number) => (
                       <div key={index} className="p-2 rounded-lg hover:bg-teal-50 transition-all">

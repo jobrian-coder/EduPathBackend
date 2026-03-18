@@ -6,7 +6,7 @@ export default function SidebarMenu() {
     <div className="space-y-2">
       <Link to="/" className={item}>Home</Link>
       <Link to="/careers/compare" className={item}>Careers</Link>
-      <Link to="/societies" className={item}>Societies</Link>
+      <Link to="/hubs" className={item}>Hubs</Link>
       <Link to="/profile" className={item}>Profile</Link>
     </div>
   )

@@ -13,7 +13,7 @@ export default function HeroSection() {
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link to="/careers/compare"><Button size="lg">Explore Careers</Button></Link>
-          <Link to="/societies"><Button variant="outline" size="lg">Browse Societies</Button></Link>
+          <Link to="/hubs"><Button variant="outline" size="lg">Browse Hubs</Button></Link>
         </div>
         <div className="pt-4 text-slate-500">700,000+ students guided</div>
       </div>

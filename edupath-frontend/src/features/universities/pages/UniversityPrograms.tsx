@@ -349,7 +349,7 @@ function ProgramDiscussionsBadge({ programName }: { programName: string }) {
   }, [programName])
   
   // Create a search URL that will filter posts by the program name
-  const searchUrl = `/societies?search=${encodeURIComponent(programName)}`
+  const searchUrl = `/hubs?search=${encodeURIComponent(programName)}`
   
   return (
     <Link to={searchUrl} className="text-teal-400 hover:text-teal-300 text-sm">

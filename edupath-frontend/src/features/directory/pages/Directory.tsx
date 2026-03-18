@@ -67,7 +67,10 @@ export default function Directory() {
 
   // helpers
   const byCourseId = useMemo(() => links.reduce<Record<string, CourseUniversity[]>>((acc, l) => {
-    (acc[l.course] ||= []).push(l)
+    const cid = typeof l.course === 'object' ? (l.course as any).id : l.course
+    if (cid) {
+      (acc[cid] ||= []).push(l)
+    }
     return acc
   }, {}), [links])
 
@@ -97,12 +100,17 @@ export default function Directory() {
     return courses.filter(c => {
       // university filter via CU mapping
       const cuArr = byCourseId[c.id] || []
-      if (universityId && !cuArr.some(l => String(l.university) === String(universityId))) return false
+      if (universityId) {
+        if (!cuArr.some(l => {
+          const uid = typeof l.university === 'object' ? (l.university as any).id : l.university
+          return String(uid) === String(universityId)
+        })) return false
+      }
       // city filter via university location
       if (city) {
         const uniMatches = cuArr.some(l => {
-          const u = universities.find(u => String(u.id) === String(l.university))
-          return u?.location === city
+          const uniObj = typeof l.university === 'object' ? (l.university as any) : universities.find(u => String(u.id) === String(l.university))
+          return uniObj?.location === city
         })
         if (!uniMatches) return false
       }
@@ -175,35 +183,62 @@ export default function Directory() {
             {view==='courses' && !loading && (
               <div className="grid md:grid-cols-2 gap-4">
                 {filteredCourses.map(c => (
-                  <Card key={c.id} className="hover:shadow-md transition-shadow">
+                  <Card 
+                    key={c.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer hover:bg-slate-50"
+                    onClick={() => setSelectedCourse(c)}
+                  >
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <Link to={`/courses/${c.id}`} className="font-semibold text-gray-900 hover:text-teal-500 transition-colors">{c.name}</Link>
-                          <div className="mt-2 text-xs flex flex-wrap gap-1">
-                            {(c.career_paths || []).slice(0,3).map((cp,i)=> (
-                              <span key={i} className="px-2 py-1 rounded-full bg-teal-100 text-teal-700 text-xs">{cp}</span>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-gray-900 group-hover:text-teal-500 transition-colors text-lg flex-1">
+                            {c.name}
+                          </h3>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); saveCourse(c); }} 
+                            className={`flex-shrink-0 p-2 rounded-full border transition-colors ${
+                              isBookmarked(`course:${c.id}`, 'course') 
+                                ? 'bg-teal-100 border-teal-600 text-teal-700' 
+                                : 'border-gray-300 hover:bg-teal-50 hover:text-teal-500 text-gray-400'
+                            }`}
+                            title={isBookmarked(`course:${c.id}`, 'course') ? "Saved" : "Save Course"}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isBookmarked(`course:${c.id}`, 'course') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                          </button>
+                        </div>
+                        
+                        <div className="flex justify-start">
+                          <span className="text-sm font-medium text-teal-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            View Details
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* University icons at bottom of card */}
+                      {byCourseId[c.id]?.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                          <div className="flex -space-x-2 overflow-hidden">
+                            {byCourseId[c.id].slice(0, 3).map((cu) => (
+                              <div 
+                                key={cu.id}
+                                className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-teal-50 flex items-center justify-center text-[8px] font-bold text-teal-700"
+                                title={(cu.university as any).name}
+                              >
+                                {(cu.university as any).short_name?.substring(0, 2).toUpperCase() || '??'}
+                              </div>
                             ))}
+                            {byCourseId[c.id].length > 3 && (
+                              <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
+                                +{byCourseId[c.id].length - 3}
+                              </div>
+                            )}
                           </div>
+                          <span className="text-[10px] text-gray-400">
+                            {byCourseId[c.id].length} universities
+                          </span>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <label className="text-xs inline-flex items-center gap-1 text-gray-700">
-                            <input type="checkbox" checked={!!compare[c.id]} onChange={()=>toggleCompare(c.id)} className="rounded border-gray-300 text-teal-600 focus:ring-teal-500" /> Compare
-                          </label>
-                          <button onClick={()=>saveCourse(c)} className={`text-xs px-3 py-1 rounded-full border ${isBookmarked(`course:${c.id}`,'course') ? 'bg-teal-100 border-teal-600 text-teal-700' : 'border-gray-300 hover:bg-teal-50 hover:text-teal-500 text-gray-700'}`}>{isBookmarked(`course:${c.id}`,'course') ? '✓ Saved' : 'Save'}</button>
-                          <button onClick={()=>setSelectedCourse(c)} className="text-xs px-3 py-1 rounded-full border border-teal-600 hover:bg-teal-50 hover:text-teal-500 text-teal-600 transition-colors">View Course</button>
-                        </div>
-                      </div>
-                      {/* Quick info */}
-                      <div className="mt-3 text-xs text-gray-600 grid grid-cols-3 gap-2">
-                        <div>Duration: {c.duration}</div>
-                        <div>Entry: {(c.mandatory_subjects || []).slice(0,2).join(', ') || '—'}</div>
-                        <div>Fees: {minFeeFor(c.id)?.toLocaleString() ?? 'Varies'}</div>
-                      </div>
-                      <div className="mt-3 flex justify-between items-center pt-3 border-t border-gray-200">
-                        <Link to={`/courses/${c.id}`} className="text-sm text-teal-600 hover:text-teal-500 font-medium">View More</Link>
-                        <CourseDiscussionsBadge courseName={c.name} />
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -338,9 +373,12 @@ export default function Directory() {
         )}
 
         {/* Course Detail Card Modal */}
-        {selectedCourse && (
+        { selectedCourse && (
           <CourseDetailCard
-            course={selectedCourse}
+            course={{
+              ...selectedCourse,
+              universities: (selectedCourse.universities?.length ? selectedCourse.universities : byCourseId[selectedCourse.id]) || []
+            }}
             onClose={() => setSelectedCourse(null)}
           />
         )}
@@ -363,7 +401,7 @@ function CourseDiscussionsBadge({ courseName }: { courseName: string }) {
     })()
   }, [courseName])
   return (
-    <Link to={'/societies'} className="text-teal-400 hover:text-teal-300">
+    <Link to={'/hubs'} className="text-teal-400 hover:text-teal-300">
       See Discussions{count!=null ? ` (${count})` : ''}
     </Link>
   )

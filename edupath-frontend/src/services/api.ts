@@ -231,6 +231,9 @@ export interface Course {
   mandatory_subjects: string[];
   alternative_subjects: string[];
   cluster_subjects?: string[] | null;
+  pros?: string[];
+  cons?: string[];
+  careers?: string[];
   universities?: CourseUniversity[];
 }
 
@@ -238,8 +241,15 @@ export interface CourseUniversity {
   id: string;
   course: string | Course;
   university: string | University;
+  program_code?: string;
+  programme_name?: string;
   fees_ksh: number;
   cutoff_points: number;
+  cutoff_2022?: number;
+  cutoff_2023?: number;
+  requirements?: any;
+  cutoffs?: any;
+  cluster_subjects?: string[];
   application_deadline?: string | null;
   course_url?: string | null;
 }
@@ -650,14 +660,52 @@ export const societiesAPI = {
   },
 };
 
-// Export all types
-export type {
-  Course,
-  CourseUniversity,
-  University,
-  KCSEGrade,
-  SocietyPostType
+// ============================================
+// ADVISOR API (RAG Pipeline)
+// ============================================
+
+export interface AdvisorRecommendation {
+  rank: number;
+  course_name: string;
+  institution: string;
+  hub_category: string;
+  match_explanation: string;
+  career_paths: string[];
+  cutoff_2023: number | null;
+  cutoff_2022: number | null;
+  avg_fees_ksh: number | null;
+  match_score: number;
+}
+
+export const advisorAPI = {
+  startSession: () =>
+    apiRequest<{
+      session_id: string;
+      question: string;
+      question_number: number;
+      done: boolean;
+    }>('/advisor/start/', { method: 'POST' }),
+
+  sendMessage: (sessionId: string, content: string) =>
+    apiRequest<{
+      question: string | null;
+      options?: string[];
+      question_number: number;
+      done: boolean;
+      profile?: string;
+    }>(`/advisor/${sessionId}/message/`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+
+  getRecommendations: (sessionId: string) =>
+    apiRequest<{
+      session_id: string;
+      profile_text: string;
+      recommendations: AdvisorRecommendation[];
+    }>(`/advisor/${sessionId}/recommendations/`),
 };
+
 
 export default {
   auth: authAPI,
@@ -668,4 +716,5 @@ export default {
   search: searchAPI,
   societies: societiesAPI,
   academic: academicAPI,
+  advisor: advisorAPI,
 };

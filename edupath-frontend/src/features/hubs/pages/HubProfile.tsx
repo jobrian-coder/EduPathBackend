@@ -48,7 +48,7 @@ export default function HubProfile() {
       <PageContainer title="Hub Not Found">
         <Card>
           <CardContent>
-            <div className="text-slate-600 dark:text-slate-300">No hub found. Go back to <Link to="/societies" className="text-blue-600">Hubs</Link>.</div>
+            <div className="text-slate-600 dark:text-slate-300">No hub found. Go back to <Link to="/hubs" className="text-blue-600">Hubs</Link>.</div>
           </CardContent>
         </Card>
       </PageContainer>

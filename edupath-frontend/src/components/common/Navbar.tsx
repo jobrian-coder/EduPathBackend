@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
-import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal, User } from 'lucide-react'
+import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal, User, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -40,8 +40,11 @@ export function Navbar() {
           <NavLink to="/courses/compare" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
             <Bookmark size={18}/> Courses
           </NavLink>
-          <NavLink to="/societies" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
-            <Users size={18}/> Societies
+          <NavLink to="/hubs" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
+            <Users size={18}/> Hubs
+          </NavLink>
+          <NavLink to="/advisor" className={({isActive}) => `${navLink} text-teal-700 font-bold bg-teal-50 ${isActive ? 'bg-teal-100 ring-2 ring-teal-200' : ''}`}>
+            <Sparkles size={18} className="text-teal-600 animate-pulse"/> EduGuide
           </NavLink>
           {isAuthenticated ? (
             <>
@@ -85,8 +88,11 @@ export function Navbar() {
                 <NavLink to="/courses/compare" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
                   Courses
                 </NavLink>
-                <NavLink to="/societies" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
-                  Societies
+                <NavLink to="/hubs" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 ${isActive ? 'bg-teal-100 text-teal-800' : 'hover:bg-teal-50'}`}>
+                  Hubs
+                </NavLink>
+                <NavLink to="/advisor" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md font-bold text-teal-700 bg-teal-50 ${isActive ? 'bg-teal-100 ring-2 ring-teal-200' : ''}`}>
+                  ✨ EduGuide
                 </NavLink>
                 {isAuthenticated ? (
                   <>

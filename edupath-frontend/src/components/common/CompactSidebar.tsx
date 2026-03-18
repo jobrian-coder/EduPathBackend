@@ -21,9 +21,9 @@ export default function CompactSidebar() {
           <Layers size={18}/>
           <span className="opacity-0 group-hover:opacity-100 transition-opacity">Courses</span>
         </NavLink>
-        <NavLink to="/societies" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
+        <NavLink to="/hubs" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Users size={18}/>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Societies</span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Hubs</span>
         </NavLink>
         <NavLink to="/profile" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <User size={18}/>

@@ -652,7 +652,7 @@ export default function HubFeedV2() {
             {/* Related Professional Societies */}
             <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
               <h3 className="text-sm font-semibold text-slate-800 mb-3">
-                Related Professional Societies
+                Related Hubs
               </h3>
               <div className="space-y-3">
                 {selectedHub?.related_societies?.slice(0, 4).map((society: any, index: number) => (
@@ -683,10 +683,10 @@ export default function HubFeedV2() {
               </div>
               <div className="mt-4 pt-3 border-t border-teal-200">
                 <button
-                  onClick={() => navigate('/societies')}
+                  onClick={() => navigate('/hubs')}
                   className="w-full text-xs text-center text-teal-600 hover:text-teal-700 transition-colors"
                 >
-                  Explore All Societies →
+                  Explore All Hubs →
                 </button>
               </div>
             </div>
@@ -749,7 +749,7 @@ export default function HubFeedV2() {
                   {/* Related Professional Societies */}
                   <div className="bg-teal-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-slate-800 mb-3">
-                      Related Professional Societies
+                      Related Hubs
                     </h4>
                     <div className="space-y-3">
                       {selectedHub?.related_societies?.slice(0, 4).map((society: any, index: number) => (
@@ -781,12 +781,12 @@ export default function HubFeedV2() {
                     <div className="mt-4 pt-3 border-t border-teal-200">
                       <button
                         onClick={() => {
-                          navigate('/societies')
+                          navigate('/hubs')
                           setShowMobileMenu(false)
                         }}
                         className="w-full text-xs text-center text-teal-600 hover:text-teal-700 transition-colors"
                       >
-                        Explore All Societies →
+                        Explore All Hubs →
                       </button>
                     </div>
                   </div>

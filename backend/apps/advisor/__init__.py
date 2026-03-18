@@ -1,0 +1,1 @@
+"""EduPath AI Advisor app."""

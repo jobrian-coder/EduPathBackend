@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/hubs/', include('apps.hubs.urls')),
     path('api/societies/', include('apps.societies.urls')),
     path('api/chatbot/', include('apps.chatbot.urls')),
+    path('api/advisor/', include('apps.advisor.urls')),
 ]
 
 if settings.DEBUG:

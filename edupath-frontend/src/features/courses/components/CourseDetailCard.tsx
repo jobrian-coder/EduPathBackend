@@ -28,9 +28,10 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
 }) => {
   const [expandedSections, setExpandedSections] = React.useState({
     universities: true,
-    requirements: false,
-    careerPaths: false,
-    modules: false
+    requirements: true,
+    careerPaths: true,
+    modules: true,
+    prosCons: true
   })
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -110,6 +111,59 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
             </p>
           </div>
 
+          {/* Pros and Cons */}
+          {(course.pros?.length || course.cons?.length) ? (
+            <div className="mb-6">
+              <button
+                onClick={() => toggleSection('prosCons')}
+                className="flex items-center justify-between w-full text-left mb-4"
+              >
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Pros & Cons
+                </h3>
+                {expandedSections.prosCons ? 
+                  <ChevronUp className="w-5 h-5" /> : 
+                  <ChevronDown className="w-5 h-5" />
+                }
+              </button>
+              {expandedSections.prosCons && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Pros */}
+                  {course.pros && course.pros.length > 0 && (
+                    <Card className="border-green-200 bg-green-50/50">
+                      <CardHeader className="py-3 px-4 border-b border-green-100 bg-green-100/30">
+                        <div className="font-semibold text-green-800">Advantages</div>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-2">
+                        {course.pros.map((pro, i) => (
+                          <div key={i} className="flex gap-2 text-sm text-green-900/80">
+                            <span className="text-green-500 font-bold">✓</span> {pro}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                  {/* Cons */}
+                  {course.cons && course.cons.length > 0 && (
+                    <Card className="border-red-200 bg-red-50/50">
+                      <CardHeader className="py-3 px-4 border-b border-red-100 bg-red-100/30">
+                        <div className="font-semibold text-red-800">Challenges</div>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-2">
+                        {course.cons.map((con, i) => (
+                          <div key={i} className="flex gap-2 text-sm text-red-900/80">
+                            <span className="text-red-500 font-bold">✕</span> {con}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null}
+
           {/* Universities Offering This Course */}
           {course.universities && course.universities.length > 0 && (
             <div className="mb-6">
@@ -135,17 +189,23 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                              {courseUni.university.short_name.substring(0, 2).toUpperCase()}
+                              {(courseUni.university as any).short_name?.substring(0, 2).toUpperCase() || '??'}
                             </div>
                             <div>
-                              <h4 className="font-semibold text-slate-900 dark:text-white">
-                                {courseUni.university.name}
+                              <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                {(courseUni as any).programme_name || course.name}
+                                {(courseUni as any).program_code && (
+                                  <Badge variant="secondary" className="text-[10px] py-0">{(courseUni as any).program_code}</Badge>
+                                )}
                               </h4>
+                              <div className="text-sm font-medium text-blue-600 mb-1">
+                                {(courseUni.university as any).name}
+                              </div>
                               <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                 <MapPin className="w-4 h-4" />
-                                {courseUni.university.location}
+                                {(courseUni.university as any).location}
                                 <Badge variant="outline" className="text-xs">
-                                  {courseUni.university.type}
+                                  {(courseUni.university as any).type}
                                 </Badge>
                               </div>
                             </div>
@@ -153,7 +213,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                           <div className="text-right">
                             <div className="text-sm text-slate-500 dark:text-slate-400">Ranking</div>
                             <div className="font-semibold text-slate-900 dark:text-white">
-                              #{courseUni.university.ranking}
+                              #{(courseUni.university as any).ranking}
                             </div>
                           </div>
                         </div>
@@ -184,7 +244,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                             <div>
                               <div className="text-sm text-slate-500 dark:text-slate-400">Application Deadline</div>
                               <div className="font-semibold text-slate-900 dark:text-white">
-                                {formatDate(courseUni.application_deadline)}
+                                {formatDate(courseUni.application_deadline || undefined)}
                               </div>
                             </div>
                           </div>
@@ -238,7 +298,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(courseUni.course_url, '_blank')}
+                              onClick={() => window.open(courseUni.course_url || '', '_blank')}
                               className="flex items-center gap-2"
                             >
                               <ExternalLink className="w-4 h-4" />
@@ -343,7 +403,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
           </div>
 
           {/* Career Paths */}
-          {course.career_paths && course.career_paths.length > 0 && (
+          {((course as any).career_paths?.length || (course as any).careers?.length) ? (
             <div className="mb-6">
               <button
                 onClick={() => toggleSection('careerPaths')}
@@ -351,7 +411,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
               >
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   <Target className="w-5 h-5" />
-                  Career Opportunities ({course.career_paths.length})
+                  Career Opportunities ({((course as any).career_paths?.length || (course as any).careers?.length)})
                 </h3>
                 {expandedSections.careerPaths ? 
                   <ChevronUp className="w-5 h-5" /> : 
@@ -361,7 +421,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
               
               {expandedSections.careerPaths && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {course.career_paths.map((career, index) => (
+                  {((course as any).career_paths?.length ? (course as any).career_paths : (course as any).careers || []).map((career: any, index: number) => (
                     <div
                       key={index}
                       className="p-3 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
@@ -374,7 +434,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Course Modules */}
           {course.modules && course.modules.length > 0 && (
@@ -424,7 +484,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
               <Button variant="outline" size="sm">
                 Compare Courses
               </Button>
-              <Button variant="primary" size="sm">
+              <Button variant="default" size="sm">
                 Apply Now
               </Button>
             </div>

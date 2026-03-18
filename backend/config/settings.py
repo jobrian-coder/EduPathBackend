@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'apps.hubs',
     'apps.societies',
     'apps.chatbot',
+    'apps.advisor',
 ]
 
 MIDDLEWARE = [
@@ -172,3 +173,6 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+# AI Advisor — RAG Pipeline
+GROQ_API_KEY = config('GROQ_API_KEY', default='')
+CHROMA_DB_PATH = config('CHROMA_DB_PATH', default='./chroma_store')

@@ -18,8 +18,8 @@ export function Sidebar() {
         <NavLink to="/courses/compare" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Layers size={18}/> Courses
         </NavLink>
-        <NavLink to="/societies" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
-          <Users size={18}/> Societies
+        <NavLink to="/hubs" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
+          <Users size={18}/> Hubs
         </NavLink>
         <NavLink to="/profile" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <User size={18}/> Profile
