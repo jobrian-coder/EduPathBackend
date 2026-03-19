@@ -44,7 +44,7 @@ export default function AdsCarousel({
               <div className="text-xl font-semibold">{ad.title}</div>
               {ad.subtitle && <div className="text-sm text-slate-600 dark:text-slate-300 mt-1">{ad.subtitle}</div>}
               <div className="mt-3">
-                <button className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm hover:shadow-md transition-all">
+                <button className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600 shadow-sm hover:shadow-md transition-all">
                   {ad.cta || 'Learn More'}
                 </button>
               </div>

@@ -33,8 +33,8 @@ function App() {
           </aside>
         )}
         <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1 p-4 md:p-6 bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl">
+          {!hideSidebar && <Navbar />}
+          <main className={`flex-1 ${hideSidebar ? '' : 'p-4 md:p-6'} bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl`}>
             <Outlet />
           </main>
         </div>

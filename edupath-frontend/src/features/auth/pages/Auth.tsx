@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import api from '../../../services/api'
 import edupathIcon from '../../../assets/login/edupathicong.png'
@@ -109,23 +109,23 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Column - Login Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 md:px-12 lg:px-16 xl:px-20 bg-white">
+      <div className="flex-1 flex flex-col justify-center px-8 md:px-12 lg:px-16 xl:px-20 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800">
         <div className="max-w-md mx-auto w-full">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
             <img src={edupathIcon} alt="EduPath" className="w-8 h-8" />
-            <span className="text-2xl font-bold text-gray-900">EduPath</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">EduPath</span>
           </div>
 
           {/* Welcome Message */}
           <div className="mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {mode === 'login' ? 'Welcome Back!' : 'Join EduPath!'}
             </h1>
           </div>
 
           {/* Instructional Text */}
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 dark:text-slate-400 mb-8">
             {mode === 'login' 
               ? "Sign in to access your dashboard and continue your educational journey." 
               : "Create your account to start exploring courses, universities, and career paths."
@@ -136,14 +136,14 @@ export default function AuthPage() {
           <form onSubmit={mode === 'login' ? onLoginSubmit : onSignupSubmit} className="space-y-6">
             {mode === 'signup' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && (
@@ -153,18 +153,18 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400 dark:text-slate-500" />
                 </div>
                 <input
                   type="email"
                   value={mode === 'login' ? identifier : email}
                   onChange={(e) => mode === 'login' ? setIdentifier(e.target.value) : setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
                   placeholder="Enter your email"
                 />
               </div>
@@ -177,18 +177,18 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-gray-400 dark:text-slate-500" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={mode === 'login' ? password : spw}
                   onChange={(e) => mode === 'login' ? setPassword(e.target.value) : setSpw(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
                   placeholder="Enter your password"
                 />
                 <button
@@ -213,14 +213,14 @@ export default function AuthPage() {
 
             {mode === 'signup' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Confirm Password
                 </label>
                 <input
                   type="password"
                   value={spw2}
                   onChange={(e) => setSpw2(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
                   placeholder="Confirm your password"
                 />
                 {errors.spw2 && (
@@ -259,10 +259,10 @@ export default function AuthPage() {
           {/* Separator */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-300 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">OR</span>
+              <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400">OR</span>
             </div>
           </div>
 
@@ -270,7 +270,7 @@ export default function AuthPage() {
           <div className="space-y-3">
             <button
               onClick={googleLogin}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -283,7 +283,7 @@ export default function AuthPage() {
 
             <button
               onClick={appleLogin}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
@@ -294,7 +294,7 @@ export default function AuthPage() {
 
           {/* Sign Up/Login Link */}
           <div className="mt-6 text-center">
-            <span className="text-gray-600">
+            <span className="text-gray-600 dark:text-slate-400">
               {mode === 'login' ? "Don't have an Account? " : "Already have an Account? "}
             </span>
             <button

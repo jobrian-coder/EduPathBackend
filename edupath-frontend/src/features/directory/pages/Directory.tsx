@@ -152,7 +152,48 @@ export default function Directory() {
         </div>
 
         {/* Layout */}
-        <div className="grid gap-4 lg:grid-cols-1">
+        <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+          
+          {/* Universities Sidebar */}
+          <aside className="hidden lg:block h-[calc(100vh-12rem)] sticky top-36 overflow-y-auto custom-scrollbar">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 space-y-2">
+              <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
+                Universities
+              </div>
+              
+              <button
+                onClick={() => setUniversityId('')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                  universityId === '' 
+                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200 dark:border-teal-800 dark:bg-gradient-to-r dark:from-teal-950/40 dark:to-cyan-950/30 text-teal-900 dark:text-teal-100' 
+                    : 'text-slate-700 hover:bg-teal-50 border border-transparent dark:hover:bg-slate-800/60 dark:text-slate-200'
+                }`}
+              >
+                <div className="text-sm font-medium">All Universities</div>
+              </button>
+
+              {filteredUniversities.map(u => (
+                <button
+                  key={u.id}
+                  onClick={() => setUniversityId(u.id)}
+                  title={u.name}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    universityId === u.id 
+                      ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200 dark:border-teal-800 dark:bg-gradient-to-r dark:from-teal-950/40 dark:to-cyan-950/30 text-teal-900 dark:text-teal-100' 
+                      : 'text-slate-700 hover:bg-teal-50 border border-transparent dark:hover:bg-slate-800/60 dark:text-slate-200'
+                  }`}
+                >
+                  <img src={getUniversityIcon(u.name)} alt={u.name} className="w-8 h-8 rounded-full object-cover bg-white shadow-sm border border-gray-100 flex-shrink-0" />
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-xs font-medium truncate">
+                      {(u as any).short_name || u.name}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </aside>
+
           <div className="space-y-4">
             {error && <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3">{error}</div>}
             {loading && <div className="text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">Loading...</div>}

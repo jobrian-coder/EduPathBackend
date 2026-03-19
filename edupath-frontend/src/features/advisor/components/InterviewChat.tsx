@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User as UserIcon, Bot, Loader } from 'lucide-react';
+import { Send, User as UserIcon, Loader } from 'lucide-react';
 import api from '../../../services/api';
+import eduguideIcon from '../../../assets/eduguide.png';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -100,13 +101,17 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({ sessionId, onCompl
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 dark:bg-slate-900/50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 dark:bg-slate-900/50 relative">
+        <div 
+          className="absolute inset-x-0 inset-y-12 z-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none mix-blend-multiply dark:mix-blend-screen" 
+          style={{ backgroundImage: `url(${eduguideIcon})`, backgroundPosition: 'center', backgroundSize: 'contain', backgroundRepeat: 'no-repeat' }}
+        />
         {messages.map((msg, i) => (
-          <div key={i} className="flex flex-col gap-3">
+          <div key={i} className="flex flex-col gap-3 relative z-10">
             <div className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center flex-shrink-0 shadow-md">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center flex-shrink-0 shadow-md p-1">
+                  <img src={eduguideIcon} alt="EduGuide" className="w-full h-full object-contain" />
                 </div>
               )}
               
@@ -143,9 +148,9 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({ sessionId, onCompl
         ))}
         
         {isSending && (
-          <div className="flex gap-4 justify-start">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center flex-shrink-0">
-              <Bot className="w-5 h-5 text-white animate-pulse" />
+          <div className="flex gap-4 justify-start relative z-10">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center flex-shrink-0 p-1">
+              <img src={eduguideIcon} alt="EduGuide" className="w-full h-full object-contain animate-pulse" />
             </div>
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-none px-5 py-4 flex items-center gap-2">
               <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
