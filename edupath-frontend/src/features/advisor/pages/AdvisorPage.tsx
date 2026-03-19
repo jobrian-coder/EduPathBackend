@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, ArrowRight, Loader, GraduationCap } from 'lucide-react';
 import api, { type AdvisorRecommendation } from '../../../services/api';
 import { InterviewChat } from '../components/InterviewChat';
 import { RecommendationCard } from '../components/RecommendationCard';
@@ -9,6 +9,25 @@ export const AdvisorPage: React.FC = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [recommendations, setRecommendations] = useState<AdvisorRecommendation[] | null>(null);
   const [isFetchingRecommendations, setIsFetchingRecommendations] = useState(false);
+  const [academicProfile, setAcademicProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
+
+  // Fetch academic profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await api.academic.getProfile();
+        setAcademicProfile(profile);
+      } catch (e) {
+        // Profile may not exist yet
+        setAcademicProfile(null);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleStartSession = async () => {
     setIsStarting(true);
@@ -25,12 +44,17 @@ export const AdvisorPage: React.FC = () => {
 
   const handleInterviewComplete = async (completedSessionId: string) => {
     setIsFetchingRecommendations(true);
+    setRecommendationsError(null);
     try {
       const res = await api.advisor.getRecommendations(completedSessionId);
+      console.log('[Advisor] Recommendations response:', res);
+      if (!res.recommendations || res.recommendations.length === 0) {
+        console.warn('[Advisor] No recommendations returned from API');
+      }
       setRecommendations(res.recommendations);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to load recommendations.');
+    } catch (err: any) {
+      console.error('[Advisor] Failed to load recommendations:', err);
+      setRecommendationsError(err?.message || 'Failed to load recommendations. Please try again.');
     } finally {
       setIsFetchingRecommendations(false);
     }
@@ -40,6 +64,8 @@ export const AdvisorPage: React.FC = () => {
     setSessionId(null);
     setRecommendations(null);
   };
+
+  const hasGrades = academicProfile?.kcse_mean_points != null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-800 dark:to-teal-950 py-12 px-4 sm:px-6 lg:px-8">
@@ -58,6 +84,47 @@ export const AdvisorPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Academic Profile Alert */}
+        {!profileLoading && !hasGrades && !sessionId && !recommendations && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-2xl p-4 flex items-start gap-3">
+            <GraduationCap className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-amber-800 dark:text-amber-200 text-sm">
+                <strong>Tip:</strong> Add your KCSE grades to your{' '}
+                <a href="/profile/academic" className="underline hover:text-amber-900 dark:hover:text-amber-100">
+                  Academic Profile
+                </a>{' '}
+                for personalized course recommendations based on your actual cluster points.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Badge */}
+        {!profileLoading && hasGrades && !sessionId && !recommendations && (
+          <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700/30 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-teal-100 dark:bg-teal-800 rounded-full flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-teal-900 dark:text-teal-100 font-medium">
+                  Academic Profile Linked
+                </p>
+                <p className="text-teal-700 dark:text-teal-300 text-sm">
+                  KCSE Mean Points: {academicProfile.kcse_mean_points}/84
+                </p>
+              </div>
+            </div>
+            <a 
+              href="/profile/academic"
+              className="text-sm text-teal-600 dark:text-teal-400 hover:underline"
+            >
+              Edit Grades
+            </a>
+          </div>
+        )}
+        
         {/* Content Section */}
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-white/20 dark:border-slate-700/50">
           
@@ -69,6 +136,11 @@ export const AdvisorPage: React.FC = () => {
                 <p className="text-slate-500 dark:text-slate-400">
                   You'll answer 10 adaptive questions about your educational journey, and we'll match you with the top 5 Kenyan university programs just for you.
                 </p>
+                {hasGrades && (
+                  <p className="text-teal-600 dark:text-teal-400 text-sm">
+                    Your academic profile will be used to filter courses by eligibility.
+                  </p>
+                )}
               </div>
               <button
                 onClick={handleStartSession}
@@ -107,15 +179,40 @@ export const AdvisorPage: React.FC = () => {
               <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Analysing your profile...</h3>
               <p className="text-slate-500 dark:text-slate-400">
                 Searching across 2,000+ courses to find your perfect matches.
+                {hasGrades && ' Using your KCSE grades for eligibility filtering.'}
               </p>
             </div>
           )}
 
+          {recommendationsError && (
+            <div className="p-8 text-center bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-700/30">
+              <p className="text-red-800 dark:text-red-200 font-medium">
+                Error loading recommendations
+              </p>
+              <p className="text-red-600 dark:text-red-300 text-sm mt-2">
+                {recommendationsError}
+              </p>
+              <button
+                onClick={() => handleInterviewComplete(sessionId!)}
+                className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
           {/* Results State */}
-          {recommendations && (
+          {recommendations && !recommendationsError && (
             <div className="p-8 space-y-8 bg-slate-50 dark:bg-slate-900/50">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Your Top 5 Course Matches</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Your Top 5 Course Matches</h2>
+                  {hasGrades && (
+                    <p className="text-sm text-teal-600 dark:text-teal-400 mt-1">
+                      Based on your KCSE mean points of {academicProfile.kcse_mean_points}/84
+                    </p>
+                  )}
+                </div>
                 <button
                   onClick={handleStartOver}
                   className="px-5 py-2 text-sm font-medium text-teal-600 bg-teal-50 dark:text-teal-400 dark:bg-teal-900/30 rounded-full hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
@@ -126,8 +223,8 @@ export const AdvisorPage: React.FC = () => {
 
               {recommendations.length > 0 ? (
                 <div className="grid gap-6">
-                  {recommendations.map((rec) => (
-                    <RecommendationCard key={rec.rank} recommendation={rec} />
+                  {recommendations.map((rec, idx) => (
+                    <RecommendationCard key={idx} recommendation={rec} />
                   ))}
                 </div>
               ) : (
@@ -135,6 +232,11 @@ export const AdvisorPage: React.FC = () => {
                   <p className="text-yellow-800 dark:text-yellow-200">
                     We couldn't find exact matches based on your specific criteria. Please try the interview again with broader preferences.
                   </p>
+                  {!hasGrades && (
+                    <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-2">
+                      Tip: Adding your KCSE grades to your Academic Profile can help us find courses you're eligible for.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -82,16 +82,35 @@ class GroqInterviewService:
         try:
             parsed = json.loads(response_text)
         except json.JSONDecodeError as e:
-            # Fallback
+            # Fallback - if we can't parse and we're at max questions, force completion
+            if question_count >= self.MAX_QUESTIONS:
+                return {
+                    "question": None,
+                    "options": [],
+                    "question_number": question_count,
+                    "done": True,
+                    "profile": f"Student completed {question_count} questions. Final answer: {student_answer}",
+                    "assistant_message": response_text,
+                }
+            # Otherwise return a generic continue
             parsed = {"done": False, "question": "Could you tell me a little more about that?", "options": []}
 
-        if parsed.get("done") or question_count >= self.MAX_QUESTIONS:
+        # Check if interview is complete - either Groq says done OR we've reached max questions
+        is_done = parsed.get("done") or question_count >= self.MAX_QUESTIONS
+        
+        if is_done:
+            # Extract profile from Groq response, or generate a fallback
+            profile = parsed.get("profile")
+            if not profile or profile.strip() == "":
+                # Generate a synthetic profile from message history if Groq didn't provide one
+                profile = self._generate_fallback_profile(message_history, student_answer, question_count)
+            
             return {
                 "question": None,
                 "options": [],
                 "question_number": question_count,
                 "done": True,
-                "profile": parsed.get("profile", f"Student answered {question_count} questions. Summary: {student_answer}"),
+                "profile": profile,
                 "assistant_message": response_text,
             }
 
@@ -103,6 +122,20 @@ class GroqInterviewService:
             "profile": None,
             "assistant_message": response_text,
         }
+
+    def _generate_fallback_profile(self, message_history: list, last_answer: str, question_count: int) -> str:
+        """Generate a synthetic profile when Groq fails to return one."""
+        # Extract student answers from message history
+        answers = [msg["content"] for msg in message_history if msg.get("role") == "user"]
+        answers.append(last_answer)
+        
+        return (
+            f"Student Profile (based on {question_count} questions): "
+            f"The student provided insights across {question_count} areas including: "
+            f"{', '.join(answers[:3])}{'...' if len(answers) > 3 else ''}. "
+            f"Their final response indicated: {last_answer}. "
+            f"This profile suggests interests in subjects they've discussed throughout the interview."
+        )
 
     def _call_groq(self, messages: list) -> str:
         """Call Groq API and return the assistant content string."""

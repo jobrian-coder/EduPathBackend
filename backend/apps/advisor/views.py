@@ -160,9 +160,21 @@ class RecommendationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Fetch user's academic profile for eligibility filtering
+        academic_profile = None
+        if request.user.is_authenticated:
+            from apps.authentication.models import AcademicProfile
+            try:
+                academic_profile = AcademicProfile.objects.get(user=request.user)
+            except AcademicProfile.DoesNotExist:
+                pass
+
         try:
             recommender = RecommenderService()
-            recommendations = recommender.recommend(session.profile_text)
+            recommendations = recommender.recommend(
+                profile_text=session.profile_text,
+                academic_profile=academic_profile
+            )
         except Exception as e:
             return Response(
                 {"error": f"Recommendation engine error: {str(e)}"},
@@ -174,5 +186,6 @@ class RecommendationsView(APIView):
                 "session_id": str(session.id),
                 "profile_text": session.profile_text,
                 "recommendations": recommendations,
+                "academic_profile_used": academic_profile is not None,
             }
         )
