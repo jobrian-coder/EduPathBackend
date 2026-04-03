@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 
 from .models import AdvisorSession, AdvisorMessage
@@ -19,6 +20,7 @@ class StartAdvisorView(APIView):
     POST /api/advisor/start/
     Creates a new AdvisorSession and returns the first question.
     """
+    permission_classes = [AllowAny]
     
     def post(self, request):
         try:
@@ -66,6 +68,7 @@ class AdvisorMessageView(APIView):
     POST /api/advisor/<session_id>/message/
     Accept the student's answer, return the next question or completion signal.
     """
+    permission_classes = [AllowAny]
 
     def post(self, request, pk):
         session = get_object_or_404(
@@ -138,6 +141,7 @@ class RecommendationsView(APIView):
     Runs Stage-2 RAG pipeline and returns top-5 course recommendations.
     Session must be complete (10 questions answered).
     """
+    permission_classes = [AllowAny]
 
     def get(self, request, pk):
         session = get_object_or_404(
