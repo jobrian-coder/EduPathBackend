@@ -1,5 +1,5 @@
 from rest_framework import viewsets, filters, status, permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
@@ -26,40 +26,27 @@ class UniversityViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ['type', 'location']
     search_fields = ['name', 'short_name', 'description']
     ordering_fields = ['ranking', 'established']
-    
+
     def get_serializer_class(self):
         if self.action == 'list':
             return UniversityListSerializer
         return UniversitySerializer
-    
+
     @action(detail=True, methods=['get'])
     def programs(self, request, pk=None):
         """Get all programs offered by a specific university"""
         university = self.get_object()
-        
-        # Get all CourseUniversity relationships for this university
         course_universities = CourseUniversity.objects.filter(university=university).select_related('course')
-        
-        # Apply filters if provided
         category = request.query_params.get('category')
         if category:
             course_universities = course_universities.filter(course__category=category)
-        
-        # Apply search if provided
         search = request.query_params.get('search')
         if search:
-            course_universities = course_universities.filter(
-                course__name__icontains=search
-            )
-        
-        # Apply ordering
+            course_universities = course_universities.filter(course__name__icontains=search)
         ordering = request.query_params.get('ordering', 'course__name')
         if ordering in ['course__name', '-course__name', 'fees_ksh', '-fees_ksh', 'cutoff_points', '-cutoff_points']:
             course_universities = course_universities.order_by(ordering)
-        
-        # Serialize the data
         serializer = CourseUniversitySerializer(course_universities, many=True)
-        
         return Response({
             'university': UniversitySerializer(university).data,
             'programs': serializer.data,
@@ -68,13 +55,13 @@ class UniversityViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
-    """Course CRUD"""
+    """Course CRUD — returns flat rows (one per programme)"""
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category']
-    search_fields = ['name', 'description']
-    
+    filterset_fields = ['category', 'related_hub', 'institution']
+    search_fields = ['name', 'category', 'description', 'institution']
+
     def get_serializer_class(self):
         if self.action == 'list':
             return CourseListSerializer
@@ -89,13 +76,17 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         if not user_cluster_points:
             return Response({'error': 'cluster_points required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not course.cluster_points:
+            return Response(
+                {'error': 'This course does not have cluster points defined (new KUCCPS data uses cutoff_2023 instead).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             user_points = float(user_cluster_points)
             course_points = float(course.cluster_points)
-
             eligible = user_points >= course_points
             difference = user_points - course_points
-
             return Response({
                 'eligible': eligible,
                 'user_points': user_points,
@@ -108,13 +99,94 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CourseUniversityViewSet(viewsets.ReadOnlyModelViewSet):
-    """Course-University relationships"""
+    """Course-University relationships (legacy)"""
     queryset = CourseUniversity.objects.all()
     serializer_class = CourseUniversitySerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['course', 'university']
     ordering_fields = ['fees_ksh', 'cutoff_points']
 
+
+# ── New grouped endpoints (category-level presentation) ──────────────────────
+
+def _build_programme_entry(course):
+    return {
+        'programme_code':        course.programme_code,
+        'name':                  course.name,
+        'institution':           course.institution,
+        'cutoff_2023':           float(course.cutoff_2023) if course.cutoff_2023 is not None else None,
+        'cutoff_2022':           float(course.cutoff_2022) if course.cutoff_2022 is not None else None,
+        'subject_requirement_1': course.subject_requirement_1,
+        'subject_requirement_2': course.subject_requirement_2,
+        'subject_requirement_3': course.subject_requirement_3,
+        'subject_requirement_4': course.subject_requirement_4,
+    }
+
+
+@api_view(['GET'])
+def course_list_grouped(request):
+    """
+    Returns one entry per category for the frontend discovery page.
+    All programme offerings for a category are nested under 'programmes'.
+
+    Query params:
+        q   — filter by category name (case-insensitive contains)
+        hub — filter by related_hub (exact)
+    """
+    search = request.query_params.get('q', '').strip()
+    hub    = request.query_params.get('hub', '').strip()
+
+    qs = Course.objects.all().order_by('category', 'cutoff_2023')
+    if search:
+        qs = qs.filter(category__icontains=search)
+    if hub:
+        qs = qs.filter(related_hub=hub)
+
+    grouped = {}
+    for course in qs:
+        cat = course.category
+        if cat not in grouped:
+            grouped[cat] = {
+                'category':     cat,
+                'description':  course.description,
+                'pros':         course.pros,
+                'cons':         course.cons,
+                'careers':      course.careers,
+                'related_hub':  course.related_hub,
+                'avg_fees_ksh': course.avg_fees_ksh,
+                'is_enriched':  course.is_enriched,
+                'programmes':   [],
+            }
+        grouped[cat]['programmes'].append(_build_programme_entry(course))
+
+    return Response(list(grouped.values()))
+
+
+@api_view(['GET'])
+def course_detail_grouped(request, category):
+    """
+    Returns full detail for one category, including all programme offerings
+    ordered by cutoff_2023 ascending (best cutoff last).
+    """
+    courses = Course.objects.filter(category=category).order_by('cutoff_2023')
+    if not courses.exists():
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    first = courses.first()
+    return Response({
+        'category':     first.category,
+        'description':  first.description,
+        'pros':         first.pros,
+        'cons':         first.cons,
+        'careers':      first.careers,
+        'related_hub':  first.related_hub,
+        'avg_fees_ksh': first.avg_fees_ksh,
+        'is_enriched':  first.is_enriched,
+        'programmes':   [_build_programme_entry(c) for c in courses],
+    })
+
+
+# ── Legacy ClusterCalculationView (kept for backward compat) ─────────────────
 
 class ClusterCalculationView(APIView):
     """Calculate cluster points and eligibility for a given course."""
@@ -135,7 +207,6 @@ class ClusterCalculationView(APIView):
         except Course.DoesNotExist:
             return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Pull data from user's academic profile if requested
         if use_profile and request.user and request.user.is_authenticated:
             try:
                 profile = request.user.academic_profile
@@ -146,18 +217,16 @@ class ClusterCalculationView(APIView):
             except AcademicProfile.DoesNotExist:
                 pass
 
-        # Validate grades data
         if not grades:
             return Response({'error': 'grades are required to compute cluster points'}, status=status.HTTP_400_BAD_REQUEST)
 
         points_map = normalize_grades(grades)
         if not points_map:
             return Response({
-                'error': 'No valid grades found. Please provide grades in format: {"subject_code": "grade"} or [{"subject_code": "code", "grade": "A"}]',
+                'error': 'No valid grades found.',
                 'received_grades': grades
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate course has cluster subjects
         if not course.cluster_subjects:
             return Response({
                 'error': 'Course does not have cluster subjects defined',
@@ -167,7 +236,6 @@ class ClusterCalculationView(APIView):
 
         raw_cluster_total, missing_subjects = calculate_raw_cluster(points_map, course.cluster_subjects)
 
-        # Calculate mean points
         numeric_mean_points = None
         if mean_points is not None:
             try:
@@ -179,27 +247,12 @@ class ClusterCalculationView(APIView):
         else:
             numeric_mean_points = calculate_mean_points(points_map)
             if numeric_mean_points is None or numeric_mean_points <= 0:
-                return Response({
-                    'error': 'Unable to calculate mean points from provided grades',
-                    'points_map': points_map,
-                    'available_subjects': list(points_map.keys())
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Unable to calculate mean points from provided grades'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate cluster score
         cluster_score = calculate_cluster_points(raw_cluster_total, numeric_mean_points)
         if cluster_score is None:
-            return Response({
-                'error': 'Unable to compute cluster score with provided data',
-                'debug_info': {
-                    'raw_cluster_total': raw_cluster_total,
-                    'mean_points': numeric_mean_points,
-                    'cluster_subjects': course.cluster_subjects,
-                    'points_map': points_map,
-                    'missing_subjects': missing_subjects
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Unable to compute cluster score with provided data'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate course has cluster points
         if not course.cluster_points:
             return Response({
                 'error': 'Course does not have cluster points defined',
@@ -210,24 +263,19 @@ class ClusterCalculationView(APIView):
         try:
             required_points = float(course.cluster_points)
         except (TypeError, ValueError):
-            return Response({
-                'error': 'Course has invalid cluster points value',
-                'course_id': str(course.id),
-                'course_name': course.name,
-                'cluster_points': course.cluster_points
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Course has invalid cluster points value'}, status=status.HTTP_400_BAD_REQUEST)
 
         eligible = cluster_score >= required_points
 
         return Response({
-            'course_id': str(course.id),
-            'course_name': course.name,
-            'cluster_points': round(cluster_score, 2),
+            'course_id':         str(course.id),
+            'course_name':       course.name,
+            'cluster_points':    round(cluster_score, 2),
             'raw_cluster_total': raw_cluster_total,
-            'mean_points': round(numeric_mean_points, 2),
-            'required_points': required_points,
-            'eligible': eligible,
-            'missing_subjects': missing_subjects,
-            'cluster_subjects': course.cluster_subjects,
-            'points_map': points_map,
+            'mean_points':       round(numeric_mean_points, 2),
+            'required_points':   required_points,
+            'eligible':          eligible,
+            'missing_subjects':  missing_subjects,
+            'cluster_subjects':  course.cluster_subjects,
+            'points_map':        points_map,
         })

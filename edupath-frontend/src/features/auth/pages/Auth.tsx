@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import api from '../../../services/api'
 import edupathIcon from '../../../assets/login/edupathicong.png'
@@ -9,20 +10,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   
-  // Background style for the auth page
-  const backgroundStyle = {
-    backgroundImage: `url('/assets/edupathbackground.gif')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed',
-    minHeight: '100vh',
-    width: '100%',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    zIndex: -1,
-  } as React.CSSProperties;
+
 
   // login fields
   const [identifier, setIdentifier] = useState('')
@@ -111,10 +99,18 @@ export default function AuthPage() {
       {/* Left Column - Login Form */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-12 lg:px-16 xl:px-20 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800">
         <div className="max-w-md mx-auto w-full">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <img src={edupathIcon} alt="EduPath" className="w-8 h-8" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">EduPath</span>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <img src={edupathIcon} alt="EduPath" className="w-8 h-8" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">EduPath</span>
+            </div>
+            <Link 
+              to="/how-it-works" 
+              className="text-sm font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+            >
+              How it works
+            </Link>
           </div>
 
           {/* Welcome Message */}

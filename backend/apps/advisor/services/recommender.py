@@ -114,7 +114,7 @@ class RecommenderService:
 
         # Estimate cluster points from mean points (rough conversion)
         # Cluster points typically range from 0-48, mean points 0-84
-        estimated_cluster = min(48, mean_points * 0.57)
+        estimated_cluster = min(48, float(mean_points) * 0.57)
 
         filtered = []
         for hit in hits:
@@ -132,7 +132,7 @@ class RecommenderService:
 
             # More lenient filtering: allow courses within 15% below cutoff
             # This accounts for estimation errors and year-to-year variation
-            if estimated_cluster >= cutoff * 0.80:  # Within 80% of cutoff (was 85%)
+            if estimated_cluster >= float(cutoff) * 0.80:  # Within 80% of cutoff (was 85%)
                 filtered.append(hit)
 
         # Only use filtered results if we have enough, otherwise return original

@@ -2,7 +2,7 @@ import { Navigate, type RouteObject } from 'react-router-dom'
 import App from '../App'
 import CourseCompare from '../features/courses/pages/CourseCompare'
 import CourseDetail from '../features/courses/pages/CourseDetail'
-import Societies from '../features/societies/pages/Societies'
+
 import Profile from '../features/profile/pages/Profile'
 import AcademicProfilePage from '../features/profile/pages/AcademicProfile'
 import Directory from '../features/directory/pages/Directory'
@@ -12,6 +12,7 @@ import AuthPage from '../features/auth/pages/Auth'
 import PostDetail from '../features/posts/pages/PostDetail'
 import UniversityPrograms from '../features/universities/pages/UniversityPrograms'
 import AdvisorPage from '../features/advisor/pages/AdvisorPage'
+import HowItWorks from '../features/landing/pages/HowItWorks'
 import { HomeGate, RequireAuth } from './guards'
 
 export const AppRoutes: RouteObject[] = [
@@ -32,6 +33,7 @@ export const AppRoutes: RouteObject[] = [
       { path: 'profile', element: <RequireAuth><Profile /></RequireAuth> },
       { path: 'profile/academic', element: <RequireAuth><AcademicProfilePage /></RequireAuth> },
       { path: 'advisor', element: <AdvisorPage /> },
+      { path: 'how-it-works', element: <HowItWorks /> },
       { path: 'auth', element: <AuthPage /> },
     ],
   },

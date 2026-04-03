@@ -365,7 +365,7 @@ export default function HubFeedV2() {
         <main className="space-y-3 min-w-0">
           {/* Hub Header */}
           {selectedHub && (
-            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 overflow-hidden mb-3 md:mb-4">
+            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-3 md:mb-4">
               {/* Background Image */}
               {(selectedHub as any).icon_url && (
                 <div 
@@ -442,7 +442,7 @@ export default function HubFeedV2() {
             <article
               key={post.id}
               onClick={() => navigate(`/posts/${post.id}`)}
-              className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-teal-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-400/40"
+              className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-400/40"
             >
               <div className="p-3 md:p-4">
                 {/* Post Header */}
@@ -554,7 +554,7 @@ export default function HubFeedV2() {
 
           {/* Create Post Form - Now Below Posts */}
           {showCreatePost && selectedHub && (
-            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 md:p-4 mb-3 md:mb-4">
+            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 md:p-4 mb-3 md:mb-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Create Post</h3>
                 <button

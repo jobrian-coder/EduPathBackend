@@ -2,31 +2,16 @@ import { Outlet, useLocation } from 'react-router-dom'
 import './index.css'
 import { Navbar } from './components/common/Navbar'
 import CompactSidebar from './components/common/CompactSidebar'
+import { Footer } from './components/common/Footer'
 
 function App() {
   const location = useLocation()
   const hideSidebar = location.pathname.startsWith('/auth')
-  const showLandingBackground = location.pathname === '/'
-  
-  // Add background style for the landing page
-  const landingPageStyle = {
-    backgroundImage: `url('/assets/edupathbackground.gif')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed',
-    minHeight: '100vh',
-    width: '100%',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    zIndex: -1,
-  } as React.CSSProperties;
+  const isHomePage = location.pathname === '/'
 
   return (
     <>
-      {showLandingBackground && <div style={landingPageStyle} />}
-      <div className={"min-h-screen text-gray-900 dark:text-slate-100 " + (showLandingBackground ? 'bg-black bg-opacity-50 ' : '') + (hideSidebar ? '' : 'grid grid-cols-1 md:grid-cols-[64px_1fr]') }>
+      <div className={"min-h-screen text-gray-900 dark:text-slate-100 " + (hideSidebar ? '' : 'grid grid-cols-1 md:grid-cols-[64px_1fr]') }>
         {!hideSidebar && (
           <aside className="hidden md:block bg-white bg-opacity-90 border-r border-gray-200 pt-20 dark:bg-slate-900/60 dark:border-slate-700">
             <CompactSidebar />
@@ -37,6 +22,7 @@ function App() {
           <main className={`flex-1 ${hideSidebar ? '' : 'p-4 md:p-6'} bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl`}>
             <Outlet />
           </main>
+          {isHomePage && !hideSidebar && <Footer />}
         </div>
       </div>
     </>

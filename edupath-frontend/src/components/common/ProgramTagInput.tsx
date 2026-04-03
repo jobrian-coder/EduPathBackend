@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Search, X, BookOpen, Tag } from 'lucide-react'
 import { coursesAPI } from '../../services/api'
-import type { Course } from '../../services/api'
+import type { CourseGrouped } from '../../services/api'
 
 interface ProgramTagInputProps {
   selectedPrograms: string[]
@@ -10,7 +10,7 @@ interface ProgramTagInputProps {
   maxPrograms?: number
 }
 
-interface ProgramOption extends Course {
+interface ProgramOption extends CourseGrouped {
   displayName: string
 }
 
@@ -24,9 +24,9 @@ export default function ProgramTagInput({
   const [searchResults, setSearchResults] = useState<ProgramOption[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
-  const [selectedProgramDetails, setSelectedProgramDetails] = useState<Course[]>([])
+  const [selectedProgramDetails, setSelectedProgramDetails] = useState<CourseGrouped[]>([])
   
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -42,7 +42,7 @@ export default function ProgramTagInput({
         const programDetails = await Promise.all(
           selectedPrograms.map(async (programId) => {
             try {
-              return await coursesAPI.getCourse(programId)
+              return await coursesAPI.getGrouped(programId)
             } catch (error) {
               console.error(`Failed to load program ${programId}:`, error)
               return null
@@ -50,7 +50,7 @@ export default function ProgramTagInput({
           })
         )
         
-        setSelectedProgramDetails(programDetails.filter(Boolean) as Course[])
+        setSelectedProgramDetails(programDetails.filter(Boolean) as CourseGrouped[])
       } catch (error) {
         console.error('Failed to load selected program details:', error)
       }
@@ -73,17 +73,16 @@ export default function ProgramTagInput({
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true)
       try {
-        const { results } = await coursesAPI.listCourses({
-          search: searchQuery.trim(),
-          ordering: 'name'
+        const results = await coursesAPI.listGrouped({
+          q: searchQuery.trim(),
         })
         
         // Filter out already selected programs and create display names
         const availablePrograms = results
-          .filter(program => !selectedPrograms.includes(program.id))
+          .filter(program => !selectedPrograms.includes(program.category))
           .map(program => ({
             ...program,
-            displayName: program.name
+            displayName: program.category
           }))
         
         setSearchResults(availablePrograms.slice(0, 10)) // Limit to 10 results
@@ -125,7 +124,7 @@ export default function ProgramTagInput({
       return
     }
 
-    onProgramsChange([...selectedPrograms, program.id])
+    onProgramsChange([...selectedPrograms, program.category])
     setSearchQuery('')
     setShowDropdown(false)
     inputRef.current?.focus()
@@ -154,15 +153,15 @@ export default function ProgramTagInput({
         <div className="flex flex-wrap gap-2 mb-3">
           {selectedProgramDetails.map((program) => (
             <div
-              key={program.id}
+              key={program.category}
               className="flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-800 rounded-lg text-sm border border-teal-200"
             >
               <BookOpen className="w-4 h-4" />
               <span className="font-medium truncate max-w-[200px]">
-                {program.name}
+                {program.category}
               </span>
               <button
-                onClick={() => handleProgramRemove(program.id)}
+                onClick={() => handleProgramRemove(program.category)}
                 className="text-teal-600 hover:text-teal-800 transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -203,7 +202,7 @@ export default function ProgramTagInput({
         >
           {searchResults.map((program) => (
             <button
-              key={program.id}
+              key={program.category}
               onClick={() => handleProgramSelect(program)}
               className="w-full px-4 py-3 text-left hover:bg-teal-50 border-b border-teal-100 last:border-b-0 transition-colors"
             >
@@ -216,7 +215,7 @@ export default function ProgramTagInput({
                     {program.displayName}
                   </div>
                   <div className="text-sm text-teal-600 mt-1">
-                    {program.category} • {program.duration}
+                    {program.related_hub} • Avg Ksh {program.avg_fees_ksh?.toLocaleString() ?? 'N/A'}
                   </div>
                   {program.description && (
                     <div className="text-xs text-slate-600 mt-1 line-clamp-2">

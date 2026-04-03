@@ -41,25 +41,43 @@ def main():
         metadata={"hnsw:space": "cosine"}
     )
     
-    courses = Course.objects.all().prefetch_related('universities__university')
-    total = courses.count()
+    # For the new flat-Course layout, group by category so ChromaDB has one
+    # document per category (matching what the frontend sees).
+    from itertools import groupby
+    all_courses = Course.objects.all().order_by('category')
+    grouped = {}
+    for course in all_courses:
+        cat = course.category
+        if cat not in grouped:
+            grouped[cat] = {'rep': course, 'institutions': [], 'cutoffs_2023': [], 'cutoffs_2022': [], 'fees': []}
+        g = grouped[cat]
+        if course.institution:
+            g['institutions'].append(course.institution)
+        if course.cutoff_2023:
+            g['cutoffs_2023'].append(float(course.cutoff_2023))
+        if course.cutoff_2022:
+            g['cutoffs_2022'].append(float(course.cutoff_2022))
+        if course.avg_fees_ksh:
+            g['fees'].append(course.avg_fees_ksh)
+
+    course_groups = list(grouped.values())
+    total = len(course_groups)
     print(f"Found {total} canonical courses to index.")
-    
+
     documents = []
     metadatas = []
     ids = []
-    
-    for i, course in enumerate(courses, 1):
-        # Gather university info
-        inst_names = [cu.university.name for cu in course.universities.all()]
-        cutoff_2023s = [cu.cutoff_points for cu in course.universities.all() if cu.cutoff_points]
-        cutoff_2022s = [getattr(cu, 'cutoff_2022', None) for cu in course.universities.all()]
-        cutoff_2022s = [c for c in cutoff_2022s if c]
-        fees = [cu.fees_ksh for cu in course.universities.all() if cu.fees_ksh]
-        
+
+    for i, g in enumerate(course_groups, 1):
+        course = g['rep']
+        inst_names = g['institutions']
+        cutoff_2023s = g['cutoffs_2023']
+        cutoff_2022s = g['cutoffs_2022']
+        fees = g['fees']
+
         avg_cutoff = sum(cutoff_2023s) / len(cutoff_2023s) if cutoff_2023s else None
-        avg_cutoff_2022 = float(sum(cutoff_2022s) / len(cutoff_2022s)) if cutoff_2022s else None
-        avg_fees = float(sum(fees) / len(fees)) if fees else None
+        avg_cutoff_2022 = sum(cutoff_2022s) / len(cutoff_2022s) if cutoff_2022s else None
+        avg_fees = sum(fees) / len(fees) if fees else None
         institutions_str = ", ".join(inst_names[:3]) + (f" and {len(inst_names)-3} others" if len(inst_names) > 3 else "")
         
         # Build text representation for embedding
@@ -67,7 +85,7 @@ def main():
             f"Course Name: {course.name}",
             f"Category (Hub): {course.category}",
             f"Description: {course.description}",
-            f"Career Opportunities: {', '.join(course.career_paths) if course.career_paths else 'Unknown'}",
+            f"Career Opportunities: {', '.join(course.careers) if course.careers else 'Unknown'}",
             f"Pros: {', '.join(course.pros) if course.pros else 'N/A'}",
             f"Cons: {', '.join(course.cons) if course.cons else 'N/A'}",
             f"Required Subjects: {', '.join(course.mandatory_subjects) if course.mandatory_subjects else 'N/A'}",
@@ -80,16 +98,16 @@ def main():
             "course_name": course.name,
             "hub_category": course.category,
             "institution": institutions_str or "Unknown",
-            "careers": ", ".join(course.career_paths[:3]) if course.career_paths else "",
+            "careers": ", ".join(course.careers[:3]) if course.careers else "",
         }
         
         # Must cast decimals to float for ChromaDB, or omit if null
         if avg_cutoff is not None:
             meta["cutoff_2023"] = float(avg_cutoff)
         if avg_cutoff_2022 is not None:
-            meta["cutoff_2022"] = avg_cutoff_2022
+            meta["cutoff_2022"] = float(avg_cutoff_2022)
         if avg_fees is not None:
-            meta["avg_fees_ksh"] = avg_fees
+            meta["avg_fees_ksh"] = float(avg_fees)
             
         documents.append(doc_text)
         metadatas.append(meta)

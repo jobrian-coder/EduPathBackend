@@ -1,6 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UniversityViewSet, CourseViewSet, CourseUniversityViewSet, ClusterCalculationView
+from .views import (
+    UniversityViewSet,
+    CourseViewSet,
+    CourseUniversityViewSet,
+    ClusterCalculationView,
+    course_list_grouped,
+    course_detail_grouped,
+)
 
 router = DefaultRouter()
 router.register(r'universities', UniversityViewSet, basename='university')
@@ -10,4 +17,7 @@ router.register(r'course-universities', CourseUniversityViewSet, basename='cours
 urlpatterns = [
     path('', include(router.urls)),
     path('calculate-cluster/', ClusterCalculationView.as_view(), name='calculate-cluster'),
+    # Category-grouped endpoints (frontend primary API)
+    path('grouped/', course_list_grouped, name='course-list-grouped'),
+    path('grouped/<str:category>/', course_detail_grouped, name='course-detail-grouped'),
 ]

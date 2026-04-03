@@ -227,7 +227,7 @@ export default function PostDetail() {
                   <textarea
                     value={replyText[comment.id] || ''}
                     onChange={(e) => setReplyText(prev => ({ ...prev, [comment.id]: e.target.value }))}
-                    className="w-full p-3 rounded-lg bg-white border border-teal-200 text-slate-800 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                    className="w-full p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-teal-200 dark:border-teal-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                     rows={2}
                     placeholder={`Reply to ${comment.author?.username}...`}
                     autoFocus
@@ -295,12 +295,12 @@ export default function PostDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-slate-900/60 dark:to-teal-950/60">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px] gap-4 p-2 md:p-4 max-w-[1800px] mx-auto">
         
         {/* Left Sidebar - Hub Navigator */}
         <aside className="hidden lg:block lg:h-[calc(100vh-2rem)] lg:sticky lg:top-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-3 md:p-4 space-y-2">
+          <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 md:p-4 space-y-2">
             <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
               Communities
             </div>
@@ -309,9 +309,9 @@ export default function PostDetail() {
               <button
                 key={h.id}
                 onClick={() => handleHubSwitch(h)}
-                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 ${
+                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 dark:hover:bg-slate-800/60 dark:text-slate-200 ${
                   hub?.id === h.id 
-                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200' 
+                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200 dark:border-teal-800 dark:bg-gradient-to-r dark:from-teal-950/40 dark:to-cyan-950/30' 
                     : 'border border-transparent'
                 }`}
               >
@@ -325,7 +325,7 @@ export default function PostDetail() {
                   <div className="text-xl md:text-2xl">{h.icon}</div>
                 )}
                 <div className="flex-1 text-left min-w-0">
-                  <div className="text-xs md:text-sm font-medium text-slate-800 truncate">
+                  <div className="text-xs md:text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                     {h.name}
                   </div>
                   <div className="text-xs text-teal-600 hidden md:block">
@@ -338,7 +338,7 @@ export default function PostDetail() {
               </button>
             ))}
 
-            <button className="w-full flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 mt-4 rounded-xl border-2 border-dashed border-teal-200 text-teal-600 hover:border-teal-400 hover:text-teal-700 transition-all text-sm">
+            <button className="w-full flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 mt-4 rounded-xl border-2 border-dashed border-teal-200 dark:border-teal-800/50 text-teal-600 dark:text-teal-400 hover:border-teal-400 hover:text-teal-700 transition-all text-sm">
               <Plus className="w-4 h-4" />
               <span className="font-medium hidden md:inline">Create Hub</span>
               <span className="font-medium md:hidden">New</span>
@@ -358,7 +358,7 @@ export default function PostDetail() {
           </button>
 
           {/* Post Card */}
-          <article className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-teal-100">
+          <article className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 dark:border-slate-700">
             <div className="p-4 md:p-6">
               {/* Post Header */}
               <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-3 text-xs">
@@ -386,12 +386,12 @@ export default function PostDetail() {
               </div>
 
               {/* Post Title */}
-              <h1 className="text-xl md:text-2xl font-bold text-slate-800 mb-3">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3">
                 {post.title}
               </h1>
 
               {/* Post Content */}
-              <div className="prose max-w-none text-slate-700 mb-4">
+              <div className="prose max-w-none text-slate-700 dark:text-slate-300 mb-4">
                 <p className="whitespace-pre-wrap">{post.content}</p>
               </div>
 
@@ -414,13 +414,13 @@ export default function PostDetail() {
 
           {/* Comment Form */}
         {user ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4 md:p-6">
+            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 md:p-6">
               <h2 className="text-lg font-semibold text-slate-800 mb-3">Join the conversation</h2>
               <form onSubmit={handleCommentSubmit}>
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white border border-teal-200 text-slate-800 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+                  className="w-full p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-teal-200 dark:border-teal-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
                   rows={3}
                   placeholder="Write your comment..."
                   required
@@ -436,7 +436,7 @@ export default function PostDetail() {
               </form>
             </div>
         ) : (
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4 md:p-6 text-center">
+            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 md:p-6 text-center">
             <button
               onClick={() => navigate('/auth?redirect=' + encodeURIComponent(window.location.pathname))}
                 className="text-teal-600 hover:text-teal-700 font-medium"
@@ -447,8 +447,8 @@ export default function PostDetail() {
         )}
 
           {/* Comments Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
             {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
           </h3>
           
@@ -465,7 +465,7 @@ export default function PostDetail() {
         {/* Right Sidebar - Hub Info */}
         {hub && (
           <aside className="hidden xl:block h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-4">
+            <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-4">
               <div className="flex items-center gap-3 mb-4">
                 {(hub as any).icon_url ? (
                   <img 
@@ -512,11 +512,11 @@ export default function PostDetail() {
 
               {(hub as any).related_societies && (hub as any).related_societies.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-teal-100">
-                  <h4 className="text-sm font-semibold text-slate-800 mb-3">Related Hubs</h4>
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">Related Hubs</h4>
                   <div className="space-y-2">
                     {(hub as any).related_societies.slice(0, 3).map((society: any, index: number) => (
                       <div key={index} className="p-2 rounded-lg hover:bg-teal-50 transition-all">
-                        <div className="text-sm font-medium text-slate-800">{society.name}</div>
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{society.name}</div>
                         <a
                           href={society.website}
                           target="_blank"

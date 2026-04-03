@@ -270,6 +270,32 @@ export interface University {
   accreditation: string;
 }
 
+/** One institution-programme row nested inside a CourseGrouped response. */
+export interface Programme {
+  programme_code: string | null;
+  name: string;
+  institution: string | null;
+  cutoff_2023: number | null;
+  cutoff_2022: number | null;
+  subject_requirement_1: string | null;
+  subject_requirement_2: string | null;
+  subject_requirement_3: string | null;
+  subject_requirement_4: string | null;
+}
+
+/** Category-level response from /courses/grouped/ and /courses/grouped/<category>/ */
+export interface CourseGrouped {
+  category: string;
+  description: string | null;
+  pros: string[] | null;
+  cons: string[] | null;
+  careers: string[] | null;
+  related_hub: string | null;
+  avg_fees_ksh: number | null;
+  is_enriched: boolean;
+  programmes: Programme[];
+}
+
 export const coursesAPI = {
   listCourses: async (params?: { category?: string; search?: string }) => {
     const data = await apiRequest<any>(`/courses/courses/?${new URLSearchParams(params as any)}`, { includeAuth: false })
@@ -325,6 +351,26 @@ export const coursesAPI = {
     }))
     return { results }
   },
+
+  /**
+   * Returns one object per category (235 items) for the discovery page.
+   * Each object includes a `programmes` array of all institution offerings.
+   */
+  listGrouped: (params?: { q?: string; hub?: string }) =>
+    apiRequest<CourseGrouped[]>(
+      `/courses/grouped/?${new URLSearchParams(params as any)}`,
+      { includeAuth: false }
+    ),
+
+  /**
+   * Returns full detail for one category, all institution offerings nested.
+   * Pass the raw category string — encoding is handled inside.
+   */
+  getGrouped: (category: string) =>
+    apiRequest<CourseGrouped>(
+      `/courses/grouped/${encodeURIComponent(category)}/`,
+      { includeAuth: false }
+    ),
 
   calculateCluster: (payload: {
     course_id: string;

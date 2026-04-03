@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BookOpen, X } from 'lucide-react'
 import { coursesAPI } from '../../services/api'
-import type { Course } from '../../services/api'
+import type { CourseGrouped } from '../../services/api'
 
 interface ProgramTagsProps {
   programIds: string[]
@@ -18,7 +18,7 @@ export default function ProgramTags({
   onRemove,
   className = ""
 }: ProgramTagsProps) {
-  const [programs, setPrograms] = useState<Course[]>([])
+  const [programs, setPrograms] = useState<CourseGrouped[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function ProgramTags({
         const programDetails = await Promise.all(
           programIds.slice(0, maxDisplay).map(async (programId) => {
             try {
-              return await coursesAPI.getCourse(programId)
+              return await coursesAPI.getGrouped(programId)
             } catch (error) {
               console.error(`Failed to load program ${programId}:`, error)
               return null
@@ -41,7 +41,7 @@ export default function ProgramTags({
           })
         )
         
-        setPrograms(programDetails.filter(Boolean) as Course[])
+        setPrograms(programDetails.filter(Boolean) as CourseGrouped[])
       } catch (error) {
         console.error('Failed to load program details:', error)
         setPrograms([])
@@ -79,16 +79,16 @@ export default function ProgramTags({
     <div className={`flex flex-wrap gap-1 ${className}`}>
       {programs.map((program) => (
         <div
-          key={program.id}
+          key={program.category}
           className="flex items-center gap-1 px-2 py-1 bg-teal-100 text-teal-800 rounded-md text-xs border border-teal-200 hover:bg-teal-200 transition-colors"
         >
           <BookOpen className="w-3 h-3 flex-shrink-0" />
-          <span className="font-medium truncate max-w-[120px]" title={program.name}>
-            {program.name}
+          <span className="font-medium truncate max-w-[120px]" title={program.category}>
+            {program.category}
           </span>
           {showRemove && onRemove && (
             <button
-              onClick={() => onRemove(program.id)}
+              onClick={() => onRemove(program.category)}
               className="text-teal-600 hover:text-teal-800 transition-colors"
             >
               <X className="w-3 h-3" />
