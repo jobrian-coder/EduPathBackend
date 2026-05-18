@@ -3,9 +3,13 @@ import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts'
 import api, { type CourseGrouped } from '../../../services/api'
-import ProsConsGenerator from '../../chatbot/components/ProsConsGenerator'
+import { listBookmarks, type BookmarkItem } from '../../../lib/bookmarks'
+import { Bookmark, Sparkles, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export default function CourseCompare() {
+  const navigate = useNavigate()
+  
   // Up to 3 selections
   const [queries, setQueries] = useState<string[]>(['', '', ''])
   const [options, setOptions] = useState<CourseGrouped[][]>([[], [], []])
@@ -13,6 +17,14 @@ export default function CourseCompare() {
   const [view, setView] = useState<'table' | 'visual'>('table')
   const [chartType, setChartType] = useState<'bar' | 'radar'>('bar')
   const [highlightMetric, setHighlightMetric] = useState<string | null>(null)
+  const [savedCourses, setSavedCourses] = useState<BookmarkItem[]>([])
+
+  // Load saved courses from bookmarks
+  useEffect(() => {
+    const bookmarks = listBookmarks()
+    const courseBookmarks = bookmarks.filter(b => b.type === 'course')
+    setSavedCourses(courseBookmarks)
+  }, [])
 
   // Debounced backend suggestions
   useEffect(() => {
@@ -331,19 +343,99 @@ export default function CourseCompare() {
         </div>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* Saved Courses Section */}
         <Card className="dark:bg-slate-900/40 dark:border-slate-700">
           <CardHeader className="dark:bg-slate-800/60 dark:border-slate-700">
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">🤖 AI Career Analysis</h2>
+            <div className="flex items-center gap-2">
+              <Bookmark className="w-5 h-5 text-teal-500" />
+              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Saved Courses</h2>
+            </div>
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Get AI-generated pros and cons for any career or course to help with your decision making
+              Your bookmarked courses for quick access
             </p>
           </CardHeader>
           <CardContent className="dark:bg-slate-900/40">
-            <ProsConsGenerator 
-              careerName={courses[0]?.category || ''}
-              courseName={courses[0]?.category || ''}
-            />
+            {savedCourses.length > 0 ? (
+              <div className="space-y-3">
+                {savedCourses.slice(0, 5).map((course) => (
+                  <div
+                    key={course.id}
+                    className="group flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60 transition cursor-pointer"
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                        {course.title}
+                      </p>
+                      {course.meta && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {course.meta}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-teal-600 font-semibold mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Details <ChevronRight className="w-3 h-3" />
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-500 transition-colors" />
+                  </div>
+                ))}
+                {savedCourses.length > 5 && (
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="w-full text-center text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 py-2"
+                  >
+                    View all {savedCourses.length} saved courses
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Bookmark className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-500 dark:text-slate-400">
+                  No saved courses yet. Browse courses and click the bookmark icon to save them here.
+                </p>
+                <button
+                  onClick={() => navigate('/directory')}
+                  className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                >
+                  Browse Courses
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* AI Recommendations Section */}
+        <Card className="dark:bg-slate-900/40 dark:border-slate-700">
+          <CardHeader className="dark:bg-slate-800/60 dark:border-slate-700">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">AI Recommended</h2>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Personalized course suggestions from our AI advisor
+            </p>
+          </CardHeader>
+          <CardContent className="dark:bg-slate-900/40">
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
+                Get personalized course recommendations based on your interests, grades, and career goals.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate('/advisor')}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-teal-600 to-purple-600 text-white rounded-lg hover:from-teal-700 hover:to-purple-700 transition flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Get AI Recommendations
+                </button>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  Takes only 2 minutes • Free • Personalized for you
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

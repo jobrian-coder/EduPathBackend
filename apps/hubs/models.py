@@ -67,6 +67,8 @@ class Post(models.Model):
         ('guide', 'Guide'),
         ('discussion', 'Discussion'),
         ('success_story', 'Success Story'),
+        ('link', 'Link'),
+        ('image', 'Image'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -78,6 +80,8 @@ class Post(models.Model):
     post_type = models.CharField(max_length=20, choices=POST_TYPES)
     is_expert_post = models.BooleanField(default=False)
     tags = models.JSONField(default=list, blank=True)
+    link_url = models.URLField(max_length=2000, blank=True, null=True, help_text='External URL for link-type posts')
+    image_url = models.TextField(blank=True, null=True, help_text='Image URL or base64 data for image-type posts')
     
     # Vote tracking
     upvotes = models.IntegerField(default=0)
@@ -273,3 +277,74 @@ class Vote(models.Model):
     
     def __str__(self):
         return f"{self.user.username} {self.vote_type}d {self.votable_type}"
+
+
+class HubMembership(models.Model):
+    """Extended hub membership tracking user roles within a hub.
+    Supplements the CareerHub.members M2M with per-member role data."""
+
+    ROLE_CHOICES = [
+        ('member', 'Member'),
+        ('associate', 'Associate'),
+        ('mentor', 'Mentor'),
+        ('moderator', 'Moderator'),
+        ('institution', 'Institution'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    hub = models.ForeignKey(CareerHub, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hub_memberships')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    role_granted_at = models.DateTimeField(null=True, blank=True)
+    role_granted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='granted_hub_roles'
+    )
+
+    class Meta:
+        db_table = 'hub_memberships'
+        unique_together = ['hub', 'user']
+        indexes = [
+            models.Index(fields=['hub', 'role']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} — {self.role} in {self.hub.name}"
+
+
+class AffiliatedInstitution(models.Model):
+    """Schools, bootcamps, and companies affiliated with a hub.
+    Affiliated institutions can post links and images in the hub."""
+
+    INSTITUTION_TYPES = [
+        ('school', 'School / University'),
+        ('bootcamp', 'Bootcamp'),
+        ('company', 'Company'),
+        ('ngo', 'NGO / Non-profit'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    hub = models.ForeignKey(CareerHub, on_delete=models.CASCADE, related_name='affiliated_institutions')
+    name = models.CharField(max_length=200)
+    institution_type = models.CharField(max_length=20, choices=INSTITUTION_TYPES)
+    logo_emoji = models.CharField(max_length=10, blank=True, default='🏛️')
+    logo_url = models.URLField(max_length=500, blank=True, null=True)
+    website = models.URLField(max_length=500, blank=True, null=True)
+    description = models.TextField(blank=True)
+    is_verified = models.BooleanField(default=False, help_text='Verified by EduPath admins')
+    added_at = models.DateTimeField(auto_now_add=True)
+    added_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='added_institutions'
+    )
+
+    class Meta:
+        db_table = 'hub_affiliated_institutions'
+        ordering = ['-is_verified', 'name']
+        indexes = [
+            models.Index(fields=['hub', 'is_verified']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.institution_type}) — {self.hub.name}"

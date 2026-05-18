@@ -1,0 +1,54 @@
+<mxfile host="app.diagrams.net" version="22.1.0" type="device">
+  <diagram name="Use Case Diagram" id="usecase">
+    <mxGraphModel dx="1200" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1100" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="ttl" value="Figure 4.5: Proposed System – Use Case Diagram" style="text;html=1;align=center;fontStyle=1;fontSize=11;fontFamily=Arial;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="250" y="15" width="580" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- System Boundary -->
+        <mxCell id="boundary" value="&lt;b&gt;EduPath System&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Arial;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="60" width="660" height="820" as="geometry"/>
+        </mxCell>
+
+        <!-- Use Cases -->
+        <!-- Auth Group -->
+        <mxCell id="uc1" value="Register Account" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="60" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc2" value="Login / Logout" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="120" width="160" height="45" as="geometry"/></mxCell>
+
+        <!-- Student Use Cases -->
+        <mxCell id="uc3" value="Input KCSE Grades" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="200" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc4" value="View AI Course Recommendations" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="260" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc5" value="Chat with EduGuide AI" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="320" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc6" value="Search and Filter Courses" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="380" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc7" value="Compare Courses" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="440" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc8" value="Bookmark / Save Courses" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="500" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc9" value="View Career Pathways" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="230" y="560" width="160" height="45" as="geometry"/></mxCell>
+
+        <!-- Mentor Use Cases -->
+        <mxCell id="uc10" value="Create Professional Profile" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="240" y="650" width="160" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc11" value="Post Advice in Hubs" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="240" y="710" width="160" height="45" as="geometry"/></mxCell>
+
+        <!-- Admin Use Cases -->
+        <mxCell id="uc12" value="Manage Courses &amp; Universities" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="440" y="60" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc13" value="Manage User Accounts" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="440" y="120" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc14" value="Configure AI Parameters" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="440" y="180" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc15" value="View Analytics &amp; Reports" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="440" y="240" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc16" value="Moderate Hub Content" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;" vertex="1" parent="boundary"><mxGeometry x="440" y="300" width="170" height="45" as="geometry"/></mxCell>
+
+        <!-- Include: AI sub-cases -->
+        <mxCell id="uc17" value="&lt;&lt;include&gt;&gt;\nVector Semantic Search" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=9;fontStyle=2;" vertex="1" parent="boundary"><mxGeometry x="440" y="400" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc18" value="&lt;&lt;include&gt;&gt;\nGroq LLM Processing" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=9;fontStyle=2;" vertex="1" parent="boundary"><mxGeometry x="440" y="460" width="170" height="45" as="geometry"/></mxCell>
+        <mxCell id="uc19" value="&lt;&lt;extend&gt;&gt;\nEligibility Filtering" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=9;fontStyle=2;" vertex="1" parent="boundary"><mxGeometry x="440" y="520" width="170" height="45" as="geometry"/></mxCell>
+
+        <!-- Include arrows -->
+        <mxCell id="ia1" value="&lt;&lt;include&gt;&gt;" style="dashed=1;edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;" edge="1" source="uc4" target="uc17" parent="boundary"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ia2" value="&lt;&lt;include&gt;&gt;" style="dashed=1;edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;" edge="1" source="uc5" target="uc18" parent="boundary"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ia3" value="&lt;&lt;extend&gt;&gt;" style="dashed=1;edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;" edge="1" source="uc4" target="uc19" parent="boundary"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="310" y="282"/><mxPoint x="310" y="542"/></Array></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

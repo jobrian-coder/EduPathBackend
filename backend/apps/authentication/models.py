@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('novice', 'Novice'),
         ('contributor', 'Contributor'),
         ('expert', 'Expert'),
+        ('admin', 'Admin'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

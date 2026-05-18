@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CareerHub, Post, Comment, Vote
+from .models import CareerHub, Post, Comment, Vote, HubMembership, AffiliatedInstitution
 
 
 @admin.register(CareerHub)
@@ -32,3 +32,19 @@ class VoteAdmin(admin.ModelAdmin):
     list_filter = ['votable_type', 'vote_type', 'created_at']
     search_fields = ['user__username']
     ordering = ['-created_at']
+
+
+@admin.register(HubMembership)
+class HubMembershipAdmin(admin.ModelAdmin):
+    list_display = ['user', 'hub', 'role', 'joined_at', 'role_granted_by']
+    list_filter = ['role', 'hub']
+    search_fields = ['user__username', 'hub__name']
+    ordering = ['-joined_at']
+
+
+@admin.register(AffiliatedInstitution)
+class AffiliatedInstitutionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'institution_type', 'hub', 'is_verified', 'added_at']
+    list_filter = ['institution_type', 'is_verified', 'hub']
+    search_fields = ['name', 'hub__name', 'description']
+    ordering = ['-is_verified', 'name']

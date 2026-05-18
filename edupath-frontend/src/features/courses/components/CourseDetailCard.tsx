@@ -361,7 +361,7 @@ export const CourseDetailCard: React.FC<CourseDetailCardProps> = ({
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold mb-3 text-slate-900 dark:text-white">
+                      <h4 className="font-semibold mb-3 bg-slate-800 text-white px-3 py-1.5 rounded-md inline-block">
                         Subject Requirements
                       </h4>
                       <div className="space-y-2">

@@ -140,6 +140,11 @@ export interface User {
   bio?: string;
   location?: string;
   created_at: string;
+  date_joined?: string;
+  is_active?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  email_verified?: boolean;
 }
 
 export const authAPI = {
@@ -235,6 +240,19 @@ export interface Course {
   cons?: string[];
   careers?: string[];
   universities?: CourseUniversity[];
+  // Admin fields (optional, used for creation/editing)
+  institution?: string;
+  cutoff_2023?: number | null;
+  cutoff_2022?: number | null;
+  fees_ksh?: number | null;
+  programme_code?: string | null;
+  subject_requirement_1?: string | null;
+  subject_requirement_2?: string | null;
+  subject_requirement_3?: string | null;
+  subject_requirement_4?: string | null;
+  is_enriched?: boolean;
+  avg_fees_ksh?: number | null;
+  related_hub?: string | null;
 }
 
 export interface CourseUniversity {
@@ -753,6 +771,144 @@ export const advisorAPI = {
 };
 
 
+// ============================================
+// ADMIN API (Requires admin role)
+// ============================================
+
+/** Strip undefined/null/empty values so they never appear as literal '?foo=undefined' in the URL. */
+function toQS(params?: Record<string, string | undefined | null>): string {
+  if (!params) return ''
+  const clean = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ) as Record<string, string>
+  const qs = new URLSearchParams(clean).toString()
+  return qs ? `?${qs}` : ''
+}
+
+export const adminAPI = {
+  // Users
+  listUsers: async (params?: { search?: string; role?: string; is_active?: string }) => {
+    const data = await apiRequest<any>(`/auth/users/${toQS(params)}`)
+    const results: User[] = Array.isArray(data) ? data : (data?.results || [])
+    const count: number = data?.count ?? results.length
+    return { results, count }
+  },
+
+  getUser: (id: string) =>
+    apiRequest<User>(`/auth/users/${id}/`),
+
+  createUser: (data: Partial<User> & { password: string }) =>
+    apiRequest<User>('/auth/users/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateUser: (id: string, data: Partial<User> & { password?: string }) =>
+    apiRequest<User>(`/auth/users/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteUser: (id: string) =>
+    apiRequest<void>(`/auth/users/${id}/`, {
+      method: 'DELETE',
+    }),
+
+  // Universities
+  listUniversities: async (params?: { type?: string; location?: string; search?: string }) => {
+    const data = await apiRequest<any>(`/courses/admin/universities/${toQS(params)}`)
+    const results: University[] = Array.isArray(data) ? data : (data?.results || [])
+    const count: number = data?.count ?? results.length
+    return { results, count }
+  },
+
+  getUniversity: (id: string) =>
+    apiRequest<University>(`/courses/admin/universities/${id}/`),
+
+  createUniversity: (data: Omit<University, 'id' | 'created_at' | 'updated_at'>) =>
+    apiRequest<University>('/courses/admin/universities/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateUniversity: (id: string, data: Partial<University>) =>
+    apiRequest<University>(`/courses/admin/universities/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteUniversity: (id: string) =>
+    apiRequest<void>(`/courses/admin/universities/${id}/`, {
+      method: 'DELETE',
+    }),
+
+  // Courses
+  listCourses: async (params?: { category?: string; search?: string }) => {
+    const data = await apiRequest<any>(`/courses/admin/courses/${toQS(params)}`)
+    const results: Course[] = Array.isArray(data) ? data : (data?.results || [])
+    const count: number = data?.count ?? results.length
+    return { results, count }
+  },
+
+  getCourse: (id: string) =>
+    apiRequest<Course>(`/courses/admin/courses/${id}/`),
+
+  createCourse: (data: Omit<Course, 'id' | 'created_at' | 'updated_at'>) =>
+    apiRequest<Course>('/courses/admin/courses/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateCourse: (id: string, data: Partial<Course>) =>
+    apiRequest<Course>(`/courses/admin/courses/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCourse: (id: string) =>
+    apiRequest<void>(`/courses/admin/courses/${id}/`, {
+      method: 'DELETE',
+    }),
+
+  // Bulk operations
+  bulkCreateCourses: (courses: Omit<Course, 'id' | 'created_at' | 'updated_at'>[]) =>
+    apiRequest<{ created_count: number; created: any[]; errors: any[] }>('/courses/admin/courses/bulk_create/', {
+      method: 'POST',
+      body: JSON.stringify({ courses }),
+    }),
+
+  bulkUpdateCourses: (courses: Partial<Course>[]) =>
+    apiRequest<{ updated_count: number; updated: any[]; errors: any[] }>('/courses/admin/courses/bulk_update/', {
+      method: 'POST',
+      body: JSON.stringify({ courses }),
+    }),
+
+  // Course-University relationships
+  listCourseUniversities: async (params?: { course?: string; university?: string }) => {
+    const data = await apiRequest<any>(`/courses/admin/course-universities/?${new URLSearchParams(params as any)}`)
+    const results: CourseUniversity[] = Array.isArray(data) ? data : (data?.results || [])
+    return { results }
+  },
+
+  createCourseUniversity: (data: Omit<CourseUniversity, 'id' | 'created_at' | 'updated_at'>) =>
+    apiRequest<CourseUniversity>('/courses/admin/course-universities/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateCourseUniversity: (id: string, data: Partial<CourseUniversity>) =>
+    apiRequest<CourseUniversity>(`/courses/admin/course-universities/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCourseUniversity: (id: string) =>
+    apiRequest<void>(`/courses/admin/course-universities/${id}/`, {
+      method: 'DELETE',
+    }),
+};
+
+
 export default {
   auth: authAPI,
   careers: careersAPI,
@@ -763,4 +919,5 @@ export default {
   societies: societiesAPI,
   academic: academicAPI,
   advisor: advisorAPI,
+  admin: adminAPI,
 };

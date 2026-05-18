@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CareerHub, Post, Comment, Vote
+from .models import CareerHub, Post, Comment, Vote, HubMembership, AffiliatedInstitution
 from apps.authentication.serializers import UserSerializer
 
 
@@ -81,6 +81,8 @@ class PostSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'deleted_at',
+            'link_url',
+            'image_url',
             'is_member',
             'user_vote',
         ]
@@ -122,7 +124,27 @@ class PostSerializer(serializers.ModelSerializer):
 class PostCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['hub', 'title', 'content', 'post_type', 'is_expert_post', 'tags']
+        fields = ['hub', 'title', 'content', 'post_type', 'is_expert_post', 'tags', 'link_url', 'image_url']
+
+
+class HubMembershipSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = HubMembership
+        fields = ['id', 'hub', 'user', 'username', 'role', 'joined_at', 'role_granted_at']
+        read_only_fields = ['id', 'joined_at', 'role_granted_at', 'username']
+
+
+class AffiliatedInstitutionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AffiliatedInstitution
+        fields = [
+            'id', 'hub', 'name', 'institution_type',
+            'logo_emoji', 'logo_url', 'website', 'description',
+            'is_verified', 'added_at',
+        ]
+        read_only_fields = ['id', 'added_at', 'is_verified']
 
 
 class CommentSerializer(serializers.ModelSerializer):

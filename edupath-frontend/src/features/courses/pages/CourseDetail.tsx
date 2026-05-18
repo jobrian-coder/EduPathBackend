@@ -36,7 +36,8 @@ export default function CourseDetail() {
     ;(async () => {
       setLoading(true)
       try {
-        const data = await api.courses.getGrouped(decodeURIComponent(encodedCategory))
+        const category = decodeURIComponent(encodedCategory).replace(/^course:/, '')
+        const data = await api.courses.getGrouped(category)
         setCourse(data)
       } catch (e: any) {
         setError(e?.message || 'Failed to load course')
@@ -180,7 +181,7 @@ export default function CourseDetail() {
                                     </div>
                                   </div>
 
-                                  <div className="text-xs uppercase font-bold text-slate-400 mb-2">Subject Requirements</div>
+                                  <div className="text-xs uppercase font-bold bg-slate-800 text-white px-3 py-1.5 rounded-md mb-2 inline-block">Subject Requirements</div>
                                   <div className="flex flex-wrap gap-2 text-xs">
                                     {[p.subject_requirement_1, p.subject_requirement_2, p.subject_requirement_3, p.subject_requirement_4]
                                       .filter(Boolean)

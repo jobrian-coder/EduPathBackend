@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import api, { type SubjectDef, type GradeEntry, type KCSEGrade } from '../../../services/api'
+import { TermsAcceptanceModal, hasConsented } from '../../legal/components/TermsAcceptanceModal'
 
 // Predefined KCSE subjects (4 compulsory + 6 optional)
 const KCSE_SUBJECTS = [
@@ -62,6 +63,7 @@ export default function AcademicProfilePage() {
   const [school, setSchool] = useState<string>('')
   const [manualMean, setManualMean] = useState(false)
   const [meanPoints, setMeanPoints] = useState<number | undefined>()
+  const [showTermsModal, setShowTermsModal] = useState(false)
   const sections = [
     {
       id: 'overview',
@@ -180,6 +182,13 @@ export default function AcademicProfilePage() {
         return
       }
 
+      // Check for data consent
+      if (!hasConsented('academic')) {
+        setShowTermsModal(true)
+        setSaving(false)
+        return
+      }
+
       const payload = {
         kcse_year: examYear,
         kcse_school: school ? school : null,
@@ -187,8 +196,8 @@ export default function AcademicProfilePage() {
         kcse_mean_points: effectiveMeanPoints ?? null,
       }
 
-      const result = await api.academic.upsertProfile(payload)
-      
+      await api.academic.upsertProfile(payload)
+
       // Notify other views (e.g., Profile tabs) to refresh academic summary
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('academic:saved'))
@@ -200,6 +209,12 @@ export default function AcademicProfilePage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleTermsAccepted = () => {
+    setShowTermsModal(false)
+    // Retry saving after consent
+    saveProfile()
   }
 
   return (
@@ -504,6 +519,12 @@ export default function AcademicProfilePage() {
           </Card>
         </div>
       </div>
+      <TermsAcceptanceModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccepted}
+        onCancel={() => setShowTermsModal(false)}
+        dataType="academic"
+      />
     </PageContainer>
   )
 }

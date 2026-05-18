@@ -1,0 +1,85 @@
+<mxfile host="65bd71144e">
+    <diagram name="Current System DFD" id="curr_dfd">
+        <mxGraphModel dx="348" dy="365" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1050" pageHeight="900" background="none" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="ttl" value="Figure 4.2: Current System – Data Flow Diagram (Physical DFD)" style="text;html=1;align=center;fontStyle=1;fontSize=11;fontFamily=Arial;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="15" width="650" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="student" value="&lt;b&gt;Student&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="380" width="100" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="kuccps" value="&lt;b&gt;KUCCPS Portal&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="380" width="110" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="univ" value="&lt;b&gt;Universities&lt;/b&gt;&lt;br&gt;&amp;amp; Colleges" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="200" width="110" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="parents" value="&lt;b&gt;Parents /&lt;br&gt;Teachers&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="200" width="100" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1" value="1.0&lt;br&gt;&lt;b&gt;Gather KCSE&lt;br&gt;Results&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="170" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2" value="2.0&lt;br&gt;&lt;b&gt;Seek Informal&lt;br&gt;Guidance&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="360" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3" value="3.0&lt;br&gt;&lt;b&gt;Browse Course&lt;br&gt;Listings&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="250" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4" value="4.0&lt;br&gt;&lt;b&gt;Manual Course&lt;br&gt;Selection&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="450" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5" value="5.0&lt;br&gt;&lt;b&gt;Submit KUCCPS&lt;br&gt;Application&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="350" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="ds1" value="D1  KUCCPS Course Listings" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="160" width="220" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="ds2" value="D2  Paper-based / Verbal Notes" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="560" width="220" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="f1" value="KCSE results slip" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="student" target="p1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f2" value="Verbal advice" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="parents" target="p2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f3" value="Queries / requests" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="student" target="p2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f4" value="Informal notes" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#888888;" parent="1" source="p2" target="ds2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f5" value="Course info (static)" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="univ" target="ds1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f6" value="Grade summary" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="p1" target="p3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f7" value="Available courses" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#888888;" parent="1" source="ds1" target="p3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f8" value="Shortlisted options" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="p3" target="p4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f9" value="Informal guidance" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="p2" target="p4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f10" value="Final choices" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="p4" target="p5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f11" value="Application form" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="p5" target="kuccps" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f12" value="Placement result" style="edgeStyle=orthogonalEdgeStyle;html=1;fontFamily=Arial;fontSize=9;strokeColor=#555555;" parent="1" source="kuccps" target="student" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg" value="&lt;b&gt;Key:&lt;/b&gt;  Rectangle = External Entity   |   Ellipse = Process   |   Open Rectangle = Data Store" style="text;html=1;align=left;fontSize=9;fontFamily=Arial;strokeColor=none;fillColor=none;fontColor=#555555;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="790" width="700" height="25" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

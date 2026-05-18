@@ -28,9 +28,12 @@ export default function PostDetail() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        const postId = id?.replace(/^post:/, '') || id;
+        if (!postId) return;
+
         const [postData, commentsData] = await Promise.all([
-          api.hubs.getPost(id), 
-          api.hubs.listComments(id).then(res => res.results || [])
+          api.hubs.getPost(postId), 
+          api.hubs.listComments(postId).then(res => res.results || [])
         ]);
         setPost(postData);
         setComments(commentsData);

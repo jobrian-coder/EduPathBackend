@@ -1,0 +1,147 @@
+<mxfile host="65bd71144e">
+    <diagram name="Level 1 DFD" id="lvl1_dfd">
+        <mxGraphModel dx="1392" dy="1460" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1200" pageHeight="1000" background="none" math="0" shadow="1">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="ttl" value="Figure 4.4: Proposed System – Level 1 Logical DFD" style="text;html=1;align=center;fontStyle=1;fontSize=11;fontFamily=Arial;strokeColor=none;fillColor=none;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="15" width="650" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="student" value="&lt;b&gt;Student&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="200" width="90" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="mentor" value="&lt;b&gt;Mentor&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="620" width="90" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="admin" value="&lt;b&gt;Admin&lt;/b&gt;" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontFamily=Arial;fontSize=10;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="200" width="90" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="groq" value="&lt;b&gt;Groq AI&lt;/b&gt;&lt;br&gt;API" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="500" width="90" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1" value="1.0&lt;br&gt;&lt;b&gt;User Registration&lt;br&gt;&amp;amp; Authentication&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="180" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2" value="2.0&lt;br&gt;&lt;b&gt;Academic Profile&lt;br&gt;&amp;amp; Grade Input&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="360" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3" value="3.0&lt;br&gt;&lt;b&gt;AI Recommendation&lt;br&gt;Engine&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="270" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4" value="4.0&lt;br&gt;&lt;b&gt;Course Search&lt;br&gt;&amp;amp; Browse&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="460" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5" value="5.0&lt;br&gt;&lt;b&gt;EduGuide AI&lt;br&gt;Chat Interface&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="270" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="p6" value="6.0&lt;br&gt;&lt;b&gt;Community Hubs&lt;br&gt;&amp;amp; Mentorship&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="580" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="p7" value="7.0&lt;br&gt;&lt;b&gt;Admin &amp;amp; Data&lt;br&gt;Management&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Arial;fontSize=10;align=center;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="460" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="d1" value="D1   Users Database" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="300" width="180" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="d2" value="D2   Academic Profiles" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="480" width="180" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="d3" value="D3   Course &amp; University DB" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="390" width="200" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="d4" value="D4   ChromaDB (Vector Store)" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="390" width="200" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="d5" value="D5   Hub Posts &amp; Comments" style="shape=partialRectangle;top=0;left=0;right=0;bottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#888888;fontFamily=Arial;fontSize=10;align=left;spacingLeft=8;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="700" width="180" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="f1" value="Reg. details" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="student" target="p1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f2" value="Auth token" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p1" target="student" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="230"/>
+                            <mxPoint x="160" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f3" value="User record" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#888888;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p1" target="d1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f4" value="KCSE grades" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="student" target="p2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="75" y="220"/>
+                            <mxPoint x="75" y="397"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f5" value="Profile saved" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#888888;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p2" target="d2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f6" value="Profile data" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="d2" target="p3" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="480" y="498"/>
+                            <mxPoint x="480" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f7" value="Course embeddings" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="d4" target="p3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f8" value="Ranked results" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p3" target="student" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="610" y="270"/>
+                            <mxPoint x="610" y="150"/>
+                            <mxPoint x="75" y="150"/>
+                            <mxPoint x="75" y="200"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f9" value="Groq LLM call" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p3" target="p5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f10" value="AI response" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p5" target="groq" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f11" value="LLM result" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#82b366;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="groq" target="p5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1125" y="480"/>
+                            <mxPoint x="1125" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f12" value="Course query" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="student" target="p4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="75" y="220"/>
+                            <mxPoint x="75" y="497"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="f13" value="Course records" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#888888;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="d3" target="p4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f14" value="Data updates" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="admin" target="p7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f15" value="Write to DB" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#888888;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p7" target="d3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f16" value="Advice posted" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="mentor" target="p6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="f17" value="Stored content" style="edgeStyle=orthogonalEdgeStyle;fontFamily=Arial;fontSize=9;strokeColor=#888888;sketch=1;curveFitting=1;jiggle=2;" parent="1" source="p6" target="d5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg" value="&lt;b&gt;Key:&lt;/b&gt;  Rectangle = External Entity   |   Ellipse = Process   |   Open Rectangle = Data Store   |   Green = AI/ML Component" style="text;html=1;align=left;fontSize=9;fontFamily=Arial;strokeColor=none;fillColor=none;fontColor=#555555;sketch=1;curveFitting=1;jiggle=2;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="880" width="800" height="25" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

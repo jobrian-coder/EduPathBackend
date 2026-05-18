@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import { listBookmarks } from '../../../lib/bookmarks'
 import type { BookmarkItem } from '../../../lib/bookmarks'
 import api from '../../../services/api'
+import { getSavedRecommendations, type SavedRecommendation } from '../../advisor/components/RecommendationCard'
+import { TermsAcceptanceModal, hasConsented } from '../../legal/components/TermsAcceptanceModal'
 
 // interface ProfileStats {
 //   followers: number
@@ -55,8 +57,31 @@ function useBookmarks(): BookmarkItem[] {
   return items
 }
 
+function useSavedRecommendations(): { items: SavedRecommendation[]; remove: (key: string) => void } {
+  const [items, setItems] = useState<SavedRecommendation[]>([])
+
+  const refresh = () => setItems(getSavedRecommendations())
+
+  useEffect(() => {
+    refresh()
+    window.addEventListener('storage', refresh)
+    return () => window.removeEventListener('storage', refresh)
+  }, [])
+
+  const remove = (key: string) => {
+    const updated = getSavedRecommendations().filter(
+      r => `${r.course_name}__${r.institution}` !== key
+    )
+    localStorage.setItem('edupath_saved_recommendations', JSON.stringify(updated))
+    setItems(updated)
+  }
+
+  return { items, remove }
+}
+
 export default function Profile() {
   const bookmarks = useBookmarks()
+  const { items: savedRecs, remove: removeRec } = useSavedRecommendations()
   const [user, setUser] = useState<any | null>(null)
   const [editing, setEditing] = useState(false)
   const [bioDraft, setBioDraft] = useState('')
@@ -65,12 +90,13 @@ export default function Profile() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false)
   const [isRequestingUpgrade, setIsRequestingUpgrade] = useState(false)
   const [upgradeStatus, setUpgradeStatus] = useState<null | 'idle' | 'requested' | 'error'>(null)
-  const [activeTab, setActiveTab] = useState<'academic' | 'bookmarks' | 'role'>('academic')
+  const [activeTab, setActiveTab] = useState<'academic' | 'activity' | 'role'>('academic')
   const [academic, setAcademic] = useState<any | null>(null)
   const [achievements, setAchievements] = useState<any[]>([])
   const [analytics, setAnalytics] = useState<any | null>(null)
   const [isLoadingAchievements, setIsLoadingAchievements] = useState(false)
   const [, setIsLoadingAnalytics] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   const fetchProfile = async () => {
     try {
@@ -204,6 +230,19 @@ export default function Profile() {
     return userPoints >= courseCutoff ? 'Eligible ✅' : 'Not eligible ❌'
   }
 
+  const handleTermsAccepted = async () => {
+    setShowTermsModal(false)
+    // Retry saving after consent
+    try {
+      const updated = await api.auth.updateProfile({ bio: bioDraft, location: locationDraft })
+      setUser(updated)
+      setEditing(false)
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save profile. Please ensure you are logged in.')
+    }
+  }
+
   return (
     <PageContainer title="Profile">
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -277,6 +316,11 @@ export default function Profile() {
                 ) : (
                   <div className="flex-1 flex gap-2">
                     <button onClick={async()=>{
+                      // Check for data consent
+                      if (!hasConsented('personal')) {
+                        setShowTermsModal(true)
+                        return
+                      }
                       try {
                         const updated = await api.auth.updateProfile({ bio: bioDraft, location: locationDraft })
                         setUser(updated)
@@ -294,124 +338,151 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Profile Completion & Achievements */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Profile Completion Tracker */}
-          <Card className="bg-white dark:bg-slate-800">
+        {/* ── Saved Courses & Universities (always visible, top priority) ── */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="font-semibold text-slate-900 dark:text-white">Profile Completion</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  {user?.profile_completion || 0}% Complete
-                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">📚 Saved Courses</div>
+                <Link to="/directory" className="text-sm text-teal-600 hover:text-teal-700">Browse →</Link>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${user?.profile_completion || 0}%` }}
-                  ></div>
+            <CardContent className="space-y-3">
+              {bookmarkedCourses.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                  <div className="text-3xl mb-2">🎓</div>
+                  <div className="text-sm">No courses saved yet.</div>
+                  <Link to="/directory" className="mt-2 inline-block text-sm text-teal-600 hover:underline">Explore courses →</Link>
                 </div>
-                
-                {/* Completion Details */}
-                {user?.profile_completion_details && (
-                  <div className="space-y-2 text-sm">
-                    {Object.entries(user.profile_completion_details).map(([key, completed]) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
-                          completed ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
-                        }`}>
-                          {completed ? '✓' : '○'}
-                        </span>
-                        <span className={`${completed ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
-                          {key.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                        </span>
-                      </div>
-                    ))}
+              ) : (
+                bookmarkedCourses.map(item => (
+                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
+                      <div className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{eligibilityBadge(item)}</div>
+                    </div>
+                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.meta}</div>}
+                    <Link to={`/courses/${item.id}`} className="mt-2 text-sm text-teal-500 hover:text-teal-600 block">View course →</Link>
                   </div>
-                )}
-              </div>
+                ))
+              )}
             </CardContent>
           </Card>
 
-          {/* Achievements */}
-          <Card className="bg-white dark:bg-slate-800">
+          <Card>
             <CardHeader>
-              <div className="font-semibold text-slate-900 dark:text-white">Achievements</div>
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-slate-900 dark:text-white">🏛️ Saved Universities</div>
+                <Link to="/directory" className="text-sm text-teal-600 hover:text-teal-700">Browse →</Link>
+              </div>
             </CardHeader>
-            <CardContent>
-              {isLoadingAchievements ? (
-                <div className="text-center py-4 text-slate-500">Loading achievements...</div>
-              ) : achievements.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {achievements.slice(0, 6).map((achievement: any) => (
-                    <div key={achievement.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                      <span className="text-lg">{achievement.achievement.icon}</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
-                          {achievement.achievement.title}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {new Date(achievement.earned_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+            <CardContent className="space-y-3">
+              {bookmarkedUniversities.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                  <div className="text-3xl mb-2">🏫</div>
+                  <div className="text-sm">No universities saved yet.</div>
+                  <Link to="/directory" className="mt-2 inline-block text-sm text-teal-600 hover:underline">Explore universities →</Link>
                 </div>
               ) : (
-                <div className="text-center py-4 text-slate-500">
-                  No achievements yet. Start engaging to earn badges!
-                </div>
+                bookmarkedUniversities.map(item => (
+                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all">
+                    <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
+                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.meta}</div>}
+                    <Link to={`/universities/${item.id}/programs`} className="mt-2 text-sm text-teal-500 hover:text-teal-600 block">View university →</Link>
+                  </div>
+                ))
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Analytics Dashboard */}
-        {analytics && (
-          <Card className="bg-white dark:bg-slate-800">
-            <CardHeader>
-              <div className="font-semibold text-slate-900 dark:text-white">Your Activity Analytics</div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20">
-                  <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
-                    {analytics.total_posts || 0}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Posts Created</div>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {analytics.total_comments || 0}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Comments Made</div>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20">
-                  <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
-                    {analytics.upvotes_received || 0}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Upvotes Received</div>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {analytics.recent_posts || 0}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Posts (30 days)</div>
-                </div>
+        {/* ── Saved EduGuide Recommendations ── */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="font-semibold text-slate-900 dark:text-white">🤖 Saved EduGuide Recommendations</div>
+              <Link to="/advisor" className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400">
+                {savedRecs.length > 0 ? 'Get new →' : 'Start EduGuide →'}
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {savedRecs.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                <div className="text-3xl mb-2">✨</div>
+                <div className="text-sm">No AI recommendations saved yet.</div>
+                <Link to="/advisor" className="mt-2 inline-block text-sm text-teal-600 hover:underline">
+                  Chat with EduGuide to get personalised matches →
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="space-y-3">
+                {savedRecs.map(rec => {
+                  const key = `${rec.course_name}__${rec.institution}`
+                  return (
+                    <div
+                      key={key}
+                      className="flex items-start justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300">
+                            #{rec.rank} Match
+                          </span>
+                          <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+                            {rec.match_score}%
+                          </span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500">
+                            {rec.hub_category}
+                          </span>
+                        </div>
+                        <div className="font-semibold text-slate-800 dark:text-white leading-tight">
+                          {rec.course_name}
+                        </div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                          {rec.institution}
+                          {rec.cutoff_2023 != null && (
+                            <span className="ml-2 text-slate-400">· Cutoff {rec.cutoff_2023}</span>
+                          )}
+                          {rec.avg_fees_ksh != null && (
+                            <span className="ml-2 text-slate-400">
+                              · KSh {rec.avg_fees_ksh.toLocaleString()}/yr
+                            </span>
+                          )}
+                        </div>
+                        {rec.career_paths?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {rec.career_paths.slice(0, 3).map((c, i) => (
+                              <span key={i} className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-xs text-slate-400 mt-2">
+                          Saved {new Date(rec.saved_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeRec(key)}
+                        title="Remove"
+                        className="flex-shrink-0 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-lg leading-none mt-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Tab Menu */}
+        {/* ── Tab Menu (secondary content) ── */}
         <div className="flex flex-wrap gap-2">
           {[
             { id: 'academic', label: 'Academic & Interests' },
-            { id: 'bookmarks', label: 'Bookmarks' },
+            { id: 'activity', label: 'Activity & Stats' },
             { id: 'role', label: 'Role & Posts' },
           ].map(t => (
             <button
@@ -589,48 +660,103 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === 'bookmarks' && (
+        {activeTab === 'activity' && (
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader><div className="font-semibold">Bookmarked Courses</div></CardHeader>
-              <CardContent className="space-y-3">
-                {bookmarkedCourses.length === 0 && <div className="text-sm text-slate-500 dark:text-slate-400">No courses saved yet.</div>}
-                {bookmarkedCourses.map(item => (
-                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
-                      <div className="text-sm">{eligibilityBadge(item)}</div>
+            {/* Profile Completion Tracker */}
+            <Card className="bg-white dark:bg-slate-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-slate-900 dark:text-white">Profile Completion</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">{user?.profile_completion || 0}% Complete</div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${user?.profile_completion || 0}%` }}
+                    ></div>
+                  </div>
+                  {user?.profile_completion_details && (
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(user.profile_completion_details).map(([key, completed]) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${completed ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                            {completed ? '✓' : '○'}
+                          </span>
+                          <span className={`${completed ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
+                            {key.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">View course</div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader><div className="font-semibold">Bookmarked Universities</div></CardHeader>
-              <CardContent className="space-y-3">
-                {bookmarkedUniversities.length === 0 && <div className="text-sm text-slate-500 dark:text-slate-400">No universities saved yet.</div>}
-                {bookmarkedUniversities.map(item => (
-                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
-                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">View university</div>
+            {/* Achievements */}
+            <Card className="bg-white dark:bg-slate-800">
+              <CardHeader><div className="font-semibold text-slate-900 dark:text-white">Achievements</div></CardHeader>
+              <CardContent>
+                {isLoadingAchievements ? (
+                  <div className="text-center py-4 text-slate-500">Loading achievements...</div>
+                ) : achievements.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {achievements.slice(0, 6).map((achievement: any) => (
+                      <div key={achievement.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <span className="text-lg">{achievement.achievement.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{achievement.achievement.title}</div>
+                          <div className="text-xs text-slate-500">{new Date(achievement.earned_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="text-center py-4 text-slate-500">No achievements yet. Start engaging to earn badges!</div>
+                )}
               </CardContent>
             </Card>
 
+            {/* Analytics */}
+            {analytics && (
+              <Card className="lg:col-span-2 bg-white dark:bg-slate-800">
+                <CardHeader><div className="font-semibold text-slate-900 dark:text-white">Activity Analytics</div></CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20">
+                      <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">{analytics.total_posts || 0}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Posts Created</div>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{analytics.total_comments || 0}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Comments Made</div>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analytics.upvotes_received || 0}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Upvotes Received</div>
+                    </div>
+                    <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                      <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{analytics.recent_posts || 0}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Posts (30 days)</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Saved Posts */}
             <Card className="lg:col-span-2">
-              <CardHeader><div className="font-semibold">Bookmarked Posts</div></CardHeader>
+              <CardHeader><div className="font-semibold">Saved Posts</div></CardHeader>
               <CardContent className="space-y-3">
                 {bookmarkedPosts.length === 0 && <div className="text-sm text-slate-500 dark:text-slate-400">No posts saved yet.</div>}
                 {bookmarkedPosts.map(item => (
                   <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
                     <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
                     {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400">{item.meta}</div>}
-                    <div className="mt-2 text-sm text-teal-500 hover:text-teal-600 cursor-pointer">Open discussion</div>
+                    <Link to={`/posts/${item.id}`} className="mt-2 text-sm text-teal-500 hover:text-teal-600 block">Open discussion</Link>
                   </div>
                 ))}
               </CardContent>
@@ -710,6 +836,12 @@ export default function Profile() {
         )}
         </div>
       </div>
+      <TermsAcceptanceModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccepted}
+        onCancel={() => setShowTermsModal(false)}
+        dataType="personal"
+      />
     </PageContainer>
   )
 }

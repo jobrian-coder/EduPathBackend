@@ -13,7 +13,19 @@ import PostDetail from '../features/posts/pages/PostDetail'
 import UniversityPrograms from '../features/universities/pages/UniversityPrograms'
 import AdvisorPage from '../features/advisor/pages/AdvisorPage'
 import HowItWorks from '../features/landing/pages/HowItWorks'
-import { HomeGate, RequireAuth } from './guards'
+import LegalPage from '../features/legal/pages/LegalPage'
+// Admin imports
+import AdminDashboard from '../features/admin/pages/AdminDashboard'
+import AdminCourses from '../features/admin/pages/AdminCourses'
+import AdminUniversities from '../features/admin/pages/AdminUniversities'
+import AdminUsers from '../features/admin/pages/AdminUsers'
+import { ToastProvider } from '../features/admin/hooks/useToast'
+import { HomeGate, RequireAuth, RequireAdmin } from './guards'
+
+// Wrapper component for admin pages with ToastProvider
+const AdminWrapper = ({ children }: { children: React.ReactNode }) => (
+  <ToastProvider>{children}</ToastProvider>
+);
 
 export const AppRoutes: RouteObject[] = [
   {
@@ -35,6 +47,12 @@ export const AppRoutes: RouteObject[] = [
       { path: 'advisor', element: <AdvisorPage /> },
       { path: 'how-it-works', element: <HowItWorks /> },
       { path: 'auth', element: <AuthPage /> },
+      { path: 'legal', element: <LegalPage /> },
+      // Admin routes
+      { path: 'admin', element: <RequireAdmin><AdminWrapper><AdminDashboard /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/courses', element: <RequireAdmin><AdminWrapper><AdminCourses /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/universities', element: <RequireAdmin><AdminWrapper><AdminUniversities /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/users', element: <RequireAdmin><AdminWrapper><AdminUsers /></AdminWrapper></RequireAdmin> },
     ],
   },
 ]

@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { MessageSquare, ThumbsUp, ThumbsDown, Share2, TrendingUp, Plus, Circle, Eye, Menu, BookOpen, X } from 'lucide-react'
+import { MessageSquare, ThumbsUp, ThumbsDown, Share2, TrendingUp, Plus, Circle, Eye, Menu, BookOpen, X, Link2, Image } from 'lucide-react'
 import api from '../../../services/api'
 import { useAuth } from '../../../hooks/useAuth'
 import ProgramTagInput from '../../../components/common/ProgramTagInput'
 import ProgramTags from '../../../components/common/ProgramTags'
 import FloatingChatButton from '../../chatbot/components/FloatingChatButton'
+import { LinkPreviewCard } from '../components/LinkPreviewCard'
+import { RoleBadge } from '../components/RoleBadge'
 
 interface Hub {
   id: string
@@ -36,6 +38,9 @@ interface Post {
   user_vote?: string | null
   created_at: string
   tags?: string[]
+  link_url?: string
+  image_url?: string
+  author_role?: string
 }
 
 export default function HubFeedV2() {
@@ -62,6 +67,9 @@ export default function HubFeedV2() {
   const [isExpertPost, setIsExpertPost] = useState(false)
   const [isCreatingPost, setIsCreatingPost] = useState(false)
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([])
+  const [newPostLinkUrl, setNewPostLinkUrl] = useState('')
+  const [newPostImageFile, setNewPostImageFile] = useState<File | null>(null)
+  const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null)
 
   // Function definitions BEFORE useEffect hooks
   const loadHubs = async () => {
@@ -170,27 +178,42 @@ export default function HubFeedV2() {
   }
 
   const handleCreatePost = async () => {
-    if (!newPostTitle.trim() || !newPostContent.trim() || !selectedHub) return
+    if (!newPostTitle.trim() || !selectedHub) return
+    if (newPostType !== 'link' && newPostType !== 'image' && !newPostContent.trim()) return
     
     setIsCreatingPost(true)
     
     try {
-      const newPost = await api.hubs.createPost({
+      // Build payload — image posts encode preview as data URL into image_url for now
+      const payload: any = {
         hub: selectedHub.id,
         title: newPostTitle,
         content: newPostContent,
         post_type: newPostType,
         is_expert_post: isExpertPost,
-        tags: selectedPrograms
-      })
+        tags: selectedPrograms,
+      }
+      if (newPostType === 'link' && newPostLinkUrl.trim()) {
+        payload.link_url = newPostLinkUrl.trim()
+      }
+      if (newPostType === 'image' && newPostImagePreview) {
+        payload.image_url = newPostImagePreview
+      }
+
+      const newPost = await api.hubs.createPost(payload)
       
-      // Add new post to feed
-      setPosts(prev => [newPost, ...prev])
+      // Add new post to feed with local enrichment
+      const enriched = {
+        ...newPost,
+        link_url: payload.link_url,
+        image_url: payload.image_url,
+      }
+      setPosts(prev => [enriched, ...prev])
       
       // Update cache
       setFeedCache(prev => ({
         ...prev,
-        [selectedHub.id]: [newPost, ...(prev[selectedHub.id] || [])]
+        [selectedHub.id]: [enriched, ...(prev[selectedHub.id] || [])]
       }))
       
       // Reset form
@@ -199,6 +222,9 @@ export default function HubFeedV2() {
       setNewPostType('discussion')
       setIsExpertPost(false)
       setSelectedPrograms([])
+      setNewPostLinkUrl('')
+      setNewPostImageFile(null)
+      setNewPostImagePreview(null)
       setShowCreatePost(false)
       
       // Update hub post count
@@ -451,21 +477,32 @@ export default function HubFeedV2() {
                     {selectedHub?.name}
                   </span>
                   
-                  {/* Level + Post Type Tags */}
+                  {/* Post Type Tag */}
                   <span className={`px-2 py-0.5 rounded-full font-medium text-xs ${
-                    post.is_expert_post 
-                      ? 'bg-teal-200 text-teal-800' 
-                      : 'bg-cyan-100 text-cyan-700'
+                    post.post_type === 'link'  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                    post.post_type === 'image' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' :
+                    post.is_expert_post        ? 'bg-teal-200 text-teal-800' : 'bg-cyan-100 text-cyan-700'
                   }`}>
-                    {post.is_expert_post ? '⭐ Expert' : '👤 Rookie'} · {
-                      post.post_type === 'question' ? '❓' :
-                      post.post_type === 'guide' ? '📚' :
-                      post.post_type === 'success_story' ? '🎉' : '💬'
-                    } {post.post_type.replace('_', ' ')}
+                    {post.post_type === 'link'  ? '🔗 Link' :
+                     post.post_type === 'image' ? '🖼️ Image' :
+                     post.is_expert_post ? '⭐ Expert' : '👤 Rookie'} · {
+                      post.post_type === 'question'     ? '❓' :
+                      post.post_type === 'guide'        ? '📚' :
+                      post.post_type === 'success_story'? '🎉' :
+                      post.post_type === 'link'         ? '' :
+                      post.post_type === 'image'        ? '' : '💬'
+                    } {!['link','image'].includes(post.post_type) && post.post_type.replace('_', ' ')}
                   </span>
-                  
-                  <span className="text-teal-600">
+
+                  {/* Author + role badge */}
+                  <span className="text-teal-600 flex items-center gap-1">
                     by {post.author?.username || 'Anonymous'}
+                    {post.author_role && (
+                      <RoleBadge role={post.author_role as any} size="sm" />
+                    )}
+                    {post.is_expert_post && !post.author_role && (
+                      <RoleBadge role="mentor" size="sm" />
+                    )}
                   </span>
                   <span className="text-teal-400 hidden md:inline">·</span>
                   <span className="text-teal-400 hidden md:inline">
@@ -486,9 +523,28 @@ export default function HubFeedV2() {
                 </h2>
 
                 {/* Post Preview */}
-                <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3 mb-3">
-                  {post.content}
-                </p>
+                {post.post_type !== 'link' && (
+                  <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3 mb-3">
+                    {post.content}
+                  </p>
+                )}
+
+                {/* Link Preview Card */}
+                {post.post_type === 'link' && post.link_url && (
+                  <LinkPreviewCard url={post.link_url} title={post.content || undefined} />
+                )}
+
+                {/* Image Post */}
+                {post.post_type === 'image' && post.image_url && (
+                  <div className="mt-2 mb-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-72">
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="w-full object-cover max-h-72"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                )}
 
                 {/* Program Tags */}
                 {post.tags && post.tags.length > 0 && (
@@ -602,13 +658,20 @@ export default function HubFeedV2() {
                   {/* Post Type/Tag */}
                   <select
                     value={newPostType}
-                    onChange={(e) => setNewPostType(e.target.value)}
+                    onChange={(e) => {
+                      setNewPostType(e.target.value)
+                      setNewPostLinkUrl('')
+                      setNewPostImageFile(null)
+                      setNewPostImagePreview(null)
+                    }}
                     className="px-4 py-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900/40 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="question">❓ Question</option>
                     <option value="discussion">💬 Discussion</option>
                     <option value="guide">📚 Guide</option>
                     <option value="success_story">🎉 Success Story</option>
+                    <option value="link">🔗 Share a Link</option>
+                    <option value="image">🖼️ Share an Image</option>
                   </select>
                   
                   {/* Contributor Level */}
@@ -620,10 +683,61 @@ export default function HubFeedV2() {
                       className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                     />
                     <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                      {isExpertPost ? '⭐ Expert Post' : '👤 Regular Post'}
+                      {isExpertPost ? '⭐ Expert / Mentor Post' : '👤 Regular Post'}
                     </span>
                   </label>
                 </div>
+
+                {/* Link URL Input */}
+                {newPostType === 'link' && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+                    <Link2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <input
+                      type="url"
+                      value={newPostLinkUrl}
+                      onChange={(e) => setNewPostLinkUrl(e.target.value)}
+                      placeholder="Paste a URL (e.g. https://moringaschool.com/courses)"
+                      className="flex-1 bg-transparent text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Image Upload */}
+                {newPostType === 'image' && (
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-pink-300 dark:border-pink-700 bg-pink-50 dark:bg-pink-950/20 cursor-pointer hover:border-pink-400 transition-all">
+                      <Image className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                      <span className="text-sm text-slate-700 dark:text-slate-200">
+                        {newPostImageFile ? newPostImageFile.name : 'Click to upload image (PNG, JPG, GIF)'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setNewPostImageFile(file)
+                          const reader = new FileReader()
+                          reader.onload = (ev) => setNewPostImagePreview(ev.target?.result as string)
+                          reader.readAsDataURL(file)
+                        }}
+                      />
+                    </label>
+                    {newPostImagePreview && (
+                      <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48">
+                        <img src={newPostImagePreview} alt="preview" className="w-full object-cover max-h-48" />
+                        <button
+                          type="button"
+                          onClick={() => { setNewPostImageFile(null); setNewPostImagePreview(null) }}
+                          className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 {/* Submit Button */}
                 <div className="flex gap-2 pt-2">
@@ -635,7 +749,12 @@ export default function HubFeedV2() {
                   </button>
                   <button
                     onClick={handleCreatePost}
-                    disabled={!newPostTitle.trim() || !newPostContent.trim() || isCreatingPost}
+                    disabled={
+                      !newPostTitle.trim() || isCreatingPost ||
+                      (newPostType === 'link' && !newPostLinkUrl.trim()) ||
+                      (newPostType === 'image' && !newPostImagePreview) ||
+                      (!['link','image'].includes(newPostType) && !newPostContent.trim())
+                    }
                     className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium hover:from-teal-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {isCreatingPost ? 'Posting...' : 'Post to ' + selectedHub.name}

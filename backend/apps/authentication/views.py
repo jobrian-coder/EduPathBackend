@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -8,8 +8,9 @@ from .models import AcademicProfile, UserInterest, Bookmark, Achievement, UserAc
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, AcademicProfileSerializer,
     UserInterestSerializer, BookmarkSerializer, AchievementSerializer,
-    UserAchievementSerializer, UserActivitySerializer
+    UserAchievementSerializer, UserActivitySerializer, AdminUserSerializer
 )
+from .permissions import IsAdmin
 
 User = get_user_model()
 
@@ -187,3 +188,37 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             'profile_completion': request.user.get_profile_completion_percentage(),
             'member_since': request.user.created_at,
         })
+
+
+class AdminUserViewSet(viewsets.ModelViewSet):
+    """Admin-only CRUD for all users."""
+
+    queryset = User.objects.all().order_by('-created_at')
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdmin]
+    pagination_class = None
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['email', 'username', 'first_name', 'last_name']
+    ordering_fields = ['created_at', 'date_joined', 'email', 'username']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get('search')
+        role = self.request.query_params.get('role')
+        is_active = self.request.query_params.get('is_active')
+
+        if search:
+            queryset = queryset.filter(
+                models.Q(email__icontains=search) |
+                models.Q(username__icontains=search) |
+                models.Q(first_name__icontains=search) |
+                models.Q(last_name__icontains=search)
+            )
+
+        if role:
+            queryset = queryset.filter(role=role)
+
+        if is_active in {'true', 'false'}:
+            queryset = queryset.filter(is_active=(is_active == 'true'))
+
+        return queryset

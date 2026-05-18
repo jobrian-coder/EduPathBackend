@@ -15,7 +15,8 @@ export function Navbar() {
   })
   const [menuOpen, setMenuOpen] = useState(false)
   const [globalQuery, setGlobalQuery] = useState('')
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, user } = useAuth()
+  const isAdmin = user?.is_staff || user?.is_superuser
 
   useEffect(() => {
     const root = document.documentElement
@@ -86,11 +87,11 @@ export function Navbar() {
           </NavLink>
           {isAuthenticated ? (
             <>
-              <NavLink to="/profile" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
+              <NavLink to={isAdmin ? "/admin" : "/profile"} className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
                   <User size={12} className="text-white"/>
                 </div>
-                Profile
+                {isAdmin ? 'Admin Dashboard' : 'Profile'}
               </NavLink>
               <button onClick={logout} className="ml-1 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 hover:bg-gray-100 transition text-gray-700">
                 Sign out
@@ -155,8 +156,8 @@ export function Navbar() {
                 </NavLink>
                 {isAuthenticated ? (
                   <>
-                    <NavLink to="/profile" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
-                      Profile
+                    <NavLink to={isAdmin ? "/admin" : "/profile"} onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
+                      {isAdmin ? 'Admin Dashboard' : 'Profile'}
                     </NavLink>
                     <button onClick={() => { logout(); setMenuOpen(false); }} className="mt-1 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 text-gray-700 dark:border-slate-700 dark:hover:bg-slate-800/60 dark:text-slate-200">
                       Sign out

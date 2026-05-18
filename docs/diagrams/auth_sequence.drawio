@@ -1,0 +1,40 @@
+<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+<!-- Participants -->
+<mxCell id="2" value="User" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="20" width="100" height="40" as="geometry"/></mxCell>
+<mxCell id="3" value="Frontend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="240" y="20" width="100" height="40" as="geometry"/></mxCell>
+<mxCell id="4" value="Django Backend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="420" y="20" width="120" height="40" as="geometry"/></mxCell>
+<mxCell id="5" value="PostgreSQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="620" y="20" width="100" height="40" as="geometry"/></mxCell>
+<!-- Lifelines -->
+<mxCell id="6" edge="1" source="2" target="2" style="endArrow=none;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" parent="1"><mxGeometry x="110" y="60" width="0" height="480" as="geometry"><Array as="points"><mxPoint x="110" y="540"/></Array></mxGeometry></mxCell>
+<mxCell id="7" edge="1" source="3" target="3" style="endArrow=none;dashed=1;" parent="1"><mxGeometry x="290" y="60" width="0" height="480" as="geometry"><Array as="points"><mxPoint x="290" y="540"/></Array></mxGeometry></mxCell>
+<mxCell id="8" edge="1" source="4" target="4" style="endArrow=none;dashed=1;" parent="1"><mxGeometry x="480" y="60" width="0" height="480" as="geometry"><Array as="points"><mxPoint x="480" y="540"/></Array></mxGeometry></mxCell>
+<mxCell id="9" edge="1" source="5" target="5" style="endArrow=none;dashed=1;" parent="1"><mxGeometry x="670" y="60" width="0" height="480" as="geometry"><Array as="points"><mxPoint x="670" y="540"/></Array></mxGeometry></mxCell>
+<!-- Step 1: Register -->
+<mxCell id="10" value="POST /auth/register/" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="200" y="90" relative="1" as="geometry"/></mxCell>
+<mxCell id="11" edge="1" source="2" target="3" parent="1"><mxGeometry y="100" relative="1" as="geometry"><mxPoint x="110" y="100" as="sourcePoint"/><mxPoint x="290" y="100" as="targetPoint"/></mxGeometry></mxCell>
+<!-- Step 2: Validate & Hash -->
+<mxCell id="12" value="Validate, hash password" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="385" y="125" relative="1" as="geometry"/></mxCell>
+<mxCell id="13" edge="1" source="3" target="4" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="290" y="130" as="sourcePoint"/><mxPoint x="480" y="130" as="targetPoint"/></mxGeometry></mxCell>
+<!-- Step 3: Save user -->
+<mxCell id="14" value="INSERT user row" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="575" y="155" relative="1" as="geometry"/></mxCell>
+<mxCell id="15" edge="1" source="4" target="5" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="480" y="160" as="sourcePoint"/><mxPoint x="670" y="160" as="targetPoint"/></mxGeometry></mxCell>
+<!-- Step 4: Return token -->
+<mxCell id="16" value="Return auth token" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="385" y="195" relative="1" as="geometry"/></mxCell>
+<mxCell id="17" edge="1" source="4" target="3" style="dashed=1;" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="480" y="200" as="sourcePoint"/><mxPoint x="290" y="200" as="targetPoint"/></mxGeometry></mxCell>
+<!-- Step 5: Store token -->
+<mxCell id="18" value="Store in localStorage" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="200" y="225" relative="1" as="geometry"/></mxCell>
+<mxCell id="19" edge="1" source="3" target="2" style="dashed=1;" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="290" y="230" as="sourcePoint"/><mxPoint x="110" y="230" as="targetPoint"/></mxGeometry></mxCell>
+<!-- STEP 6: KCSE Input -->
+<mxCell id="201" value="Input KCSE Grades" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="200" y="270" relative="1" as="geometry"/></mxCell>
+<mxCell id="20" edge="1" source="2" target="3" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="280" as="sourcePoint"/><mxPoint x="290" y="280" as="targetPoint"/></mxGeometry></mxCell>
+<!-- STEP 7: Save grades -->
+<mxCell id="211" value="POST /auth/profile/academic_profile/" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="385" y="305" relative="1" as="geometry"/></mxCell>
+<mxCell id="21" edge="1" source="3" target="4" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="290" y="310" as="sourcePoint"/><mxPoint x="480" y="310" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="22" edge="1" source="4" target="5" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="480" y="340" as="sourcePoint"/><mxPoint x="670" y="340" as="targetPoint"/></mxGeometry></mxCell>
+<!-- Step 8: Dashboard response -->
+<mxCell id="221" value="Save academic profile" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="575" y="325" relative="1" as="geometry"/></mxCell>
+<mxCell id="23" edge="1" source="4" target="3" style="dashed=1;" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="480" y="370" as="sourcePoint"/><mxPoint x="290" y="370" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="231" value="Return profile" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="385" y="355" relative="1" as="geometry"/></mxCell>
+<mxCell id="24" edge="1" source="3" target="2" style="dashed=1;" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="290" y="400" as="sourcePoint"/><mxPoint x="110" y="400" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="241" value="Render dashboard" style="edgeLabel;" vertex="1" connectable="0" parent="1"><mxGeometry x="200" y="385" relative="1" as="geometry"/></mxCell>
+</root></mxGraphModel>

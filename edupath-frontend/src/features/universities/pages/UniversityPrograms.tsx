@@ -45,7 +45,10 @@ export default function UniversityPrograms() {
         if (selectedCategory) params.category = selectedCategory
         if (sortBy) params.ordering = sortBy
 
-        const data = await api.courses.getUniversityPrograms(id, params)
+        const universityId = id?.replace(/^university:/, '') || id
+        if (!universityId) return
+
+        const data = await api.courses.getUniversityPrograms(universityId, params)
         setUniversity(data.university)
         setPrograms(data.programs)
         setTotalPrograms(data.total_programs)
@@ -214,20 +217,20 @@ export default function UniversityPrograms() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-black mb-2">
-                        {typeof program.course === 'string' ? program.course : program.course.name}
+                        {typeof program.course === 'object' && program.course !== null ? program.course.name : program.course}
                       </h3>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                         <div>
                           <div className="text-gray-600">Category</div>
                           <div className="text-black">
-                            {typeof program.course === 'object' ? program.course.category : '—'}
+                            {typeof program.course === 'object' && program.course !== null ? program.course.category : '—'}
                           </div>
                         </div>
                         <div>
                           <div className="text-gray-600">Duration</div>
                           <div className="text-black">
-                            {typeof program.course === 'object' ? program.course.duration : '—'}
+                            {typeof program.course === 'object' && program.course !== null ? program.course.duration : '—'}
                           </div>
                         </div>
                         <div>
@@ -244,7 +247,7 @@ export default function UniversityPrograms() {
                         </div>
                       </div>
 
-                      {typeof program.course === 'object' && program.course.description && (
+                      {typeof program.course === 'object' && program.course !== null && program.course.description && (
                         <div className="mb-4">
                           <div className="text-gray-600 text-sm mb-1">Description</div>
                           <div className="text-gray-700 text-sm">
@@ -259,7 +262,7 @@ export default function UniversityPrograms() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Link 
-                            to={`/courses/${typeof program.course === 'object' ? program.course.id : program.course}`}
+                            to={`/courses/${typeof program.course === 'object' && program.course !== null ? program.course.id : program.course}`}
                             className="text-teal-400 hover:text-teal-300 text-sm font-medium"
                           >
                             View Course Details
@@ -276,14 +279,14 @@ export default function UniversityPrograms() {
                           )}
                         </div>
                         <ProgramDiscussionsBadge 
-                          programName={typeof program.course === 'object' ? program.course.name : program.course} 
+                          programName={typeof program.course === 'object' && program.course !== null ? program.course.name : program.course} 
                         />
                       </div>
                     </div>
                     
                     <div className="ml-4">
                       <Badge variant="secondary">
-                        {typeof program.course === 'object' ? program.course.category : 'Course'}
+                        {typeof program.course === 'object' && program.course !== null ? program.course.category : 'Course'}
                       </Badge>
                     </div>
                   </div>

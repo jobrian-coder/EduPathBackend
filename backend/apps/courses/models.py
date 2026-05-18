@@ -16,14 +16,14 @@ class University(models.Model):
     short_name = models.CharField(max_length=50)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     location = models.CharField(max_length=200)
-    logo = models.CharField(max_length=10, default='🎓')  # Emoji or image URL
-    established = models.IntegerField()
-    ranking = models.IntegerField()
-    students = models.CharField(max_length=20)  # "84,000+"
-    website = models.URLField()
-    description = models.TextField()
+    logo = models.CharField(max_length=10, default='🎓', blank=True)  # Emoji or image URL
+    established = models.IntegerField(default=0)
+    ranking = models.IntegerField(default=0)
+    students = models.CharField(max_length=50, blank=True, default='')  # "84,000+"
+    website = models.URLField(blank=True, default='')
+    description = models.TextField(blank=True, default='')
     facilities = models.JSONField(default=list)
-    accreditation = models.TextField()
+    accreditation = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

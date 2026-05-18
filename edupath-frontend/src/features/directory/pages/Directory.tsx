@@ -71,6 +71,11 @@ export default function Directory() {
     setCompare(prev => ({ ...prev }))
   }
 
+  async function saveUniversity(u: University) {
+    toggleBookmark({ id: `university:${u.id}`, type: 'university', title: u.name, meta: u.location })
+    setCompare(prev => ({ ...prev }))
+  }
+
   const filteredGroups = useMemo(() => {
     return categoryGroups.filter(g => {
       if (universityName) {
@@ -257,6 +262,19 @@ export default function Directory() {
                     {/* Top Half - University Icon */}
                     <div className="h-40 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 flex items-center justify-center relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-teal-100/30 to-cyan-100/30 group-hover:from-teal-100/50 group-hover:to-cyan-100/50 transition-colors" />
+                      
+                      <button 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); saveUniversity(u); }} 
+                        className={`absolute top-3 right-3 z-10 p-2 rounded-full border shadow-sm transition-all ${
+                          isBookmarked(`university:${u.id}`, 'university') 
+                            ? 'bg-teal-100 border-teal-600 text-teal-700' 
+                            : 'bg-white/80 border-gray-200 hover:bg-teal-50 hover:text-teal-500 text-gray-400'
+                        }`}
+                        title={isBookmarked(`university:${u.id}`, 'university') ? "Saved" : "Save University"}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={isBookmarked(`university:${u.id}`, 'university') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                      </button>
+
                       <img 
                         src={getUniversityIcon(u.name)} 
                         alt={u.name}
@@ -265,25 +283,51 @@ export default function Directory() {
                     </div>
 
                     {/* Bottom Half */}
-                    <div className="h-40 bg-gradient-to-br from-teal-500 to-teal-600 dark:from-teal-500 dark:to-cyan-600 p-6 text-white relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-teal-600/20 to-teal-700/20 group-hover:from-teal-600/30 group-hover:to-teal-700/30 transition-colors" />
-                      <div className="relative z-10 h-full flex flex-col justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold mb-1 group-hover:text-teal-100 transition-colors truncate">
-                            {u.name}
-                          </h3>
-                          <p className="text-teal-200 font-medium text-sm">{u.short_name || u.name}</p>
+                    <div className="bg-white dark:bg-slate-900/40 p-5 flex flex-col h-full">
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${u.type === 'Public' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                            {u.type}
+                          </span>
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+                            Rank #{u.ranking}
+                          </span>
                         </div>
-                        <div className="space-y-1 mt-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-teal-200">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span>{u.location}</span>
-                            </div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-teal-600 transition-colors line-clamp-1">
+                          {u.name}
+                        </h3>
+                        <p className="text-teal-600 dark:text-teal-400 font-medium text-xs mb-2">{u.short_name || u.name}</p>
+                        
+                        {u.description && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3 leading-relaxed">
+                            {u.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="mt-auto space-y-3">
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3">
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{u.location}</span>
                           </div>
+                          {u.students && (
+                            <div className="flex items-center gap-1.5">
+                              <span>👥 {u.students}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex justify-end">
+                          <span className="text-xs font-semibold text-teal-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            View Programs
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </span>
                         </div>
                       </div>
                     </div>

@@ -18,21 +18,21 @@ const hubData = [
     slug: 'tech-hub',
     icon: techIcon,
     description: 'Kenya\'s tech community for developers, innovators, and tech enthusiasts',
-    memberCount: 2156
+    memberCount: 2
   },
   {
     name: 'Engineering Hub',
     slug: 'engineering-hub',
     icon: engineeringIcon,
     description: 'Connect with engineers, share projects, and discuss engineering topics',
-    memberCount: 1247
+    memberCount: 3
   },
   {
     name: 'Business Hub',
     slug: 'business-hub',
     icon: businessIcon,
     description: 'Entrepreneurs and business professionals sharing insights',
-    memberCount: 1543
+    memberCount: 2
   }
 ]
 
@@ -122,7 +122,7 @@ export default function Landing() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm leading-tight">
-            Design your future <br className="hidden md:block"/>
+            Design your future  <br className="hidden md:block"/>
             with <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">crystal clarity</span>.
           </h1>
 

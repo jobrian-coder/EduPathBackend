@@ -39,3 +39,14 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj.author == request.user
+
+
+class IsAdmin(permissions.BasePermission):
+    """Only allow admin users to access these endpoints."""
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.is_active and
+            (request.user.is_staff or request.user.is_superuser)
+        )

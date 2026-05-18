@@ -23,6 +23,19 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth()
+
+  if (loading) return null
+  if (!user) return <Navigate to="/auth" replace />
+
+  if (!user.is_staff && !user.is_superuser) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
+
 // Role-based guard
 // Usage: <RequireRole roles={["contributor", "expert"]}><Protected /></RequireRole>
 export function RequireRole({ roles, children }: { roles: Array<'novice' | 'contributor' | 'expert'>, children: ReactNode }) {

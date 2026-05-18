@@ -1,6 +1,22 @@
-import React from 'react';
-import { Award, Building2, Target, Briefcase } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Award, Building2, Target, Briefcase, Bookmark, BookmarkCheck, CheckCircle2 } from 'lucide-react';
 import type { AdvisorRecommendation } from '../../../services/api';
+
+const STORAGE_KEY = 'edupath_saved_recommendations';
+
+export type SavedRecommendation = AdvisorRecommendation & { saved_at: string };
+
+export function getSavedRecommendations(): SavedRecommendation[] {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function makeKey(r: AdvisorRecommendation) {
+  return `${r.course_name}__${r.institution}`;
+}
 
 interface RecommendationCardProps {
   recommendation: AdvisorRecommendation;
@@ -18,6 +34,34 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommen
     avg_fees_ksh,
     match_score
   } = recommendation;
+
+  const [saved, setSaved] = useState(false);
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    const existing = getSavedRecommendations();
+    setSaved(existing.some(r => makeKey(r) === makeKey(recommendation)));
+  }, [recommendation]);
+
+  const handleToggleSave = useCallback(() => {
+    const existing = getSavedRecommendations();
+    const key = makeKey(recommendation);
+
+    if (saved) {
+      const updated = existing.filter(r => makeKey(r) !== key);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setSaved(false);
+    } else {
+      const updated: SavedRecommendation[] = [
+        ...existing.filter(r => makeKey(r) !== key),
+        { ...recommendation, saved_at: new Date().toISOString() },
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setSaved(true);
+      setPulse(true);
+      setTimeout(() => setPulse(false), 600);
+    }
+  }, [recommendation, saved]);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-shadow border border-slate-200 dark:border-slate-700 overflow-hidden relative group">
@@ -97,6 +141,29 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommen
               </div>
             </div>
           )}
+
+          {/* Save Button */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={handleToggleSave}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                saved
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-500/30 hover:bg-teal-700'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 border border-slate-200 dark:border-slate-600'
+              } ${pulse ? 'scale-105' : 'scale-100'}`}
+            >
+              {saved ? (
+                <><BookmarkCheck className="w-4 h-4" /> Saved</>
+              ) : (
+                <><Bookmark className="w-4 h-4" /> Save Recommendation</>
+              )}
+            </button>
+            {saved && (
+              <span className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Added to your saved list
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight, Loader, GraduationCap } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sparkles, ArrowRight, Loader, GraduationCap, BookmarkCheck, Bookmark } from 'lucide-react';
 import api, { type AdvisorRecommendation } from '../../../services/api';
 import { InterviewChat } from '../components/InterviewChat';
-import { RecommendationCard } from '../components/RecommendationCard';
+import { RecommendationCard, getSavedRecommendations, type SavedRecommendation } from '../components/RecommendationCard';
 
 export const AdvisorPage: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -12,6 +12,8 @@ export const AdvisorPage: React.FC = () => {
   const [academicProfile, setAcademicProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
+  const [allSaved, setAllSaved] = useState(false);
+  const [saveAllPulse, setSaveAllPulse] = useState(false);
 
   // Fetch academic profile on mount
   useEffect(() => {
@@ -63,7 +65,33 @@ export const AdvisorPage: React.FC = () => {
   const handleStartOver = () => {
     setSessionId(null);
     setRecommendations(null);
+    setAllSaved(false);
   };
+
+  // Sync allSaved state when recommendations are loaded
+  useEffect(() => {
+    if (!recommendations || recommendations.length === 0) return;
+    const saved = getSavedRecommendations();
+    const keys = saved.map(r => `${r.course_name}__${r.institution}`);
+    setAllSaved(recommendations.every(r => keys.includes(`${r.course_name}__${r.institution}`)));
+  }, [recommendations]);
+
+  const handleSaveAll = useCallback(() => {
+    if (!recommendations) return;
+    const existing = getSavedRecommendations();
+    const now = new Date().toISOString();
+    const merged: SavedRecommendation[] = [...existing];
+    recommendations.forEach(rec => {
+      const key = `${rec.course_name}__${rec.institution}`;
+      if (!merged.some(r => `${r.course_name}__${r.institution}` === key)) {
+        merged.push({ ...rec, saved_at: now });
+      }
+    });
+    localStorage.setItem('edupath_saved_recommendations', JSON.stringify(merged));
+    setAllSaved(true);
+    setSaveAllPulse(true);
+    setTimeout(() => setSaveAllPulse(false), 600);
+  }, [recommendations]);
 
   const hasGrades = academicProfile?.kcse_mean_points != null;
 
@@ -204,7 +232,7 @@ export const AdvisorPage: React.FC = () => {
           {/* Results State */}
           {recommendations && !recommendationsError && (
             <div className="p-8 space-y-8 bg-slate-50 dark:bg-slate-900/50">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Your Top 5 Course Matches</h2>
                   {hasGrades && (
@@ -213,12 +241,28 @@ export const AdvisorPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={handleStartOver}
-                  className="px-5 py-2 text-sm font-medium text-teal-600 bg-teal-50 dark:text-teal-400 dark:bg-teal-900/30 rounded-full hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
-                >
-                  Start Over
-                </button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={handleSaveAll}
+                    disabled={allSaved}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                      allSaved
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-500/30 cursor-default'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-300'
+                    } ${saveAllPulse ? 'scale-105' : 'scale-100'}`}
+                  >
+                    {allSaved
+                      ? <><BookmarkCheck className="w-4 h-4" /> All Saved</>
+                      : <><Bookmark className="w-4 h-4" /> Save All</>
+                    }
+                  </button>
+                  <button
+                    onClick={handleStartOver}
+                    className="px-5 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Start Over
+                  </button>
+                </div>
               </div>
 
               {recommendations.length > 0 ? (
