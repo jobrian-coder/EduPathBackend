@@ -5,6 +5,8 @@ import {
   GraduationCap, 
   Building2, 
   Users, 
+  ShieldCheck,
+  FileText,
   LogOut,
   ChevronRight
 } from 'lucide-react';
@@ -28,6 +30,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/admin/hubs/moderate', icon: ShieldCheck, label: 'Hub Moderation' },
+    { path: '/admin/associates/applications', icon: FileText, label: 'Applications' },
     { path: '/admin/courses', icon: GraduationCap, label: 'Courses' },
     { path: '/admin/universities', icon: Building2, label: 'Universities' },
     { path: '/admin/users', icon: Users, label: 'Users' },

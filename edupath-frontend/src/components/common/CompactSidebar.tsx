@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Layers, Users, User, BookOpen } from 'lucide-react'
+import { Home, Layers, Users, User, BookOpen, Building2 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function CompactSidebar() {
@@ -48,6 +48,10 @@ export default function CompactSidebar() {
         <NavLink to="/hubs" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Users size={20} className="flex-shrink-0"/>
           <span className="opacity-0 group-hover:opacity-100 transition-opacity transition-delay-100">Hubs</span>
+        </NavLink>
+        <NavLink to="/associates" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
+          <Building2 size={20} className="flex-shrink-0"/>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity transition-delay-100">Associates</span>
         </NavLink>
       </div>
     </div>

@@ -14,11 +14,17 @@ import UniversityPrograms from '../features/universities/pages/UniversityProgram
 import AdvisorPage from '../features/advisor/pages/AdvisorPage'
 import HowItWorks from '../features/landing/pages/HowItWorks'
 import LegalPage from '../features/legal/pages/LegalPage'
+// Associate imports
+import AssociateApply from '../features/associates/pages/AssociateApply'
+import AssociatePage from '../features/associates/pages/AssociatePage'
+import AssociateDirectory from '../features/associates/pages/AssociateDirectory'
 // Admin imports
 import AdminDashboard from '../features/admin/pages/AdminDashboard'
 import AdminCourses from '../features/admin/pages/AdminCourses'
 import AdminUniversities from '../features/admin/pages/AdminUniversities'
 import AdminUsers from '../features/admin/pages/AdminUsers'
+import AdminHubModeration from '../features/admin/pages/AdminHubModeration'
+import AdminAssociateApplications from '../features/admin/pages/AdminAssociateApplications'
 import { ToastProvider } from '../features/admin/hooks/useToast'
 import { HomeGate, RequireAuth, RequireAdmin } from './guards'
 
@@ -48,8 +54,15 @@ export const AppRoutes: RouteObject[] = [
       { path: 'how-it-works', element: <HowItWorks /> },
       { path: 'auth', element: <AuthPage /> },
       { path: 'legal', element: <LegalPage /> },
+      // Associate routes
+      { path: 'associates', element: <AssociateDirectory /> },
+      { path: 'associates/apply', element: <AssociateApply /> },
+      { path: 'hubs/:hubId/associates/:associateId', element: <AssociatePage /> },
+      { path: 'hubs/_/associates/:associateId', element: <AssociatePage /> },
       // Admin routes
       { path: 'admin', element: <RequireAdmin><AdminWrapper><AdminDashboard /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/hubs/moderate', element: <RequireAdmin><AdminWrapper><AdminHubModeration /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/associates/applications', element: <RequireAdmin><AdminWrapper><AdminAssociateApplications /></AdminWrapper></RequireAdmin> },
       { path: 'admin/courses', element: <RequireAdmin><AdminWrapper><AdminCourses /></AdminWrapper></RequireAdmin> },
       { path: 'admin/universities', element: <RequireAdmin><AdminWrapper><AdminUniversities /></AdminWrapper></RequireAdmin> },
       { path: 'admin/users', element: <RequireAdmin><AdminWrapper><AdminUsers /></AdminWrapper></RequireAdmin> },

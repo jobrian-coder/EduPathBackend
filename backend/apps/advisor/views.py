@@ -185,6 +185,9 @@ class RecommendationsView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        # Attach up to 2 Associates per recommendation from its related_hub
+        recommendations = self._attach_associates(recommendations)
+
         return Response(
             {
                 "session_id": str(session.id),
@@ -193,3 +196,49 @@ class RecommendationsView(APIView):
                 "academic_profile_used": academic_profile is not None,
             }
         )
+
+    def _attach_associates(self, recommendations: list) -> list:
+        """
+        For each recommendation append up to 2 Associates from the course's related_hub.
+        Prioritises MENTORs over SOCIETYs. SCHOOLs are excluded.
+        Lookup is a single SQL query per hub using the hub name/category match.
+        """
+        from apps.associates.models import Associate
+        from apps.hubs.models import CareerHub
+
+        for rec in recommendations:
+            hub_category = rec.get('hub_category', '')
+            rec['associates'] = []
+            if not hub_category:
+                continue
+
+            # Resolve hub by category (case-insensitive)
+            hub = CareerHub.objects.filter(category__iexact=hub_category).first()
+            if not hub:
+                continue
+
+            # Single queryset — verified, not suspended, MENTOR or SOCIETY only
+            qs = Associate.objects.filter(
+                hub=hub,
+                is_verified=True,
+                is_suspended=False,
+                associate_type__in=['MENTOR', 'SOCIETY'],
+            )[:10]
+
+            # Prioritise MENTORs, then SOCIETYs, take up to 2
+            mentors = [a for a in qs if a.associate_type == 'MENTOR']
+            societies = [a for a in qs if a.associate_type == 'SOCIETY']
+            selected = (mentors + societies)[:2]
+
+            rec['associates'] = [
+                {
+                    'id': a.id,
+                    'name': a.name,
+                    'associate_type': a.associate_type,
+                    'bio': a.bio[:200],
+                    'profile_image': a.profile_image,
+                }
+                for a in selected
+            ]
+
+        return recommendations

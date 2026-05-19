@@ -97,6 +97,7 @@ export default function Profile() {
   const [isLoadingAchievements, setIsLoadingAchievements] = useState(false)
   const [, setIsLoadingAnalytics] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
+  const [followedAssociates, setFollowedAssociates] = useState<any[]>([])
 
   const fetchProfile = async () => {
     try {
@@ -149,6 +150,7 @@ export default function Profile() {
     if (user?.id) {
       fetchAchievements()
       fetchAnalytics()
+      api.associates.listFollowed().then(setFollowedAssociates).catch(() => {})
     }
   }, [user?.id])
 
@@ -593,6 +595,50 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Following Associates */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold">Following</div>
+                  <Link to="/associates" className="text-sm text-teal-600 hover:text-teal-700">Discover more →</Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {followedAssociates.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
+                    You're not following any Associates yet.{' '}
+                    <Link to="/associates" className="text-teal-600 hover:underline">Browse the directory</Link> to find mentors and societies in your field.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {followedAssociates.map((assoc: any) => (
+                      <Link
+                        key={assoc.id}
+                        to={`/hubs/_/associates/${assoc.id}`}
+                        className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all group"
+                      >
+                        {assoc.profile_image ? (
+                          <img src={assoc.profile_image} alt={assoc.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {assoc.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-teal-600">
+                            {assoc.name}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {assoc.associate_type.charAt(0) + assoc.associate_type.slice(1).toLowerCase()}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

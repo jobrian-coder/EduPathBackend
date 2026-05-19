@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { MessageSquare, ThumbsUp, ThumbsDown, Share2, TrendingUp, Plus, Circle, Eye, Menu, BookOpen, X, Link2, Image } from 'lucide-react'
+import { MessageSquare, ThumbsUp, ThumbsDown, Share2, TrendingUp, Plus, Circle, Eye, Menu, BookOpen, X, Link2, Image, Users, MapPin, ExternalLink } from 'lucide-react'
 import api from '../../../services/api'
+import type { Associate } from '../../../services/api'
 import { useAuth } from '../../../hooks/useAuth'
 import ProgramTagInput from '../../../components/common/ProgramTagInput'
 import ProgramTags from '../../../components/common/ProgramTags'
@@ -70,6 +71,24 @@ export default function HubFeedV2() {
   const [newPostLinkUrl, setNewPostLinkUrl] = useState('')
   const [newPostImageFile, setNewPostImageFile] = useState<File | null>(null)
   const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null)
+
+  // Associates tab
+  const [hubTab, setHubTab] = useState<'posts' | 'associates'>('posts')
+  const [associates, setAssociates] = useState<Associate[]>([])
+  const [associatesLoading, setAssociatesLoading] = useState(false)
+
+  // Load associates for selected hub
+  const loadAssociates = useCallback(async (hubId: string) => {
+    setAssociatesLoading(true)
+    try {
+      const data = await api.associates.listForHub(hubId)
+      setAssociates(Array.isArray(data) ? data : [])
+    } catch {
+      setAssociates([])
+    } finally {
+      setAssociatesLoading(false)
+    }
+  }, [])
 
   // Function definitions BEFORE useEffect hooks
   const loadHubs = async () => {
@@ -241,8 +260,13 @@ export default function HubFeedV2() {
 
   const handleHubSwitch = useCallback(async (hub: Hub) => {
     setSelectedHub(hub)
+    setHubTab('posts')
+    setAssociates([])
     navigate(`/hubs/${hub.slug}`, { replace: true })
     
+    // Load associates for sidebar (non-blocking)
+    loadAssociates(hub.id)
+
     // Check cache first
     if (feedCache[hub.id]) {
       setPosts(feedCache[hub.id])
@@ -256,7 +280,7 @@ export default function HubFeedV2() {
         console.error('Failed to load posts:', error)
       }
     }
-  }, [feedCache, navigate])
+  }, [feedCache, navigate, loadAssociates])
 
   const handleVote = async (postId: string, voteType: 'upvote' | 'downvote') => {
     if (!isAuthenticated) {
@@ -309,21 +333,50 @@ export default function HubFeedV2() {
       } else {
         await api.hubs.votePost(postId, voteType)
       }
-      
-      // Update cache
       if (selectedHub) {
-        setFeedCache(prev => ({
-          ...prev,
-          [selectedHub.id]: posts
-        }))
+        setFeedCache(prev => ({ ...prev, [selectedHub.id]: posts }))
       }
     } catch (error) {
       console.error('Failed to vote:', error)
-      // Revert on error
       if (selectedHub) {
         const { results } = await api.hubs.listPosts({ hub: selectedHub.id })
         setPosts(results)
       }
+    }
+  }
+
+  const handleFollowAssociate = async (associateId: number, isFollowing: boolean) => {
+    if (!isAuthenticated) {
+      navigate('/auth')
+      return
+    }
+
+    // Optimistic update
+    setAssociates(prev => prev.map(assoc => {
+      if (assoc.id !== associateId) return assoc
+      return {
+        ...assoc,
+        is_following: !isFollowing,
+        follower_count: assoc.follower_count + (isFollowing ? -1 : 1),
+      }
+    }))
+
+    try {
+      if (isFollowing) {
+        await api.associates.unfollow(associateId)
+      } else {
+        await api.associates.follow(associateId)
+      }
+    } catch {
+      // Revert on error
+      setAssociates(prev => prev.map(assoc => {
+        if (assoc.id !== associateId) return assoc
+        return {
+          ...assoc,
+          is_following: isFollowing,
+          follower_count: assoc.follower_count + (isFollowing ? 1 : -1),
+        }
+      }))
     }
   }
 
@@ -463,150 +516,257 @@ export default function HubFeedV2() {
             </div>
           )}
 
-          {/* Posts Feed */}
-          {posts.map(post => (
-            <article
-              key={post.id}
-              onClick={() => navigate(`/posts/${post.id}`)}
-              className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-400/40"
-            >
-              <div className="p-3 md:p-4">
-                {/* Post Header */}
-                <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-2 text-xs">
-                  <span className="px-2 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700">
-                    {selectedHub?.name}
-                  </span>
-                  
-                  {/* Post Type Tag */}
-                  <span className={`px-2 py-0.5 rounded-full font-medium text-xs ${
-                    post.post_type === 'link'  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                    post.post_type === 'image' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' :
-                    post.is_expert_post        ? 'bg-teal-200 text-teal-800' : 'bg-cyan-100 text-cyan-700'
-                  }`}>
-                    {post.post_type === 'link'  ? '🔗 Link' :
-                     post.post_type === 'image' ? '🖼️ Image' :
-                     post.is_expert_post ? '⭐ Expert' : '👤 Rookie'} · {
-                      post.post_type === 'question'     ? '❓' :
-                      post.post_type === 'guide'        ? '📚' :
-                      post.post_type === 'success_story'? '🎉' :
-                      post.post_type === 'link'         ? '' :
-                      post.post_type === 'image'        ? '' : '💬'
-                    } {!['link','image'].includes(post.post_type) && post.post_type.replace('_', ' ')}
-                  </span>
+          {/* Tab switcher */}
+          {selectedHub && (
+            <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setHubTab('posts')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  hubTab === 'posts'
+                    ? 'bg-white dark:bg-slate-700 text-teal-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                Posts
+              </button>
+              <button
+                onClick={() => {
+                  setHubTab('associates')
+                  if (associates.length === 0) loadAssociates(selectedHub.id)
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+                  hubTab === 'associates'
+                    ? 'bg-white dark:bg-slate-700 text-teal-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                Associates
+              </button>
+            </div>
+          )}
 
-                  {/* Author + role badge */}
-                  <span className="text-teal-600 flex items-center gap-1">
-                    by {post.author?.username || 'Anonymous'}
-                    {post.author_role && (
-                      <RoleBadge role={post.author_role as any} size="sm" />
-                    )}
-                    {post.is_expert_post && !post.author_role && (
-                      <RoleBadge role="mentor" size="sm" />
-                    )}
-                  </span>
-                  <span className="text-teal-400 hidden md:inline">·</span>
-                  <span className="text-teal-400 hidden md:inline">
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </span>
+          {/* Associates Grid */}
+          {hubTab === 'associates' && selectedHub && (
+            <div>
+              {associatesLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-7 h-7 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
                 </div>
+              ) : associates.length === 0 ? (
+                <div className="text-center py-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <Users className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm">No Associates in this hub yet. Know a mentor or organisation that should be here? Share EduPath with them.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {associates.map(assoc => {
+                    const badgeCls =
+                      assoc.associate_type === 'MENTOR'  ? 'bg-violet-500/20 text-violet-600 border-violet-500/30' :
+                      assoc.associate_type === 'SOCIETY' ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' :
+                                                           'bg-amber-500/20 text-amber-600 border-amber-500/30'
+                    return (
+                      <div key={assoc.id} className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col gap-3">
+                        <div className="flex items-start gap-3">
+                          {assoc.profile_image ? (
+                            <img src={assoc.profile_image} alt={assoc.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                              {assoc.name.charAt(0)}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{assoc.name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${badgeCls}`}>
+                                {assoc.associate_type.charAt(0) + assoc.associate_type.slice(1).toLowerCase()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              {assoc.location && (
+                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />{assoc.location}
+                                </p>
+                              )}
+                              <p className="text-xs text-slate-500">{assoc.follower_count} followers</p>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">{assoc.bio}</p>
+                        <div className="flex gap-2 mt-auto">
+                          <button
+                            onClick={() => navigate(`/hubs/${selectedHub.id}/associates/${assoc.id}`)}
+                            className="flex-1 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xs font-medium hover:from-teal-600 hover:to-cyan-600 transition-all"
+                          >
+                            View Page
+                          </button>
+                          <button
+                            onClick={() => handleFollowAssociate(assoc.id, assoc.is_following)}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                              assoc.is_following
+                                ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400'
+                            }`}
+                          >
+                            {assoc.is_following ? 'Following' : 'Follow'}
+                          </button>
+                          {assoc.website && (
+                            <a
+                              href={assoc.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-teal-500 transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
-                {/* Post Title */}
-                <h2 
-                  className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 line-clamp-2 hover:text-teal-600 dark:hover:text-teal-300 cursor-pointer transition-colors"
-                >
-                  {post.title}
-                  {(post as any).is_edited && (
-                    <span className="ml-2 text-xs font-normal text-teal-600 italic">
-                      (edited)
-                    </span>
-                  )}
-                </h2>
+          {/* Posts Feed with Associate post interleaving */}
+          {hubTab === 'posts' && (() => {
+            const items: React.ReactNode[] = []
+            let assocIdx = 0
 
-                {/* Post Preview */}
-                {post.post_type !== 'link' && (
-                  <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3 mb-3">
-                    {post.content}
-                  </p>
-                )}
-
-                {/* Link Preview Card */}
-                {post.post_type === 'link' && post.link_url && (
-                  <LinkPreviewCard url={post.link_url} title={post.content || undefined} />
-                )}
-
-                {/* Image Post */}
-                {post.post_type === 'image' && post.image_url && (
-                  <div className="mt-2 mb-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-72">
-                    <img
-                      src={post.image_url}
-                      alt={post.title}
-                      className="w-full object-cover max-h-72"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                )}
-
-                {/* Program Tags */}
-                {post.tags && post.tags.length > 0 && (
-                  <div className="mb-3">
-                    <ProgramTags
-                      programIds={post.tags}
-                      maxDisplay={3}
-                      className="text-xs"
-                    />
-                  </div>
-                )}
-
-                {/* Interaction Bar */}
-                <div className="flex flex-wrap items-center gap-1 md:gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleVote(post.id, 'upvote')
-                    }}
-                    className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                      post.user_vote === 'upvote'
-                        ? 'bg-teal-200 text-teal-700'
-                        : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
-                    }`}
-                  >
-                    <ThumbsUp className="w-3 h-3 md:w-4 md:h-4" />
-                    {post.upvotes}
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleVote(post.id, 'downvote')
-                    }}
-                    className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                      post.user_vote === 'downvote'
-                        ? 'bg-cyan-200 text-cyan-700'
-                        : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'
-                    }`}
-                  >
-                    <ThumbsDown className="w-3 h-3 md:w-4 md:h-4" />
-                  </button>
-
-                  <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
-                    <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
-                    {post.comment_count}
-                  </button>
-
-                  {(post as any).view_count > 0 && (
-                    <div className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-teal-600">
-                      <Eye className="w-3 h-3 md:w-4 md:h-4" />
-                      {(post as any).view_count}
+            posts.forEach((post, idx) => {
+              // Insert associate post banner every 5 student posts
+              if (idx > 0 && idx % 5 === 0 && assocIdx < associates.length) {
+                const assoc = associates[assocIdx++]
+                items.push(
+                  <div key={`assoc-banner-${assoc.id}`} className="rounded-2xl border border-teal-200 dark:border-teal-800/50 bg-teal-50/60 dark:bg-teal-950/20 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-teal-100/80 dark:bg-teal-900/30 border-b border-teal-200 dark:border-teal-800/40">
+                      <span className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide">From our Associates</span>
                     </div>
-                  )}
+                    <div
+                      className="p-4 flex items-start gap-3 cursor-pointer hover:bg-teal-100/40 dark:hover:bg-teal-900/20 transition-colors"
+                      onClick={() => navigate(`/hubs/${selectedHub?.id}/associates/${assoc.id}`)}
+                    >
+                      {assoc.profile_image ? (
+                        <img src={assoc.profile_image} alt={assoc.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {assoc.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-white">{assoc.name}</p>
+                        <p className="text-xs text-teal-600 dark:text-teal-400 mb-1">{assoc.associate_type.charAt(0) + assoc.associate_type.slice(1).toLowerCase()} · {assoc.follower_count} followers</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{assoc.bio}</p>
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleFollowAssociate(assoc.id, assoc.is_following) }}
+                        className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          assoc.is_following
+                            ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                            : 'bg-teal-600 text-white hover:bg-teal-500'
+                        }`}
+                      >
+                        {assoc.is_following ? 'Following' : 'Follow'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
 
-                  <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
-                    <Share2 className="w-3 h-3 md:w-4 md:h-4" />
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+              items.push(
+                <article
+                  key={post.id}
+                  onClick={() => navigate(`/posts/${post.id}`)}
+                  className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-400/40"
+                >
+                  <div className="p-3 md:p-4">
+                    <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-2 text-xs">
+                      <span className="px-2 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700">
+                        {selectedHub?.name}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full font-medium text-xs ${
+                        post.post_type === 'link'  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                        post.post_type === 'image' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' :
+                        post.is_expert_post        ? 'bg-teal-200 text-teal-800' : 'bg-cyan-100 text-cyan-700'
+                      }`}>
+                        {post.post_type === 'link'  ? '🔗 Link' :
+                         post.post_type === 'image' ? '🖼️ Image' :
+                         post.is_expert_post ? '⭐ Expert' : '👤 Rookie'} · {
+                          post.post_type === 'question'      ? '❓' :
+                          post.post_type === 'guide'         ? '📚' :
+                          post.post_type === 'success_story' ? '🎉' :
+                          post.post_type === 'link'          ? '' :
+                          post.post_type === 'image'         ? '' : '💬'
+                        } {!['link','image'].includes(post.post_type) && post.post_type.replace('_', ' ')}
+                      </span>
+                      <span className="text-teal-600 flex items-center gap-1">
+                        by {post.author?.username || 'Anonymous'}
+                        {post.author_role && <RoleBadge role={post.author_role as any} size="sm" />}
+                        {post.is_expert_post && !post.author_role && <RoleBadge role="mentor" size="sm" />}
+                      </span>
+                      <span className="text-teal-400 hidden md:inline">·</span>
+                      <span className="text-teal-400 hidden md:inline">
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 line-clamp-2 hover:text-teal-600 dark:hover:text-teal-300 cursor-pointer transition-colors">
+                      {post.title}
+                      {(post as any).is_edited && (
+                        <span className="ml-2 text-xs font-normal text-teal-600 italic">(edited)</span>
+                      )}
+                    </h2>
+
+                    {post.post_type !== 'link' && (
+                      <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3 mb-3">{post.content}</p>
+                    )}
+                    {post.post_type === 'link' && post.link_url && (
+                      <LinkPreviewCard url={post.link_url} title={post.content || undefined} />
+                    )}
+                    {post.post_type === 'image' && post.image_url && (
+                      <div className="mt-2 mb-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-72">
+                        <img src={post.image_url} alt={post.title} className="w-full object-cover max-h-72" onClick={e => e.stopPropagation()} />
+                      </div>
+                    )}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="mb-3">
+                        <ProgramTags programIds={post.tags} maxDisplay={3} className="text-xs" />
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-1 md:gap-2">
+                      <button
+                        onClick={e => { e.stopPropagation(); handleVote(post.id, 'upvote') }}
+                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'upvote' ? 'bg-teal-200 text-teal-700' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'}`}
+                      >
+                        <ThumbsUp className="w-3 h-3 md:w-4 md:h-4" />{post.upvotes}
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleVote(post.id, 'downvote') }}
+                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'downvote' ? 'bg-cyan-200 text-cyan-700' : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'}`}
+                      >
+                        <ThumbsDown className="w-3 h-3 md:w-4 md:h-4" />
+                      </button>
+                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
+                        <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />{post.comment_count}
+                      </button>
+                      {(post as any).view_count > 0 && (
+                        <div className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-teal-600">
+                          <Eye className="w-3 h-3 md:w-4 md:h-4" />{(post as any).view_count}
+                        </div>
+                      )}
+                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
+                        <Share2 className="w-3 h-3 md:w-4 md:h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })
+
+            return items
+          })()}
 
           {/* Create Post Form - Now Below Posts */}
           {showCreatePost && selectedHub && (
@@ -768,6 +928,45 @@ export default function HubFeedV2() {
         {/* Right Sidebar - Only visible on large screens */}
         {selectedHub && (
           <aside className="hidden lg:block h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto custom-scrollbar space-y-4">
+            {/* Associates Sidebar Widget — shown above societies */}
+            {associates.length > 0 && (
+              <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="w-4 h-4 text-teal-500" />
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Associates</h3>
+                </div>
+                <div className="space-y-3">
+                  {associates.slice(0, 3).map(assoc => (
+                    <div
+                      key={assoc.id}
+                      onClick={() => navigate(`/hubs/${selectedHub.id}/associates/${assoc.id}`)}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-teal-50 dark:hover:bg-slate-800/60 cursor-pointer transition-all"
+                    >
+                      {assoc.profile_image ? (
+                        <img src={assoc.profile_image} alt={assoc.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          {assoc.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-1">{assoc.name}</div>
+                        <div className="text-xs text-teal-600">{assoc.associate_type.charAt(0) + assoc.associate_type.slice(1).toLowerCase()}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {associates.length > 3 && (
+                  <button
+                    onClick={() => setHubTab('associates')}
+                    className="w-full mt-3 text-xs text-center text-teal-600 hover:text-teal-700 transition-colors"
+                  >
+                    View all {associates.length} associates →
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Related Professional Societies */}
             <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-4">
               <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">

@@ -1,315 +1,282 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { useToast } from '../hooks/useToast';
 import { 
-  GraduationCap, 
-  Building2, 
   Users, 
+  ShieldCheck,
+  Flag,
+  FileText,
   Activity,
-  ArrowRight,
-  Plus,
-  BookOpen,
-  School,
-  MapPin,
-  Calendar,
-  Mail
 } from 'lucide-react';
-import api, { type User } from '../../../services/api';
-
-interface DashboardStats {
-  totalCourses: number;
-  totalUniversities: number;
-  totalUsers: number;
-}
-
-const ROLE_COLORS: Record<string, string> = {
-  novice: 'bg-gray-500/20 text-gray-400',
-  contributor: 'bg-blue-500/20 text-blue-400',
-  expert: 'bg-purple-500/20 text-purple-400',
-};
+import api from '../../../services/api';
+import type { DashboardStats, RecentStudentPost, RecentAssociatePost, HubHealth } from '../../../services/api';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalCourses: 0,
-    totalUniversities: 0,
-    totalUsers: 0,
-  });
-  const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentStudentPosts, setRecentStudentPosts] = useState<RecentStudentPost[]>([]);
+  const [recentAssociatePosts, setRecentAssociatePosts] = useState<RecentAssociatePost[]>([]);
+  const [hubHealth, setHubHealth] = useState<HubHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
 
+  const refreshFeeds = async () => {
+    try {
+      const [studentPosts, associatePosts] = await Promise.all([
+        api.adminHub.getRecentStudentPosts(),
+        api.adminHub.getRecentAssociatePosts(),
+      ]);
+      setRecentStudentPosts(studentPosts);
+      setRecentAssociatePosts(associatePosts);
+    } catch {
+      // Silent fail for auto-refresh
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
+    const loadDashboard = async () => {
       try {
-        const [coursesRes, universitiesRes, usersRes] = await Promise.all([
-          api.admin.listCourses(),
-          api.admin.listUniversities(),
-          api.admin.listUsers(),
+        const [statsData, studentPosts, associatePosts, hubData] = await Promise.all([
+          api.adminHub.getDashboardStats(),
+          api.adminHub.getRecentStudentPosts(),
+          api.adminHub.getRecentAssociatePosts(),
+          api.adminHub.getHubHealth(),
         ]);
-        
-        setStats({
-          totalCourses: coursesRes.count ?? coursesRes.results?.length ?? 0,
-          totalUniversities: universitiesRes.count ?? universitiesRes.results?.length ?? 0,
-          totalUsers: usersRes.count ?? usersRes.results?.length ?? 0,
-        });
-        setRecentUsers(usersRes.results.slice(0, 8));
+        setStats(statsData);
+        setRecentStudentPosts(studentPosts);
+        setRecentAssociatePosts(associatePosts);
+        setHubHealth(hubData);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
-        addToast('Failed to load dashboard stats', 'error');
+        console.error('Failed to load dashboard:', error);
+        addToast('Failed to load dashboard data', 'error');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    loadDashboard();
+
+    // Auto-refresh feeds every 60 seconds
+    const interval = setInterval(refreshFeeds, 60000);
+    return () => clearInterval(interval);
   }, [addToast]);
 
-  const navCards = [
-    { 
-      title: 'Courses',
-      description: 'Manage courses, programs, and academic offerings',
-      icon: GraduationCap,
-      count: stats.totalCourses,
-      color: 'from-teal-500 to-teal-600',
-      bgColor: 'bg-teal-500/20',
-      iconColor: 'text-teal-400',
-      link: '/admin/courses',
-      actions: [
-        { label: 'View All', href: '/admin/courses' },
-        { label: 'Add New', href: '/admin/courses', state: 'openModal' },
-      ]
-    },
-    { 
-      title: 'Universities',
-      description: 'Manage universities and institutions',
-      icon: Building2,
-      count: stats.totalUniversities,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-500/20',
-      iconColor: 'text-purple-400',
-      link: '/admin/universities',
-      actions: [
-        { label: 'View All', href: '/admin/universities' },
-        { label: 'Add New', href: '/admin/universities', state: 'openModal' },
-      ]
-    },
-    { 
-      title: 'Users',
-      description: 'Manage users and their roles',
-      icon: Users,
-      count: stats.totalUsers,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-500/20',
-      iconColor: 'text-blue-400',
-      link: '/admin/users',
-      actions: [
-        { label: 'View All', href: '/admin/users' },
-        { label: 'Add User', href: '/admin/users', state: 'openModal' },
-      ]
-    },
-  ];
+  const getStatCardColor = (key: keyof DashboardStats) => {
+    if (key === 'open_reports') {
+      return stats?.open_reports === 0 
+        ? 'bg-teal-500/20 border-teal-500/40 text-teal-400'
+        : stats.open_reports > 5
+        ? 'bg-red-500/20 border-red-500/40 text-red-400'
+        : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
+    }
+    if (key === 'pending_applications') {
+      return stats?.pending_applications === 0
+        ? 'bg-slate-500/20 border-slate-500/40 text-slate-400'
+        : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
+    }
+    return 'bg-teal-500/20 border-teal-500/40 text-teal-400';
+  };
 
-  const quickActions = [
-    { 
-      label: 'Add Course', 
-      icon: BookOpen,
-      href: '/admin/courses',
-      color: 'teal'
-    },
-    { 
-      label: 'Add University', 
-      icon: School,
-      href: '/admin/universities',
-      color: 'purple'
-    },
-    { 
-      label: 'Add User', 
-      icon: Plus,
-      href: '/admin/users',
-      color: 'blue'
-    },
-  ];
+  const getTrafficLightColor = (light: 'green' | 'amber' | 'red') => {
+    switch (light) {
+      case 'green': return 'bg-green-500';
+      case 'amber': return 'bg-amber-500';
+      case 'red': return 'bg-red-500';
+    }
+  };
 
   return (
     <AdminLayout>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-        <p className="text-slate-400">Manage your EduPath content from one place</p>
+        <p className="text-slate-400">Platform overview and moderation hub</p>
       </div>
 
-      {/* Quick Actions Row */}
-      <div className="flex flex-wrap gap-3 mb-8">
-        {quickActions.map((action) => {
-          const Icon = action.icon;
-          const colorClasses = {
-            teal: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30',
-            purple: 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
-            blue: 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30',
-          }[action.color];
-          
-          return (
-            <a
-              key={action.label}
-              href={action.href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${colorClasses}`}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm font-medium">{action.label}</span>
-            </a>
-          );
-        })}
-      </div>
-
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {navCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.title}
-              className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-all"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 ${card.bgColor} rounded-xl flex items-center justify-center`}>
-                  <Icon className={`w-6 h-6 ${card.iconColor}`} />
-                </div>
-                <span className="text-3xl font-bold text-white">
-                  {loading ? '-' : card.count.toLocaleString()}
-                </span>
-              </div>
-              
-              <h2 className="text-lg font-semibold text-white mb-2">{card.title}</h2>
-              <p className="text-sm text-slate-400 mb-4">{card.description}</p>
-              
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-800">
-                <a
-                  href={card.link}
-                  className="flex items-center gap-1 text-sm font-medium text-teal-400 hover:text-teal-300 transition-colors"
-                >
-                  Manage
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </a>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Recent Users */}
-      <div className="mb-8 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-white">Recent Users</h2>
-          </div>
-          <a
-            href="/admin/users"
-            className="flex items-center gap-1 text-sm text-teal-400 hover:text-teal-300 transition-colors"
-          >
-            View all
-            <ArrowRight className="w-4 h-4" />
-          </a>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
         </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 p-8 text-slate-400">
-            <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
-            <span>Loading users…</span>
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard
+              title="Active Students"
+              value={stats?.total_students ?? 0}
+              icon={Users}
+              color="bg-blue-500/20 text-blue-400 border-blue-500/40"
+            />
+            <StatCard
+              title="Verified Associates"
+              value={stats?.verified_associates ?? 0}
+              icon={ShieldCheck}
+              color="bg-violet-500/20 text-violet-400 border-violet-500/40"
+            />
+            <StatCard
+              title="Open Reports"
+              value={stats?.open_reports ?? 0}
+              icon={Flag}
+              color={getStatCardColor('open_reports')}
+            />
+            <StatCard
+              title="Pending Applications"
+              value={stats?.pending_applications ?? 0}
+              icon={FileText}
+              color={getStatCardColor('pending_applications')}
+            />
           </div>
-        ) : recentUsers.length === 0 ? (
-          <p className="p-8 text-center text-slate-500">No users yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-800/40">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Joined</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {recentUsers.map((user) => {
-                  const joined = user.date_joined ?? user.created_at;
-                  const initials = (user.first_name?.[0] ?? user.username[0]).toUpperCase();
-                  return (
-                    <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-                            <span className="text-sm font-semibold text-white">{initials}</span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-white">{user.username}</p>
-                            {(user.first_name || user.last_name) && (
-                              <p className="text-xs text-slate-500">{user.first_name} {user.last_name}</p>
-                            )}
+
+          {/* Live Feeds */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Student Posts Feed */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-teal-400" />
+                  <h2 className="text-lg font-semibold text-white">Recent Student Posts</h2>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <Activity className="w-3 h-3" />
+                  <span>Auto-refreshes</span>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-800/50 max-h-96 overflow-y-auto">
+                {recentStudentPosts.length === 0 ? (
+                  <p className="p-6 text-center text-slate-500">No recent posts</p>
+                ) : (
+                  recentStudentPosts.map((post) => (
+                    <div key={post.id} className="p-4 hover:bg-slate-800/40 transition-colors">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white line-clamp-1">{post.title}</p>
+                          <p className="text-xs text-slate-400 line-clamp-2 mt-1">{post.content}</p>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                            <span>{post.author}</span>
+                            <span>·</span>
+                            <span>{post.hub}</span>
+                            <span>·</span>
+                            <span>{post.upvotes} upvotes</span>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="flex items-center gap-1 text-sm text-slate-300">
-                          <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          {user.email}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="flex items-center gap-1 text-sm text-slate-400">
-                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          {user.location || <span className="text-slate-600">—</span>}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${ROLE_COLORS[user.role] ?? 'bg-slate-700 text-slate-300'}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="flex items-center gap-1 text-sm text-slate-400">
-                          <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          {new Date(joined).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                        <button
+                          onClick={() => navigate(`/admin/hubs/moderate?post=${post.id}`)}
+                          className="shrink-0 px-3 py-1.5 rounded-lg bg-teal-500/20 text-teal-400 text-xs font-medium hover:bg-teal-500/30 transition-colors"
+                        >
+                          Moderate
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
 
-      {/* System Status */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-5 h-5 text-teal-400" />
-          <h2 className="text-lg font-semibold text-white">System Status</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
-            <span className="text-slate-400">API Status</span>
-            <span className="flex items-center gap-2 text-green-400">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Operational
-            </span>
+            {/* Associate Posts Feed */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-violet-400" />
+                  <h2 className="text-lg font-semibold text-white">Recent Associate Posts</h2>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <Activity className="w-3 h-3" />
+                  <span>Auto-refreshes</span>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-800/50 max-h-96 overflow-y-auto">
+                {recentAssociatePosts.length === 0 ? (
+                  <p className="p-6 text-center text-slate-500">No recent posts</p>
+                ) : (
+                  recentAssociatePosts.map((post) => (
+                    <div key={post.id} className="p-4 hover:bg-slate-800/40 transition-colors">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white">{post.associate}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              post.associate_type === 'MENTOR' ? 'bg-violet-500/20 text-violet-400' :
+                              post.associate_type === 'SOCIETY' ? 'bg-blue-500/20 text-blue-400' :
+                              'bg-amber-500/20 text-amber-400'
+                            }`}>
+                              {post.associate_type}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 line-clamp-2 mt-1">{post.content}</p>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                            <span>{post.hub}</span>
+                            <span>·</span>
+                            <span>{post.upvotes} upvotes</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/admin/hubs/moderate?post=${post.id}`)}
+                          className="shrink-0 px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-400 text-xs font-medium hover:bg-violet-500/30 transition-colors"
+                        >
+                          Moderate
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
-            <span className="text-slate-400">Database</span>
-            <span className="flex items-center gap-2 text-green-400">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Connected
-            </span>
+
+          {/* Hub Health Indicators */}
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-4">Hub Health</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {hubHealth.map((hub) => (
+                <div
+                  key={hub.id}
+                  onClick={() => navigate(`/admin/hubs/moderate?hub=${hub.id}`)}
+                  className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 cursor-pointer hover:border-teal-500/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-white line-clamp-1">{hub.name}</h3>
+                    <div className={`w-2.5 h-2.5 rounded-full ${getTrafficLightColor(hub.traffic_light)}`} />
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Student posts (7d)</span>
+                      <span className="text-white">{hub.student_posts_7d}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Associate posts (7d)</span>
+                      <span className="text-white">{hub.associate_posts_7d}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Open reports</span>
+                      <span className={hub.open_reports > 0 ? 'text-amber-400' : 'text-white'}>
+                        {hub.open_reports}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
-            <span className="text-slate-400">Last Sync</span>
-            <span className="text-slate-300">Just now</span>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </AdminLayout>
+  );
+}
+
+function StatCard({ title, value, icon: Icon, color }: {
+  title: string;
+  value: number;
+  icon: any;
+  color: string;
+}) {
+  return (
+    <div className={`border rounded-xl p-5 ${color}`}>
+      <div className="flex items-start justify-between mb-3">
+        <Icon className="w-6 h-6" />
+        <span className="text-3xl font-bold">{value.toLocaleString()}</span>
+      </div>
+      <p className="text-sm font-medium opacity-90">{title}</p>
+    </div>
   );
 }

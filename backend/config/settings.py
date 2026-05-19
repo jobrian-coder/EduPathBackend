@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.societies',
     'apps.chatbot',
     'apps.advisor',
+    'apps.associates',
 ]
 
 MIDDLEWARE = [

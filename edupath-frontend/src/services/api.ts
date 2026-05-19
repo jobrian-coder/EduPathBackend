@@ -909,6 +909,246 @@ export const adminAPI = {
 };
 
 
+// ============================================
+// ASSOCIATES API
+// ============================================
+
+export interface Associate {
+  id: number;
+  name: string;
+  associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
+  bio: string;
+  profile_image: string | null;
+  website: string | null;
+  location: string | null;
+  follower_count: number;
+  is_following: boolean;
+  created_at: string;
+}
+
+export interface AssociatePost {
+  id: number;
+  post_type: 'UPDATE' | 'OPPORTUNITY' | 'EVENT' | 'RESOURCE';
+  title: string | null;
+  body: string;
+  image_url: string | null;
+  external_url: string | null;
+  cta_label: string | null;
+  deadline: string | null;
+  upvotes: number;
+  created_at: string;
+  associate_name: string;
+  associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
+  associate_image: string | null;
+}
+
+export const associatesAPI = {
+  apply: (data: {
+    name: string;
+    associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
+    bio: string;
+    website?: string;
+    location?: string;
+    contact_email: string;
+    hub_id: string;
+  }) =>
+    apiRequest<{ message: string }>('/associates/apply/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      includeAuth: false,
+    }),
+
+  listForHub: (hubId: string) =>
+    apiRequest<Associate[]>(`/associates/hubs/${hubId}/associates/`, { includeAuth: false }),
+
+  getDetails: (associateId: number) =>
+    apiRequest<Associate>(`/associates/${associateId}/`, { includeAuth: true }),
+
+  listPosts: (associateId: number) =>
+    apiRequest<AssociatePost[]>(`/associates/${associateId}/posts/`, { includeAuth: false }),
+
+  report: (associatePostId: number, reason: string) =>
+    apiRequest<{ message: string }>('/associates/reports/', {
+      method: 'POST',
+      body: JSON.stringify({ associate_post_id: associatePostId, reason }),
+    }),
+
+  follow: (associateId: number) =>
+    apiRequest<{ message: string }>(`/associates/${associateId}/follow/`, {
+      method: 'POST',
+    }),
+
+  unfollow: (associateId: number) =>
+    apiRequest<{ message: string }>(`/associates/${associateId}/unfollow/`, {
+      method: 'DELETE',
+    }),
+
+  listFollowed: () =>
+    apiRequest<Associate[]>('/associates/followed/', { includeAuth: true }),
+};
+
+// ============================================
+// ADMIN HUB MODERATION API
+// ============================================
+
+export interface DashboardStats {
+  total_students: number;
+  verified_associates: number;
+  open_reports: number;
+  pending_applications: number;
+}
+
+export interface RecentStudentPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  hub: string;
+  created_at: string;
+  upvotes: number;
+}
+
+export interface RecentAssociatePost {
+  id: number;
+  content: string;
+  associate: string;
+  associate_type: string;
+  hub: string;
+  created_at: string;
+  upvotes: number;
+}
+
+export interface HubHealth {
+  id: string;
+  name: string;
+  category: string;
+  student_posts_7d: number;
+  associate_posts_7d: number;
+  open_reports: number;
+  traffic_light: 'green' | 'amber' | 'red';
+}
+
+export interface HubStudentPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  upvotes: number;
+  downvotes: number;
+  report_count: number;
+  created_at: string;
+}
+
+export interface HubAssociatePost {
+  id: number;
+  content: string;
+  image_url: string | null;
+  external_url: string | null;
+  associate: string;
+  associate_id: number;
+  associate_type: string;
+  upvotes: number;
+  report_count: number;
+  is_visible: boolean;
+  created_at: string;
+}
+
+export interface HubReportGroup {
+  post_id: number;
+  post_content: string;
+  associate: string;
+  associate_type: string;
+  reports: {
+    id: number;
+    reporter: string;
+    reason: string;
+    created_at: string;
+  }[];
+  report_count: number;
+}
+
+export const adminHubAPI = {
+  getDashboardStats: () =>
+    apiRequest<DashboardStats>('/associates/admin/dashboard-stats/'),
+
+  getRecentStudentPosts: () =>
+    apiRequest<RecentStudentPost[]>('/associates/admin/recent-student-posts/'),
+
+  getRecentAssociatePosts: () =>
+    apiRequest<RecentAssociatePost[]>('/associates/admin/recent-associate-posts/'),
+
+  getHubHealth: () =>
+    apiRequest<HubHealth[]>('/associates/admin/hub-health/'),
+
+  getHubStudentPosts: (hubId: string) =>
+    apiRequest<HubStudentPost[]>(`/associates/admin/hubs/${hubId}/student-posts/`),
+
+  getHubAssociatePosts: (hubId: string) =>
+    apiRequest<HubAssociatePost[]>(`/associates/admin/hubs/${hubId}/associate-posts/`),
+
+  getHubReports: (hubId: string) =>
+    apiRequest<HubReportGroup[]>(`/associates/admin/hubs/${hubId}/reports/`),
+
+  hideStudentPost: (postId: string) =>
+    apiRequest<{ message: string }>(`/associates/admin/posts/${postId}/hide/`, { method: 'POST' }),
+
+  warnStudent: (postId: string) =>
+    apiRequest<{ message: string }>(`/associates/admin/posts/${postId}/warn/`, { method: 'POST' }),
+
+  dismissStudentPostReports: (postId: string) =>
+    apiRequest<{ message: string }>(`/associates/admin/posts/${postId}/dismiss-reports/`, { method: 'POST' }),
+
+  hideAssociatePost: (postId: number) =>
+    apiRequest<{ message: string }>(`/associates/admin/associate-posts/${postId}/hide/`, { method: 'POST' }),
+
+  strikeAssociate: (postId: number) =>
+    apiRequest<{ message: string; strike_count: number }>(`/associates/admin/associate-posts/${postId}/strike/`, { method: 'POST' }),
+
+  dismissAssociatePostReports: (postId: number) =>
+    apiRequest<{ message: string }>(`/associates/admin/associate-posts/${postId}/dismiss-reports/`, { method: 'POST' }),
+};
+
+// ============================================
+// ADMIN ASSOCIATE APPLICATIONS API
+// ============================================
+
+export interface AssociateApplication {
+  id: number;
+  name: string;
+  associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
+  hub: string;
+  hub_id: string;
+  contact_email: string;
+  bio: string;
+  website: string | null;
+  location: string | null;
+  profile_image: string | null;
+  application_status: 'PENDING' | 'AWAITING_RESPONSE' | 'APPROVED' | 'REJECTED';
+  rejection_reason: string | null;
+  admin_notes: string | null;
+  created_at: string;
+}
+
+export const adminApplicationsAPI = {
+  listApplications: (status: 'pending' | 'awaiting' | 'history' = 'pending') =>
+    apiRequest<AssociateApplication[]>(`/associates/admin/applications/?status=${status}`),
+
+  approveApplication: (associateId: number) =>
+    apiRequest<{ message: string }>(`/associates/admin/applications/${associateId}/approve/`, { method: 'POST' }),
+
+  rejectApplication: (associateId: number, reason: string) =>
+    apiRequest<{ message: string }>(`/associates/admin/applications/${associateId}/reject/`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  requestApplicationInfo: (associateId: number, question: string) =>
+    apiRequest<{ message: string }>(`/associates/admin/applications/${associateId}/request-info/`, {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    }),
+};
+
 export default {
   auth: authAPI,
   careers: careersAPI,
@@ -920,4 +1160,7 @@ export default {
   academic: academicAPI,
   advisor: advisorAPI,
   admin: adminAPI,
+  associates: associatesAPI,
+  adminHub: adminHubAPI,
+  adminApplications: adminApplicationsAPI,
 };

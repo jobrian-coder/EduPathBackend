@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal, User, Search } from 'lucide-react'
+import { GraduationCap, Home, Users, Bookmark, BookOpen, Moon, Sun, MoreHorizontal, User, Search, Building2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import eduguideIcon from '../../assets/eduguide.png'
@@ -81,6 +81,9 @@ export function Navbar() {
           <NavLink to="/hubs" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
             <Users size={18}/> Hubs
           </NavLink>
+          <NavLink to="/associates" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
+            <Building2 size={18}/> Associates
+          </NavLink>
           <NavLink to="/advisor" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
              <img src={eduguideIcon} alt="EduGuide" className="w-[18px] h-[18px] flex-shrink-0" />
             <span className="font-medium">EduGuide</span>
@@ -149,6 +152,9 @@ export function Navbar() {
                 </NavLink>
                 <NavLink to="/hubs" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
                   Hubs
+                </NavLink>
+                <NavLink to="/associates" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
+                  Associates
                 </NavLink>
                 <NavLink to="/advisor" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md flex items-center gap-2 text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
                   <img src={eduguideIcon} alt="EduGuide" className="w-[18px] h-[18px] flex-shrink-0" />
