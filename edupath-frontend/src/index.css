@@ -7,20 +7,28 @@
   --brand-teal-600: #0d9488; /* teal-600 */
   --brand-yellow: #facc15; /* yellow-400 */
   
-  /* Light theme tokens (DAY) */
-  --color-primary: #0f766e; /* teal-700 */
-  --color-primary-hover: #0d9488; /* teal-600 */
-  --color-secondary: #0ea5e9; /* sky-500 */
-  --color-accent: #facc15; /* yellow-400 */
-  --color-background: #f8fafc; /* slate-50 - bright light blue-gray */
+  /* Light theme tokens (DAY) - Enhanced for consistency */
+  --color-primary: #0d9488; /* teal-600 */
+  --color-primary-hover: #0f766e; /* teal-700 */
+  --color-secondary: #06b6d4; /* cyan-500 */
+  --color-accent: #f59e0b; /* amber-500 */
+  --color-background: #f0fdfa; /* teal-50 - subtle teal tint */
   --color-surface: #ffffff; /* white - pure white cards */
-  --color-border: #e2e8f0; /* slate-200 - subtle borders */
-  --color-text-primary: #0f172a; /* slate-900 - almost black */
-  --color-text-muted: #475569; /* slate-600 - medium gray */
-  --color-info: #38bdf8; /* sky-400 */
+  --color-surface-alt: #f8fafc; /* slate-50 - alternate surface */
+  --color-border: #cbd5e1; /* slate-300 - visible borders */
+  --color-border-subtle: #e2e8f0; /* slate-200 - subtle borders */
+  --color-text-primary: #0f172a; /* slate-900 - near black */
+  --color-text-secondary: #1e293b; /* slate-800 - dark gray */
+  --color-text-muted: #64748b; /* slate-500 - medium gray */
+  --color-text-subtle: #94a3b8; /* slate-400 - subtle text */
+  --color-info: #0ea5e9; /* sky-500 */
   --color-success: #16a34a; /* green-600 */
   --color-warning: #f59e0b; /* amber-500 */
   --color-danger: #dc2626; /* red-600 */
+  --gradient-primary: linear-gradient(135deg, #0d9488 0%, #06b6d4 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 /* Dark theme tokens (NIGHT) */
@@ -31,13 +39,21 @@
   --color-accent: #fbbf24; /* yellow-400 */
   --color-background: #0f172a; /* slate-900 - deep night blue */
   --color-surface: #1e293b; /* slate-800 - dark card surface */
-  --color-border: #334155; /* slate-700 - visible dark borders */
+  --color-surface-alt: #334155; /* slate-700 - alternate surface */
+  --color-border: #475569; /* slate-600 - visible dark borders */
+  --color-border-subtle: #334155; /* slate-700 - subtle borders */
   --color-text-primary: #f1f5f9; /* slate-100 - bright text */
+  --color-text-secondary: #e2e8f0; /* slate-200 - secondary text */
   --color-text-muted: #94a3b8; /* slate-400 - muted text */
+  --color-text-subtle: #64748b; /* slate-500 - subtle text */
   --color-info: #60a5fa; /* blue-400 */
   --color-success: #22c55e; /* green-500 */
   --color-warning: #fb923c; /* orange-400 */
   --color-danger: #f87171; /* red-400 */
+  --gradient-primary: linear-gradient(135deg, #14b8a6 0%, #38bdf8 100%);
+  --gradient-surface: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
 }
 
 html, body, #root {
@@ -83,13 +99,30 @@ body {
     color: var(--color-text-primary);
   }
   .theme-surface { background: var(--color-surface); }
+  .theme-surface-alt { background: var(--color-surface-alt); }
   .theme-border { border-color: var(--color-border); }
+  .theme-border-subtle { border-color: var(--color-border-subtle); }
   .text-muted { color: var(--color-text-muted); }
+  .text-secondary { color: var(--color-text-secondary); }
+  .text-subtle { color: var(--color-text-subtle); }
+  .bg-primary { background: var(--color-primary); }
+  .bg-primary-hover { background: var(--color-primary-hover); }
+  .bg-secondary { background: var(--color-secondary); }
+  .bg-surface { background: var(--color-surface); }
+  .bg-surface-alt { background: var(--color-surface-alt); }
   .btn-primary {
     background: var(--color-primary);
     color: #fff;
   }
   .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-secondary {
+    background: var(--color-secondary);
+    color: #fff;
+  }
+  .card-shadow { box-shadow: var(--shadow-card); }
+  .card-shadow-hover { box-shadow: var(--shadow-card-hover); }
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-surface { background: var(--gradient-surface); }
   .focus-secondary {
     outline: none;
     box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-secondary);
@@ -155,5 +188,62 @@ html.dark .text-slate-600:not([class*="dark:text-"]) {
 html.dark .text-gray-500:not([class*="dark:text-"]),
 html.dark .text-slate-500:not([class*="dark:text-"]) {
   color: #94a3b8; /* slate-400 */
+}
+
+/* Light-mode text visibility fixes
+   Components that use dark:text-white/slate-100 patterns often have base text
+   that is too light (white/slate-100/200) making them invisible on white backgrounds.
+   These rules ensure text stays dark and readable in light mode. */
+/* Note: .text-white is NOT overridden globally — it applies to buttons/gradients intentionally */
+
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200 {
+  color: #1e293b; /* slate-800 */
+}
+
+html:not(.dark) .text-slate-300 {
+  color: #334155; /* slate-700 */
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #64748b; /* slate-500 */
+}
+
+/* Ensure bg-slate-900 elements render properly in light mode */
+html:not(.dark) .bg-slate-900 {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .bg-slate-900\/40 {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+html:not(.dark) .bg-slate-900\/70 {
+  background-color: rgba(255, 255, 255, 0.98);
+}
+
+html:not(.dark) .bg-slate-800 {
+  background-color: #f8fafc; /* slate-50 */
+}
+
+html:not(.dark) .bg-slate-800\/50 {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+
+html:not(.dark) .bg-slate-800\/60 {
+  background-color: rgba(240, 253, 250, 0.6); /* teal-50-ish */
+}
+
+/* Border fixes for light mode */
+html:not(.dark) .border-slate-700 {
+  border-color: #e2e8f0; /* slate-200 */
+}
+
+html:not(.dark) .border-slate-800 {
+  border-color: #e2e8f0; /* slate-200 */
 }
 

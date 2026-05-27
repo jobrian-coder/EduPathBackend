@@ -1,14 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import api from '../../../services/api'
 import edupathIcon from '../../../assets/login/edupathicong.png'
 import eduBackground from '../../../assets/login/eduimg.png'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login'|'signup'>('login')
+  const [showBack, setShowBack] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowBack(true), 800)
+    return () => clearTimeout(timer)
+  }, [])
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [isAssociateMode, setIsAssociateMode] = useState(false)
   
 
 
@@ -51,7 +58,8 @@ export default function AuthPage() {
       const { user, token } = await api.auth.login({ email: identifier, password })
       localStorage.setItem('edupath.auth.token', token)
       localStorage.setItem('edupath.user', JSON.stringify(user))
-      window.location.href = '/'
+      localStorage.setItem('edupath.associate.mode', isAssociateMode ? 'true' : 'false')
+      window.location.href = isAssociateMode ? '/associates' : '/directory'
     } catch (err: any) {
       setErrors({ identifier: 'Invalid credentials', password: 'Invalid credentials' })
       alert(err?.message || 'Login failed')
@@ -78,7 +86,8 @@ export default function AuthPage() {
       })
       localStorage.setItem('edupath.auth.token', token)
       localStorage.setItem('edupath.user', JSON.stringify(user))
-      window.location.href = '/'
+      localStorage.setItem('edupath.associate.mode', isAssociateMode ? 'true' : 'false')
+      window.location.href = isAssociateMode ? '/associates' : '/directory'
     } catch (err: any) {
       alert(err?.message || 'Signup failed')
     } finally {
@@ -96,6 +105,20 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex">
+      {/* Back to Landing */}
+      <div
+        className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-out ${
+          showBack ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3 pointer-events-none'
+        }`}
+      >
+        <Link
+          to="/"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-300 dark:hover:border-teal-600 shadow-sm hover:shadow-md transition-all text-sm font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Link>
+      </div>
       {/* Left Column - Login Form */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-12 lg:px-16 xl:px-20 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800">
         <div className="max-w-md mx-auto w-full">
@@ -113,6 +136,32 @@ export default function AuthPage() {
             </Link>
           </div>
 
+          {/* Mode Toggle */}
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => setIsAssociateMode(false)}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                !isAssociateMode
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAssociateMode(true)}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                isAssociateMode
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              Associate
+            </button>
+          </div>
+
           {/* Welcome Message */}
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -122,9 +171,13 @@ export default function AuthPage() {
 
           {/* Instructional Text */}
           <p className="text-gray-600 dark:text-slate-400 mb-8">
-            {mode === 'login' 
-              ? "Sign in to access your dashboard and continue your educational journey." 
-              : "Create your account to start exploring courses, universities, and career paths."
+            {isAssociateMode
+              ? (mode === 'login'
+                  ? "Sign in to manage your associate profile and connect with students."
+                  : "Create your associate account to share opportunities and mentor students.")
+              : (mode === 'login'
+                  ? "Sign in to access your dashboard and continue your educational journey."
+                  : "Create your account to start exploring courses, universities, and career paths.")
             }
           </p>
 

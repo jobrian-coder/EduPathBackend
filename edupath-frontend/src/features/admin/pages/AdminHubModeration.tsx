@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { useToast } from '../hooks/useToast';
@@ -12,10 +12,12 @@ import {
   CheckCircle,
   XCircle,
   ThumbsUp,
-  Calendar
+  Calendar,
+  ArrowUpDown
 } from 'lucide-react';
 import api from '../../../services/api';
 import type { HubStudentPost, HubAssociatePost, HubReportGroup } from '../../../services/api';
+import { downloadModerationPdf } from '../utils/adminPdf';
 
 type Tab = 'student_posts' | 'associate_posts' | 'reports';
 
@@ -33,6 +35,45 @@ export default function AdminHubModeration() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { addToast } = useToast();
+
+  // ── Sort & filter state ─────────────────────────────────────────────
+  const [studentSortBy, setStudentSortBy] = useState<'date' | 'upvotes' | 'reports'>('date');
+  const [studentSortDir, setStudentSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const [assocSortBy, setAssocSortBy] = useState<'date' | 'upvotes' | 'reports'>('date');
+  const [assocSortDir, setAssocSortDir] = useState<'asc' | 'desc'>('desc');
+  const [assocTypeFilter, setAssocTypeFilter] = useState<string>('');
+
+  const [reportsSortDir, setReportsSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const displayedStudentPosts = useMemo(() => {
+    return [...studentPosts].sort((a, b) => {
+      const aVal = studentSortBy === 'date' ? new Date(a.created_at).getTime()
+                 : studentSortBy === 'upvotes' ? a.upvotes : a.report_count;
+      const bVal = studentSortBy === 'date' ? new Date(b.created_at).getTime()
+                 : studentSortBy === 'upvotes' ? b.upvotes : b.report_count;
+      return studentSortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }, [studentPosts, studentSortBy, studentSortDir]);
+
+  const displayedAssocPosts = useMemo(() => {
+    let posts = [...associatePosts];
+    if (assocTypeFilter) posts = posts.filter(p => p.associate_type === assocTypeFilter);
+    posts.sort((a, b) => {
+      const aVal = assocSortBy === 'date' ? new Date(a.created_at).getTime()
+                 : assocSortBy === 'upvotes' ? a.upvotes : a.report_count;
+      const bVal = assocSortBy === 'date' ? new Date(b.created_at).getTime()
+                 : assocSortBy === 'upvotes' ? b.upvotes : b.report_count;
+      return assocSortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    return posts;
+  }, [associatePosts, assocSortBy, assocSortDir, assocTypeFilter]);
+
+  const displayedReports = useMemo(() => {
+    return [...reports].sort((a, b) =>
+      reportsSortDir === 'asc' ? a.report_count - b.report_count : b.report_count - a.report_count
+    );
+  }, [reports, reportsSortDir]);
 
   useEffect(() => {
     if (hubIdParam) {
@@ -164,8 +205,21 @@ export default function AdminHubModeration() {
     }
   };
 
+  const handleDownloadPdf = () => {
+    downloadModerationPdf({
+      hubName: hubName || 'Hub',
+      studentPosts,
+      associatePosts,
+      reports: reports.map((r) => ({
+        post_content: r.post_content,
+        associate: r.associate,
+        report_count: r.report_count,
+      })),
+    });
+  };
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
       <div className="mb-6">
         <button
@@ -239,10 +293,32 @@ export default function AdminHubModeration() {
             <>
               {tab === 'student_posts' && (
                 <div className="space-y-4">
-                  {studentPosts.length === 0 ? (
+                  {studentPosts.length > 0 && (
+                    <div className="flex flex-wrap gap-3 items-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                      <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-xs font-medium text-slate-400">Sort by:</span>
+                      <select
+                        value={studentSortBy}
+                        onChange={e => setStudentSortBy(e.target.value as typeof studentSortBy)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      >
+                        <option value="date">Date</option>
+                        <option value="upvotes">Upvotes</option>
+                        <option value="reports">Report Count</option>
+                      </select>
+                      <button
+                        onClick={() => setStudentSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors"
+                      >
+                        {studentSortDir === 'desc' ? '↓ Descending' : '↑ Ascending'}
+                      </button>
+                      <span className="ml-auto text-xs text-slate-500">{displayedStudentPosts.length} posts</span>
+                    </div>
+                  )}
+                  {displayedStudentPosts.length === 0 ? (
                     <p className="text-slate-500 text-center py-8">No student posts in this hub</p>
                   ) : (
-                    studentPosts.map((post) => (
+                    displayedStudentPosts.map((post) => (
                       <StudentPostCard
                         key={post.id}
                         post={post}
@@ -258,10 +334,45 @@ export default function AdminHubModeration() {
 
               {tab === 'associate_posts' && (
                 <div className="space-y-4">
-                  {associatePosts.length === 0 ? (
-                    <p className="text-slate-500 text-center py-8">No associate posts in this hub</p>
+                  {associatePosts.length > 0 && (
+                    <div className="flex flex-wrap gap-3 items-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                      <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-xs font-medium text-slate-400">Sort by:</span>
+                      <select
+                        value={assocSortBy}
+                        onChange={e => setAssocSortBy(e.target.value as typeof assocSortBy)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      >
+                        <option value="date">Date</option>
+                        <option value="upvotes">Upvotes</option>
+                        <option value="reports">Report Count</option>
+                      </select>
+                      <button
+                        onClick={() => setAssocSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors"
+                      >
+                        {assocSortDir === 'desc' ? '↓ Descending' : '↑ Ascending'}
+                      </button>
+                      <span className="text-xs font-medium text-slate-400 ml-1">Type:</span>
+                      <select
+                        value={assocTypeFilter}
+                        onChange={e => setAssocTypeFilter(e.target.value)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      >
+                        <option value="">All types</option>
+                        <option value="MENTOR">Mentor</option>
+                        <option value="SOCIETY">Society</option>
+                        <option value="SCHOOL">School</option>
+                      </select>
+                      <span className="ml-auto text-xs text-slate-500">{displayedAssocPosts.length} posts</span>
+                    </div>
+                  )}
+                  {displayedAssocPosts.length === 0 ? (
+                    <p className="text-slate-500 text-center py-8">
+                      {associatePosts.length === 0 ? 'No associate posts in this hub' : 'No posts match the current filter'}
+                    </p>
                   ) : (
-                    associatePosts.map((post) => (
+                    displayedAssocPosts.map((post) => (
                       <AssociatePostCard
                         key={post.id}
                         post={post}
@@ -277,10 +388,23 @@ export default function AdminHubModeration() {
 
               {tab === 'reports' && (
                 <div className="space-y-4">
-                  {reports.length === 0 ? (
+                  {reports.length > 0 && (
+                    <div className="flex flex-wrap gap-3 items-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                      <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-xs font-medium text-slate-400">Sort by report count:</span>
+                      <button
+                        onClick={() => setReportsSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors"
+                      >
+                        {reportsSortDir === 'desc' ? '↓ Most reported first' : '↑ Least reported first'}
+                      </button>
+                      <span className="ml-auto text-xs text-slate-500">{displayedReports.length} reports</span>
+                    </div>
+                  )}
+                  {displayedReports.length === 0 ? (
                     <p className="text-slate-500 text-center py-8">No open reports in this hub</p>
                   ) : (
-                    reports.map((group) => (
+                    displayedReports.map((group) => (
                       <ReportGroupCard
                         key={group.post_id}
                         group={group}

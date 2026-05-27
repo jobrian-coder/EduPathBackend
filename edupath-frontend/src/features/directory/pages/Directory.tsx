@@ -25,6 +25,8 @@ export default function Directory() {
   const [tuitionMax, setTuitionMax] = useState<number>(1000000)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [compare, setCompare] = useState<Record<string, boolean>>({})
+  const [courseSortBy, setCourseSortBy] = useState<'name' | 'fees_asc' | 'fees_desc' | 'institutions'>('name')
+  const [uniTypeFilter, setUniTypeFilter] = useState<'all' | 'Public' | 'Private'>('all')
 
   useEffect(() => {
     (async () => {
@@ -77,7 +79,7 @@ export default function Directory() {
   }
 
   const filteredGroups = useMemo(() => {
-    return categoryGroups.filter(g => {
+    const filtered = categoryGroups.filter(g => {
       if (universityName) {
         if (!g.programmes.some(p => p.institution === universityName)) return false
       }
@@ -92,12 +94,32 @@ export default function Directory() {
       if (fee != null && (fee < tuitionMin || fee > tuitionMax)) return false
       return true
     })
-  }, [categoryGroups, universityName, city, tuitionMin, tuitionMax, universities])
+    return [...filtered].sort((a, b) => {
+      if (courseSortBy === 'fees_asc') {
+        const af = a.avg_fees_ksh ?? Infinity; const bf = b.avg_fees_ksh ?? Infinity
+        return af - bf
+      }
+      if (courseSortBy === 'fees_desc') {
+        const af = a.avg_fees_ksh ?? -Infinity; const bf = b.avg_fees_ksh ?? -Infinity
+        return bf - af
+      }
+      if (courseSortBy === 'institutions') {
+        const ac = new Set(a.programmes.map(p => p.institution)).size
+        const bc = new Set(b.programmes.map(p => p.institution)).size
+        return bc - ac
+      }
+      return a.category.localeCompare(b.category)
+    })
+  }, [categoryGroups, universityName, city, tuitionMin, tuitionMax, universities, courseSortBy])
 
   const filteredUniversities = useMemo(() => {
     const nameMatch = (u: University) => (query ? u.name.toLowerCase().includes(query.toLowerCase()) : true)
-    return universities.filter(u => (city ? u.location === city : true) && nameMatch(u))
-  }, [universities, query, city])
+    return universities.filter(u =>
+      (city ? u.location === city : true) &&
+      nameMatch(u) &&
+      (uniTypeFilter !== 'all' ? u.type === uniTypeFilter : true)
+    )
+  }, [universities, query, city, uniTypeFilter])
 
   const selectedIds = useMemo(() => Object.keys(compare).filter(k => compare[k]), [compare])
 
@@ -123,6 +145,46 @@ export default function Directory() {
               <button onClick={()=>setView('courses')} className={`px-3 py-2 ${view==='courses'?'bg-teal-600 text-white':'bg-white dark:bg-slate-900/40 text-gray-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>Courses</button>
               <button onClick={()=>setView('universities')} className={`px-3 py-2 ${view==='universities'?'bg-teal-600 text-white':'bg-white dark:bg-slate-900/40 text-gray-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>Universities</button>
             </div>
+          </div>
+          {/* Sort & filter toolbar */}
+          <div className="px-3 pb-2.5 flex flex-wrap items-center gap-2 border-t border-gray-100 dark:border-slate-800 pt-2">
+            {view === 'courses' && (
+              <>
+                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Sort:</span>
+                <select
+                  value={courseSortBy}
+                  onChange={e => setCourseSortBy(e.target.value as typeof courseSortBy)}
+                  className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                >
+                  <option value="name">Name A–Z</option>
+                  <option value="fees_asc">Fees: Low to High</option>
+                  <option value="fees_desc">Fees: High to Low</option>
+                  <option value="institutions">Most Universities</option>
+                </select>
+                <span className="text-xs text-gray-400 dark:text-slate-500 ml-1">{filteredGroups.length} categories</span>
+              </>
+            )}
+            {view === 'universities' && (
+              <>
+                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Type:</span>
+                <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-700 text-xs">
+                  {(['all', 'Public', 'Private'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setUniTypeFilter(t)}
+                      className={`px-3 py-1 ${
+                        uniTypeFilter === t
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {t === 'all' ? 'All' : t}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400 dark:text-slate-500 ml-1">{filteredUniversities.length} universities</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -177,68 +239,72 @@ export default function Directory() {
                 {filteredGroups.map(g => (
                   <Card 
                     key={g.category} 
-                    className="hover:shadow-md transition-shadow cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    className="group relative border border-slate-200 dark:border-slate-800 border-l-4 border-l-teal-600 hover:border-l-cyan-500 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-900/50"
                     onClick={() => navigate(`/courses/${encodeURIComponent(g.category)}`)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-gray-900 dark:text-slate-100 group-hover:text-teal-500 dark:group-hover:text-teal-300 transition-colors text-lg flex-1">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col gap-3.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors text-lg flex-1 leading-snug">
                             {g.category}
                           </h3>
                           <button 
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); saveCourse(g); }} 
-                            className={`flex-shrink-0 p-2 rounded-full border transition-colors ${
+                            className={`flex-shrink-0 p-2 rounded-full border transition-all duration-200 ${
                               isBookmarked(`course:${g.category}`, 'course') 
-                                ? 'bg-teal-100 border-teal-600 text-teal-700' 
-                                : 'border-gray-300 hover:bg-teal-50 hover:text-teal-500 text-gray-400'
+                                ? 'bg-teal-50 border-teal-500 text-teal-700 shadow-sm' 
+                                : 'border-slate-200 dark:border-slate-700 hover:bg-teal-50 dark:hover:bg-slate-800 hover:text-teal-600 text-slate-400'
                             }`}
                             title={isBookmarked(`course:${g.category}`, 'course') ? "Saved" : "Save Course"}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isBookmarked(`course:${g.category}`, 'course') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={isBookmarked(`course:${g.category}`, 'course') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
                           </button>
                         </div>
                         
                         <div className="flex flex-wrap gap-2">
-                          <span className="text-xs font-semibold px-2 py-1 bg-cyan-50 text-cyan-700 rounded-full">{g.related_hub}</span>
+                          <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-50 dark:bg-cyan-950/30 text-cyan-800 dark:text-cyan-300 border border-cyan-100 dark:border-cyan-900/40 rounded-full">
+                            {g.related_hub}
+                          </span>
                           {g.avg_fees_ksh && (
-                             <span className="text-xs font-semibold px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">Ksh {g.avg_fees_ksh.toLocaleString()}</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40 rounded-full">
+                              Ksh {g.avg_fees_ksh.toLocaleString()}
+                            </span>
                           )}
                         </div>
 
                         {g.description && (
-                          <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                          <div className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                             {g.description}
                           </div>
                         )}
                         
-                        <div className="flex justify-start pt-2">
-                          <span className="text-sm font-medium text-teal-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        <div className="flex justify-start pt-1">
+                          <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1.5 transition-all duration-300">
                             View Details
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            <svg className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                           </span>
                         </div>
                       </div>
 
                       {g.programmes.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                           <div className="flex -space-x-2 overflow-hidden">
                             {Array.from(new Set(g.programmes.map(p => p.institution))).slice(0, 3).map((inst, idx) => (
                               <div 
                                 key={idx}
-                                className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-teal-50 flex items-center justify-center text-[8px] font-bold text-teal-700"
+                                className="flex h-6.5 w-6.5 rounded-full ring-2 ring-white dark:ring-slate-900 bg-teal-50 dark:bg-teal-900/40 items-center justify-center text-[8px] font-bold text-teal-700 dark:text-teal-300 shadow-sm"
                                 title={inst || 'Unknown'}
                               >
                                 {(inst || '??').substring(0, 2).toUpperCase()}
                               </div>
                             ))}
                             {new Set(g.programmes.map(p => p.institution)).size > 3 && (
-                              <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
+                              <div className="flex h-6.5 w-6.5 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-100 dark:bg-slate-800 items-center justify-center text-[8px] font-bold text-slate-600 dark:text-slate-300 shadow-sm">
                                 +{new Set(g.programmes.map(p => p.institution)).size - 3}
                               </div>
                             )}
                           </div>
-                          <span className="text-[10px] text-gray-400">
+                          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                             Available at {new Set(g.programmes.map(p => p.institution)).size} institutions
                           </span>
                         </div>
@@ -354,11 +420,63 @@ export default function Directory() {
               <div>
                 <div className="text-gray-600 mb-1 dark:text-slate-300">City</div>
                 <select value={city} onChange={e=>setCity(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:bg-slate-900/40 dark:text-slate-100 dark:border-slate-700">
-                  <option value="">All</option>
+                  <option value="">All cities</option>
                   {cities.map(c => (<option key={c} value={c}>{c}</option>))}
                 </select>
               </div>
-              <button onClick={()=>setDrawerOpen(false)} className="w-full px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white">Apply</button>
+              {view === 'courses' && (
+                <>
+                  <div>
+                    <div className="text-gray-600 mb-1 dark:text-slate-300">Min Fees (KSh)</div>
+                    <input
+                      type="number"
+                      value={tuitionMin || ''}
+                      onChange={e => setTuitionMin(Number(e.target.value) || 0)}
+                      placeholder="e.g. 50,000"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900/40 dark:text-slate-100 dark:border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-gray-600 mb-1 dark:text-slate-300">Max Fees (KSh)</div>
+                    <input
+                      type="number"
+                      value={tuitionMax === 1000000 ? '' : tuitionMax}
+                      onChange={e => setTuitionMax(Number(e.target.value) || 1000000)}
+                      placeholder="e.g. 300,000"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900/40 dark:text-slate-100 dark:border-slate-700"
+                    />
+                  </div>
+                </>
+              )}
+              {view === 'universities' && (
+                <div>
+                  <div className="text-gray-600 mb-1 dark:text-slate-300">University Type</div>
+                  <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-700 text-sm">
+                    {(['all', 'Public', 'Private'] as const).map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setUniTypeFilter(t)}
+                        className={`flex-1 py-2 ${
+                          uniTypeFilter === t
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200'
+                        }`}
+                      >
+                        {t === 'all' ? 'All' : t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setCity(''); setTuitionMin(0); setTuitionMax(1000000); setUniTypeFilter('all'); }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                >
+                  Reset
+                </button>
+                <button onClick={()=>setDrawerOpen(false)} className="flex-1 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white">Apply</button>
+              </div>
             </div>
           </div>
         )}

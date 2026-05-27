@@ -11,6 +11,7 @@ class Associate(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='associate_profile')
     name = models.CharField(max_length=255)
     associate_type = models.CharField(max_length=20, choices=ASSOCIATE_TYPES)
     bio = models.TextField()
@@ -63,6 +64,7 @@ class AssociatePost(models.Model):
     external_url = models.URLField(blank=True, null=True)
     cta_label = models.CharField(max_length=60, blank=True, null=True)  # Call-to-action button label
     deadline = models.DateField(blank=True, null=True)  # Application deadline or event date
+    tags = models.JSONField(default=list, blank=True, help_text='List of course tags from hashtags')
     upvotes = models.PositiveIntegerField(default=0)
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

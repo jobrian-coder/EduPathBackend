@@ -65,24 +65,24 @@ export default function CourseDetail() {
     <PageContainer title={course?.category || 'Course Detail'}>
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4">
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 border-b-0">
-              <div className="text-xl font-semibold text-white">
+          <Card className="border border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-teal-500/10 via-cyan-500/5 to-transparent dark:from-teal-950/20 dark:via-cyan-950/10 dark:to-transparent border-b border-slate-100 dark:border-slate-800/80 border-l-4 border-l-teal-600">
+              <div className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {course?.category ?? 'Loading…'}
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {loading && <div>Loading course…</div>}
-              {error && <div className="text-red-500">{error}</div>}
+            <CardContent className="space-y-4 p-6 text-sm">
+              {loading && <div className="text-slate-600 dark:text-slate-400">Loading course…</div>}
+              {error && <div className="text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 p-3 rounded-xl">{error}</div>}
               {course && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-200 px-3 py-1 text-xs font-semibold">
-                      <Award className="w-4 h-4" />
+                <div className="space-y-5">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border border-teal-100 dark:border-teal-900/40 px-3 py-1 text-xs font-semibold">
+                      <Award className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                       {course.related_hub}
                     </span>
                     {course.avg_fees_ksh != null && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200 px-3 py-1 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900/40 px-3 py-1 text-xs font-semibold">
                         <DollarSign className="w-4 h-4" />
                         Avg Ksh {course.avg_fees_ksh.toLocaleString()}
                       </span>
@@ -181,12 +181,12 @@ export default function CourseDetail() {
                                     </div>
                                   </div>
 
-                                  <div className="text-xs uppercase font-bold bg-slate-800 text-white px-3 py-1.5 rounded-md mb-2 inline-block">Subject Requirements</div>
+                                  <div className="text-[10px] uppercase font-bold tracking-wider bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200/60 dark:border-teal-900/50 px-2.5 py-1.5 rounded-md mb-2.5 inline-block">Subject Requirements</div>
                                   <div className="flex flex-wrap gap-2 text-xs">
                                     {[p.subject_requirement_1, p.subject_requirement_2, p.subject_requirement_3, p.subject_requirement_4]
                                       .filter(Boolean)
                                       .map((req, i) => (
-                                        <span key={i} className="px-2 py-1 bg-slate-100 text-slate-700 rounded-md whitespace-nowrap">{req}</span>
+                                        <span key={i} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/80 rounded-md font-medium whitespace-nowrap">{req}</span>
                                       ))
                                     }
                                   </div>

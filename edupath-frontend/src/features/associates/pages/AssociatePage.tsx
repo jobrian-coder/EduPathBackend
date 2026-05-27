@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, MapPin, Globe, Calendar, ThumbsUp, Flag, ExternalLink, Plus, Check, Minus, User } from 'lucide-react'
+import { MapPin, Globe, Plus } from 'lucide-react'
 import api from '../../../services/api'
 import type { Associate, AssociatePost } from '../../../services/api'
 import { useAuth } from '../../../hooks/useAuth'
@@ -25,9 +25,9 @@ const HUB_ACCENT_COLORS: Record<string, string> = {
 }
 
 export default function AssociatePage() {
-  const { hubId, associateId } = useParams<{ hubId: string; associateId: string }>()
+  const { associateId } = useParams<{ associateId: string }>()
   const navigate = useNavigate()
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   const [associate, setAssociate] = useState<Associate | null>(null)
   const [posts, setPosts] = useState<AssociatePost[]>([])
@@ -35,22 +35,11 @@ export default function AssociatePage() {
   const [notFound, setNotFound] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
 
-  // Report modal state
-  const [reportPostId, setReportPostId] = useState<number | null>(null)
-  const [reportReason, setReportReason] = useState('')
-  const [reportSubmitting, setReportSubmitting] = useState(false)
-  const [reportToast, setReportToast] = useState<string | null>(null)
-
-  // Load more pagination
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-
   useEffect(() => {
     if (!associateId) return
 
     const id = parseInt(associateId, 10)
 
-    // Load associate details and posts
     Promise.all([
       api.associates.getDetails(id),
       api.associates.listPosts(id),
@@ -58,7 +47,6 @@ export default function AssociatePage() {
       .then(([associateData, postsData]) => {
         setAssociate(associateData)
         setPosts(postsData)
-        setHasMore(postsData.length >= 10)
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
@@ -73,7 +61,6 @@ export default function AssociatePage() {
     setFollowLoading(true)
     const wasFollowing = associate.is_following
 
-    // Optimistic UI update
     setAssociate({
       ...associate,
       is_following: !wasFollowing,
@@ -87,63 +74,14 @@ export default function AssociatePage() {
         await api.associates.follow(associate.id)
       }
     } catch {
-      // Revert on error
       setAssociate({
         ...associate,
         is_following: wasFollowing,
-        follower_count: associate.follower_count,
+        follower_count: associate.follower_count + (wasFollowing ? 1 : -1),
       })
     } finally {
       setFollowLoading(false)
     }
-  }
-
-  const handleLoadMore = async () => {
-    if (!associateId || !hasMore) return
-
-    const id = parseInt(associateId, 10)
-    const nextPage = page + 1
-
-    try {
-      const morePosts = await api.associates.listPosts(id)
-      // In a real implementation, you'd pass pagination params to the API
-      // For now, just simulate loading more
-      if (morePosts.length === 0) {
-        setHasMore(false)
-      } else {
-        setPosts(prev => [...prev, ...morePosts])
-        setPage(nextPage)
-      }
-    } catch {
-      setHasMore(false)
-    }
-  }
-
-  const handleReport = async () => {
-    if (!reportPostId || !reportReason.trim()) return
-    setReportSubmitting(true)
-    try {
-      await api.associates.report(reportPostId, reportReason)
-      setReportToast('Report submitted. Thank you for helping keep EduPath safe.')
-    } catch {
-      setReportToast('Failed to submit report. Please try again.')
-    } finally {
-      setReportSubmitting(false)
-      setReportPostId(null)
-      setReportReason('')
-      setTimeout(() => setReportToast(null), 4000)
-    }
-  }
-
-  const getDeadlineColor = (deadline: string | null) => {
-    if (!deadline) return 'text-slate-400 bg-slate-700/50'
-    const deadlineDate = new Date(deadline)
-    const now = new Date()
-    const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (diffDays <= 7) return 'text-red-300 bg-red-500/20'
-    if (diffDays <= 30) return 'text-amber-300 bg-amber-500/20'
-    return 'text-slate-400 bg-slate-700/50'
   }
 
   if (loading) {
@@ -164,52 +102,13 @@ export default function AssociatePage() {
   }
 
   const badge = TYPE_BADGE[associate.associate_type] ?? TYPE_BADGE.MENTOR
-  const accentColor = HUB_ACCENT_COLORS[associate.hub as string] || 'from-teal-600 to-cyan-600'
+  const accentColor = HUB_ACCENT_COLORS[(associate as any).hub] || 'from-teal-600 to-cyan-600'
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Toast */}
-      {reportToast && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-800 border border-teal-500/40 text-teal-300 text-sm px-4 py-3 rounded-xl shadow-lg">
-          {reportToast}
-        </div>
-      )}
-
-      {/* Report modal */}
-      {reportPostId !== null && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md space-y-4">
-            <h3 className="text-white font-semibold text-lg">Report Post</h3>
-            <p className="text-slate-400 text-sm">Why are you reporting this post?</p>
-            <textarea
-              rows={4}
-              value={reportReason}
-              onChange={e => setReportReason(e.target.value)}
-              placeholder="For example: This opportunity listing link is broken or This content is not relevant to this hub"
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-sm"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setReportPostId(null); setReportReason('') }}
-                className="flex-1 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReport}
-                disabled={!reportReason.trim() || reportSubmitting}
-                className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50"
-              >
-                {reportSubmitting ? 'Submitting…' : 'Submit Report'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header with banner */}
       <div className="relative">
-        {/* Banner (4:1 aspect ratio) */}
+        {/* Banner */}
         <div className={`w-full h-48 bg-gradient-to-r ${accentColor}`} />
         
         {/* Header content */}
@@ -257,80 +156,47 @@ export default function AssociatePage() {
                   associate.is_following
                     ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     : 'bg-teal-600 text-white hover:bg-teal-500'
-                }`}
+                } disabled:opacity-50`}
               >
-                {associate.is_following ? (
-                  <span className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5" />
-                    Following
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Plus className="w-3.5 h-3.5" />
-                    Follow
-                  </span>
-                )}
+                {followLoading ? 'Loading...' : associate.is_following ? 'Following' : 'Follow'}
               </button>
             </div>
 
-            {/* Full bio */}
-            <p className="text-slate-300 text-sm leading-relaxed mb-6">{associate.bio}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats bar */}
-      <div className="border-y border-slate-800 bg-slate-900/50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-around text-sm">
-            <div className="text-center">
-              <div className="text-white font-semibold">{posts.length}</div>
-              <div className="text-slate-500">Posts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-white font-semibold">{associate.follower_count}</div>
-              <div className="text-slate-500">Followers</div>
-            </div>
-            {hubId && (
+            {/* Stats row */}
+            <div className="flex items-center gap-8 py-4 border-b border-slate-800">
               <div className="text-center">
-                <button
-                  onClick={() => navigate(`/hubs/${hubId}?tab=associates`)}
-                  className="text-teal-400 hover:text-teal-300 font-semibold"
-                >
-                  View Hub
-                </button>
-                <div className="text-slate-500">Hub</div>
+                <div className="text-white font-bold text-lg">{posts.length}</div>
+                <div className="text-slate-400 text-sm">posts</div>
               </div>
-            )}
+              <div className="text-center">
+                <div className="text-white font-bold text-lg">{associate.follower_count}</div>
+                <div className="text-slate-400 text-sm">followers</div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="py-4">
+              <p className="text-slate-300 text-sm leading-relaxed">{associate.bio}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Posts feed */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      {/* Posts Grid */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {posts.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 bg-slate-900/40 border border-slate-800 rounded-2xl">
-            No posts yet.
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Plus className="w-8 h-8 text-slate-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No posts yet</h3>
+            <p className="text-slate-400">This associate hasn't posted anything yet.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {posts.map(post => (
-              <PostCard
-                key={post.id}
-                post={post}
-                isAuthenticated={isAuthenticated}
-                onReport={() => setReportPostId(post.id)}
-                getDeadlineColor={getDeadlineColor}
-              />
+          <div className="grid grid-cols-3 gap-1">
+            {posts.map((post) => (
+              <PostGridItem key={post.id} post={post} />
             ))}
-            {hasMore && (
-              <button
-                onClick={handleLoadMore}
-                className="w-full py-3 rounded-lg border border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white text-sm font-medium transition-colors"
-              >
-                Load More
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -338,134 +204,19 @@ export default function AssociatePage() {
   )
 }
 
-function PostCard({ post, isAuthenticated, onReport, getDeadlineColor }: {
-  post: AssociatePost
-  isAuthenticated: boolean
-  onReport: () => void
-  getDeadlineColor: (deadline: string | null) => string
-}) {
-  const isClosingSoon = post.deadline && (() => {
-    const deadlineDate = new Date(post.deadline)
-    const now = new Date()
-    const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    return diffDays <= 7
-  })()
-
-  const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
-    UPDATE:  { label: 'Update',  cls: 'bg-slate-600/20 text-slate-300' },
-    OPPORTUNITY: { label: 'Opportunity', cls: 'bg-teal-500/20 text-teal-300' },
-    EVENT:  { label: 'Event', cls: 'bg-violet-500/20 text-violet-300' },
-    RESOURCE:  { label: 'Resource', cls: 'bg-blue-500/20 text-blue-300' },
-  }
-
-  const typeBadge = TYPE_BADGE[post.post_type] ?? TYPE_BADGE.UPDATE
-
+function PostGridItem({ post }: { post: AssociatePost }) {
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden relative group">
-      {/* Report button */}
-      {isAuthenticated && (
-        <button
-          onClick={onReport}
-          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all z-10"
-          title="Report this post"
-        >
-          <Flag className="w-4 h-4" />
-        </button>
-      )}
-
-      {/* CLOSING SOON badge */}
-      {isClosingSoon && post.post_type === 'OPPORTUNITY' && (
-        <div className="absolute top-4 right-14 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-          CLOSING SOON
+    <div className="aspect-square bg-slate-800 relative group cursor-pointer overflow-hidden">
+      {post.image_url ? (
+        <img src={post.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <p className="text-slate-400 text-sm text-center line-clamp-4">{post.body}</p>
         </div>
       )}
-
-      {/* Event image */}
-      {post.post_type === 'EVENT' && post.image_url && (
-        <img src={post.image_url} alt="" className="w-full h-48 object-cover" />
-      )}
-
-      <div className="p-5">
-        {/* Associate identity row */}
-        <div className="flex items-center gap-3 mb-4">
-          {post.associate_image ? (
-            <img src={post.associate_image} alt={post.associate_name} className="w-10 h-10 rounded-full object-cover" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
-              {post.associate_name.charAt(0)}
-            </div>
-          )}
-          <div className="flex-1">
-            <p className="text-white font-medium text-sm">{post.associate_name}</p>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${typeBadge.cls}`}>
-                {typeBadge.label}
-              </span>
-              <span className="text-xs text-slate-500">
-                {new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Title */}
-        {post.title && (
-          <h3 className="text-white font-semibold text-lg mb-2">{post.title}</h3>
-        )}
-
-        {/* Body */}
-        <p className="text-slate-300 text-sm leading-relaxed mb-4">{post.body}</p>
-
-        {/* Deadline badge (Opportunity) */}
-        {post.post_type === 'OPPORTUNITY' && post.deadline && (
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium mb-4 ${getDeadlineColor(post.deadline)}`}>
-            <Calendar className="w-3.5 h-3.5" />
-            Deadline: {new Date(post.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </div>
-        )}
-
-        {/* Deadline badge (Event) - calendar style */}
-        {post.post_type === 'EVENT' && post.deadline && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium mb-4 bg-violet-500/20 text-violet-300">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(post.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-          </div>
-        )}
-
-        {/* CTA button (Opportunity, Event) */}
-        {(post.post_type === 'OPPORTUNITY' || post.post_type === 'EVENT') && post.external_url && (
-          <a
-            href={post.external_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-500 transition-colors mb-4"
-          >
-            {post.cta_label || 'Learn More'}
-          </a>
-        )}
-
-        {/* Resource card-within-card */}
-        {post.post_type === 'RESOURCE' && post.external_url && (
-          <a
-            href={post.external_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block p-4 bg-slate-800/50 border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors mb-4"
-          >
-            <div className="flex items-center gap-2">
-              <ExternalLink className="w-4 h-4 text-teal-400" />
-              <span className="text-teal-400 text-sm font-medium">{post.cta_label || 'View Resource'}</span>
-            </div>
-            <p className="text-slate-500 text-xs mt-1">{new URL(post.external_url).hostname}</p>
-          </a>
-        )}
-
-        {/* Divider */}
-        <div className="border-t border-slate-800 pt-4 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-slate-500 text-xs">
-            <ThumbsUp className="w-3.5 h-3.5" />
-            <span>{post.upvotes} upvotes</span>
-          </div>
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="text-white text-sm font-medium">
+          {post.post_type}
         </div>
       </div>
     </div>

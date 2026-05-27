@@ -120,7 +120,13 @@ class PostViewSet(viewsets.ModelViewSet):
         if hub and not hub.members.filter(id=self.request.user.id).exists():
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You must be a member of this hub to create posts.")
-        serializer.save(author=self.request.user)
+
+        # Parse hashtags from content
+        content = serializer.validated_data.get('content', '')
+        from apps.courses.utils import parse_hashtags
+        tags = parse_hashtags(content)
+
+        serializer.save(author=self.request.user, tags=tags)
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def vote(self, request, pk=None):
@@ -154,12 +160,33 @@ class PostViewSet(viewsets.ModelViewSet):
         """Remove vote from a post"""
         post = self.get_object()
         Vote.objects.filter(user=request.user, votable_type='post', votable_id=post.id).delete()
-        
+
         # Update post vote counts
         post.upvotes = Vote.objects.filter(votable_type='post', votable_id=post.id, vote_type='upvote').count()
         post.downvotes = Vote.objects.filter(votable_type='post', votable_id=post.id, vote_type='downvote').count()
-        
+
         return Response({'status': 'unvoted', 'upvotes': post.upvotes, 'downvotes': post.downvotes})
+
+    @action(detail=False, methods=['get'])
+    def by_tag(self, request):
+        """Filter posts by course tag (hashtag)"""
+        tag_slug = request.query_params.get('tag')
+        if not tag_slug:
+            return Response({'error': 'tag parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter posts where tags JSON contains the tag_slug
+        from django.db.models import Q
+        posts_qs = self.get_queryset().filter(
+            Q(tags__contains=[{'tag': tag_slug}]) | Q(tags__contains=[{'tag': tag_slug.lower()}])
+        ).select_related('author', 'hub').order_by('-created_at')
+
+        page = self.paginate_queryset(posts_qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(posts_qs, many=True)
+        return Response({'results': serializer.data})
 
 
 class CommentViewSet(viewsets.ModelViewSet):

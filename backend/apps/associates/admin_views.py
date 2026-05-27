@@ -56,11 +56,11 @@ def recent_associate_posts(request):
     data = []
     for post in posts:
         data.append({
-            'id': post.id,
-            'content': post.content[:200],
+            'id': str(post.id),
+            'content': (post.body or '')[:200],
             'associate': post.associate.name,
             'associate_type': post.associate.associate_type,
-            'hub': post.associate.hub.name,
+            'hub': post.associate.hub.name if post.associate.hub else 'Unknown',
             'created_at': post.created_at.isoformat(),
             'upvotes': post.upvotes,
         })
@@ -144,8 +144,8 @@ def hub_associate_posts(request, hub_id):
     for post in posts:
         report_count = ModerationReport.objects.filter(associate_post=post, status='OPEN').count()
         data.append({
-            'id': post.id,
-            'content': post.content,
+            'id': str(post.id),
+            'content': post.body or '',
             'image_url': post.image_url,
             'external_url': post.external_url,
             'associate': post.associate.name,
@@ -296,10 +296,17 @@ def associate_applications(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def approve_application(request, associate_id):
-    """Approve an associate application."""
+    """Approve an associate application and link to existing user account by contact email."""
     associate = Associate.objects.get(id=associate_id)
     associate.is_verified = True
     associate.application_status = 'APPROVED'
+    # Auto-link to a User account if one exists with the same contact email
+    if not associate.user:
+        try:
+            linked_user = User.objects.get(email=associate.contact_email)
+            associate.user = linked_user
+        except User.DoesNotExist:
+            pass
     associate.save()
     # TODO: Send confirmation email
     return Response({'message': 'Application approved'})

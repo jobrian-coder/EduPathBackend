@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { MessageSquare, ThumbsUp, ThumbsDown, Share2, TrendingUp, Plus, Circle, Eye, Menu, BookOpen, X, Link2, Image, Users, MapPin, ExternalLink } from 'lucide-react'
 import api from '../../../services/api'
@@ -38,7 +38,7 @@ interface Post {
   comment_count: number
   user_vote?: string | null
   created_at: string
-  tags?: string[]
+  tags?: { tag: string; course_id: string; course_name: string }[]
   link_url?: string
   image_url?: string
   author_role?: string
@@ -76,6 +76,24 @@ export default function HubFeedV2() {
   const [hubTab, setHubTab] = useState<'posts' | 'associates'>('posts')
   const [associates, setAssociates] = useState<Associate[]>([])
   const [associatesLoading, setAssociatesLoading] = useState(false)
+
+  // Tag filtering
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+
+  // Feed sort & filter
+  const [feedSortBy, setFeedSortBy] = useState<'newest' | 'popular' | 'discussed'>('newest')
+  const [feedPostType, setFeedPostType] = useState<string>('')
+
+  const displayedPosts = useMemo(() => {
+    let result = [...posts]
+    if (feedPostType) result = result.filter(p => p.post_type === feedPostType)
+    result.sort((a, b) => {
+      if (feedSortBy === 'popular') return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes)
+      if (feedSortBy === 'discussed') return b.comment_count - a.comment_count
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+    return result
+  }, [posts, feedSortBy, feedPostType])
 
   // Load associates for selected hub
   const loadAssociates = useCallback(async (hubId: string) => {
@@ -210,7 +228,6 @@ export default function HubFeedV2() {
         content: newPostContent,
         post_type: newPostType,
         is_expert_post: isExpertPost,
-        tags: selectedPrograms,
       }
       if (newPostType === 'link' && newPostLinkUrl.trim()) {
         payload.link_url = newPostLinkUrl.trim()
@@ -220,9 +237,9 @@ export default function HubFeedV2() {
       }
 
       const newPost = await api.hubs.createPost(payload)
-      
+
       // Add new post to feed with local enrichment
-      const enriched = {
+      const enriched: Post = {
         ...newPost,
         link_url: payload.link_url,
         image_url: payload.image_url,
@@ -274,8 +291,8 @@ export default function HubFeedV2() {
       // Load from API
       try {
         const { results } = await api.hubs.listPosts({ hub: hub.id })
-        setPosts(results)
-        setFeedCache(prev => ({ ...prev, [hub.id]: results }))
+        setPosts(results as Post[])
+        setFeedCache(prev => ({ ...prev, [hub.id]: results as Post[] }))
       } catch (error) {
         console.error('Failed to load posts:', error)
       }
@@ -291,10 +308,10 @@ export default function HubFeedV2() {
     // Optimistic update
     setPosts(prev => prev.map(post => {
       if (post.id !== postId) return post
-      
+
       const wasUpvoted = post.user_vote === 'upvote'
       const wasDownvoted = post.user_vote === 'downvote'
-      
+
       let newUpvotes = post.upvotes
       let newDownvotes = post.downvotes
       let newUserVote: string | null = voteType
@@ -340,8 +357,18 @@ export default function HubFeedV2() {
       console.error('Failed to vote:', error)
       if (selectedHub) {
         const { results } = await api.hubs.listPosts({ hub: selectedHub.id })
-        setPosts(results)
+        setPosts(results as Post[])
       }
+    }
+  }
+
+  const handleTagClick = async (tagSlug: string) => {
+    setActiveTag(tagSlug)
+    try {
+      const { results } = await api.hubs.getPostsByTag(tagSlug)
+      setPosts(results as Post[])
+    } catch (error) {
+      console.error('Failed to load posts by tag:', error)
     }
   }
 
@@ -389,13 +416,13 @@ export default function HubFeedV2() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-teal-50 to-cyan-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-900/60 dark:to-teal-950/60">
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-900/60 dark:to-teal-950/60">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px] gap-4 p-2 md:p-4 max-w-[1800px] mx-auto">
         
         {/* Left Sidebar - Hub Navigator (Hidden on mobile, visible on large screens) */}
         <aside className="hidden lg:block lg:h-[calc(100vh-2rem)] lg:sticky lg:top-4">
-          <div className="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-teal-100 dark:border-slate-700 p-3 md:p-4 space-y-2">
-            <div className="text-xs uppercase tracking-wide text-teal-600 font-semibold px-2 mb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-3 md:p-4 space-y-2">
+            <div className="text-xs uppercase tracking-wide text-teal-600 dark:text-teal-400 font-semibold px-2 mb-3">
               Communities
             </div>
             
@@ -403,9 +430,9 @@ export default function HubFeedV2() {
                   <button
                 key={hub.id}
                 onClick={() => handleHubSwitch(hub)}
-                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 dark:hover:bg-slate-800/60 dark:text-slate-200 ${
+                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 rounded-xl transition-all hover:bg-teal-50 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-200 ${
                   selectedHub?.id === hub.id 
-                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 border border-teal-200 dark:border-teal-800 dark:bg-gradient-to-r dark:from-teal-950/40 dark:to-cyan-950/30' 
+                    ? 'bg-gradient-to-r from-teal-100 to-cyan-100 dark:from-teal-950/40 dark:to-cyan-950/30 border border-teal-200 dark:border-teal-800' 
                     : 'border border-transparent'
                 }`}
               >
@@ -432,7 +459,7 @@ export default function HubFeedV2() {
               </button>
             ))}
 
-            <button className="w-full flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 mt-4 rounded-xl border-2 border-dashed border-teal-200 text-teal-600 hover:border-teal-400 hover:text-teal-700 transition-all text-sm">
+            <button className="w-full flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 mt-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-slate-600 text-teal-600 dark:text-teal-400 hover:border-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-all text-sm">
               <Plus className="w-4 h-4" />
               <span className="font-medium hidden md:inline">Create Hub</span>
               <span className="font-medium md:hidden">New</span>
@@ -444,7 +471,7 @@ export default function HubFeedV2() {
         <main className="space-y-3 min-w-0">
           {/* Hub Header */}
           {selectedHub && (
-            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-3 md:mb-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 md:p-6 mb-3 md:mb-4">
               {/* Background Image */}
               {(selectedHub as any).icon_url && (
                 <div 
@@ -546,6 +573,27 @@ export default function HubFeedV2() {
             </div>
           )}
 
+          {/* Active Tag Filter */}
+          {activeTag && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-teal-50 dark:bg-teal-900/30 rounded-lg border border-teal-200 dark:border-teal-800/50">
+              <span className="text-xs font-medium text-teal-700 dark:text-teal-300">
+                Filtered by: <span className="font-bold">#{activeTag}</span>
+              </span>
+              <button
+                onClick={async () => {
+                  setActiveTag(null)
+                  if (selectedHub) {
+                    const data = await api.hubs.listPosts({ hub: selectedHub.id })
+                    setPosts(data.results)
+                  }
+                }}
+                className="p-1 rounded hover:bg-teal-200 dark:hover:bg-teal-800/50 text-teal-600 dark:text-teal-400"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
           {/* Associates Grid */}
           {hubTab === 'associates' && selectedHub && (
             <div>
@@ -634,7 +682,42 @@ export default function HubFeedV2() {
             const items: React.ReactNode[] = []
             let assocIdx = 0
 
-            posts.forEach((post, idx) => {
+            if (displayedPosts.length > 0 || feedPostType) {
+              items.push(
+                <div key="sort-bar" className="flex flex-wrap gap-2 items-center p-2.5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-xs">
+                    {([['newest', 'Newest'], ['popular', 'Top'], ['discussed', 'Most Discussed']] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={e => { e.stopPropagation(); setFeedSortBy(val) }}
+                        className={`px-3 py-1.5 font-medium transition-colors ${
+                          feedSortBy === val
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <select
+                    value={feedPostType}
+                    onChange={e => { e.stopPropagation(); setFeedPostType(e.target.value) }}
+                    onClick={e => e.stopPropagation()}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value="">All types</option>
+                    <option value="question">❓ Questions</option>
+                    <option value="guide">📚 Guides</option>
+                    <option value="discussion">💬 Discussions</option>
+                    <option value="success_story">🎉 Success Stories</option>
+                  </select>
+                  <span className="ml-auto text-xs text-slate-400">{displayedPosts.length} posts</span>
+                </div>
+              )
+            }
+
+            displayedPosts.forEach((post, idx) => {
               // Insert associate post banner every 5 student posts
               if (idx > 0 && idx % 5 === 0 && assocIdx < associates.length) {
                 const assoc = associates[assocIdx++]
@@ -730,25 +813,36 @@ export default function HubFeedV2() {
                       </div>
                     )}
                     {post.tags && post.tags.length > 0 && (
-                      <div className="mb-3">
-                        <ProgramTags programIds={post.tags} maxDisplay={3} className="text-xs" />
+                      <div className="mb-3 flex flex-wrap gap-1.5">
+                        {post.tags.slice(0, 3).map(tag => (
+                          <button
+                            key={tag.tag}
+                            onClick={e => { e.stopPropagation(); handleTagClick(tag.tag) }}
+                            className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-xs font-medium hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
+                          >
+                            #{tag.course_name}
+                          </button>
+                        ))}
+                        {post.tags.length > 3 && (
+                          <span className="text-xs text-slate-500 dark:text-slate-400">+{post.tags.length - 3} more</span>
+                        )}
                       </div>
                     )}
 
                     <div className="flex flex-wrap items-center gap-1 md:gap-2">
                       <button
                         onClick={e => { e.stopPropagation(); handleVote(post.id, 'upvote') }}
-                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'upvote' ? 'bg-teal-200 text-teal-700' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'}`}
+                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'upvote' ? 'bg-teal-200 dark:bg-teal-800/40 text-teal-700 dark:text-teal-300' : 'bg-teal-50 dark:bg-slate-700 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-slate-600'}`}
                       >
                         <ThumbsUp className="w-3 h-3 md:w-4 md:h-4" />{post.upvotes}
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); handleVote(post.id, 'downvote') }}
-                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'downvote' ? 'bg-cyan-200 text-cyan-700' : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'}`}
+                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${post.user_vote === 'downvote' ? 'bg-cyan-200 dark:bg-cyan-800/40 text-cyan-700 dark:text-cyan-300' : 'bg-cyan-50 dark:bg-slate-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-slate-600'}`}
                       >
                         <ThumbsDown className="w-3 h-3 md:w-4 md:h-4" />
                       </button>
-                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
+                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 dark:bg-slate-700 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-slate-600 transition-all">
                         <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />{post.comment_count}
                       </button>
                       {(post as any).view_count > 0 && (
@@ -756,7 +850,7 @@ export default function HubFeedV2() {
                           <Eye className="w-3 h-3 md:w-4 md:h-4" />{(post as any).view_count}
                         </div>
                       )}
-                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all">
+                      <button className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-medium bg-teal-50 dark:bg-slate-700 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-slate-600 transition-all">
                         <Share2 className="w-3 h-3 md:w-4 md:h-4" />
                       </button>
                     </div>

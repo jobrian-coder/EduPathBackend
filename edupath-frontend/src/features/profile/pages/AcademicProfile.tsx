@@ -247,7 +247,7 @@ export default function AcademicProfilePage() {
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg border border-transparent transition ${activeSection === section.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg border border-transparent transition ${activeSection === section.id ? 'bg-cyan-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                 >
                   <div className="text-sm font-medium">{section.title}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">{section.description}</div>
@@ -292,6 +292,14 @@ export default function AcademicProfilePage() {
                       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm">
                         <div className="font-semibold text-slate-700 dark:text-slate-200">Why we ask</div>
                         <div className="mt-1 text-slate-600 dark:text-slate-300">This helps tailor course recommendations to your graduation timeline and school context.</div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => setActiveSection('subjects')}
+                          className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 font-medium"
+                        >
+                          Next: Subject Grades →
+                        </button>
                       </div>
                     </div>
                   )
@@ -362,7 +370,7 @@ export default function AcademicProfilePage() {
                                 key={entry.subject_code} 
                                 className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
                                   subject?.compulsory 
-                                    ? 'border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20' 
+                                    ? 'border-cyan-200 dark:border-cyan-900 bg-cyan-50/50 dark:bg-cyan-900/20' 
                                     : 'border-slate-200 dark:border-slate-700'
                                 }`}
                               >
@@ -370,7 +378,7 @@ export default function AcademicProfilePage() {
                                   <div className="font-medium">
                                     {subject?.name ?? entry.subject_code}
                                     {subject?.compulsory && (
-                                      <span className="ml-2 text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
+                                      <span className="ml-2 text-xs px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300 rounded-full">
                                         Required
                                       </span>
                                     )}
@@ -398,6 +406,15 @@ export default function AcademicProfilePage() {
                             )
                           })
                         }
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => setActiveSection('review')}
+                          className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 font-medium"
+                        >
+                          Next: Review & Save →
+                        </button>
                       </div>
 
                       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm">
@@ -506,7 +523,7 @@ export default function AcademicProfilePage() {
                     <div className="flex justify-end">
                       <button
                         disabled={saving}
-                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                        className="px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-60"
                         onClick={saveProfile}
                       >
                         {saving ? 'Saving…' : 'Save Academic Profile'}

@@ -441,7 +441,7 @@ export interface Post {
   content: string;
   post_type: 'question' | 'guide' | 'discussion' | 'success_story';
   is_expert_post: boolean;
-  tags: string[];
+  tags: { tag: string; course_id: string; course_name: string }[];
   upvotes: number;
   downvotes: number;
   comment_count: number;
@@ -549,6 +549,9 @@ export const hubsAPI = {
       method: 'POST',
       body: JSON.stringify({ vote_type: voteType }),
     }),
+
+  getPostsByTag: (tagSlug: string) =>
+    apiRequest<{ results: Post[] }>(`/hubs/posts/by_tag/?tag=${encodeURIComponent(tagSlug)}`, { includeAuth: false }),
 };
 
 // ============================================
@@ -767,7 +770,56 @@ export const advisorAPI = {
       session_id: string;
       profile_text: string;
       recommendations: AdvisorRecommendation[];
+      suggested_hubs?: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        icon: string;
+        color: string;
+        category: string;
+        member_count: number;
+        description: string;
+      }>;
     }>(`/advisor/${sessionId}/recommendations/`),
+  
+  // AI Chat endpoints
+  startChat: () =>
+    apiRequest<{
+      conversation_id: string;
+      title: string;
+      messages: Array<{role: string; content: string; created_at?: string}>;
+    }>(`/advisor/chat/start/`, { method: 'POST' }),
+  
+  sendChatMessage: (conversationId: string, message: string) =>
+    apiRequest<{
+      conversation_id: string;
+      title: string;
+      message: string;
+      messages: Array<{role: string; content: string; created_at?: string}>;
+    }>(`/advisor/chat/${conversationId}/message/`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  
+  getChatHistory: () =>
+    apiRequest<{
+      conversations: Array<{
+        id: string;
+        title: string;
+        message_count: number;
+        last_updated: string;
+        created_at: string;
+      }>;
+    }>(`/advisor/chat/history/`),
+  
+  getChatConversation: (conversationId: string) =>
+    apiRequest<{
+      conversation_id: string;
+      title: string;
+      messages: Array<{role: string; content: string; created_at?: string}>;
+      created_at: string;
+      updated_at: string;
+    }>(`/advisor/chat/${conversationId}/`),
 };
 
 
@@ -870,6 +922,11 @@ export const adminAPI = {
       method: 'DELETE',
     }),
 
+  triggerReindex: () =>
+    apiRequest<{ status: string; message: string }>('/courses/admin/courses/trigger_reindex/', {
+      method: 'POST',
+    }),
+
   // Bulk operations
   bulkCreateCourses: (courses: Omit<Course, 'id' | 'created_at' | 'updated_at'>[]) =>
     apiRequest<{ created_count: number; created: any[]; errors: any[] }>('/courses/admin/courses/bulk_create/', {
@@ -935,6 +992,7 @@ export interface AssociatePost {
   external_url: string | null;
   cta_label: string | null;
   deadline: string | null;
+  tags: { tag: string; course_id: string; course_name: string }[];
   upvotes: number;
   created_at: string;
   associate_name: string;
@@ -985,6 +1043,49 @@ export const associatesAPI = {
 
   listFollowed: () =>
     apiRequest<Associate[]>('/associates/followed/', { includeAuth: true }),
+
+  getMe: () =>
+    apiRequest<Associate>('/associates/me/', { includeAuth: true }),
+
+  getApplicationStatus: () =>
+    apiRequest<{
+      has_application: boolean;
+      is_verified: boolean;
+      application_status: 'PENDING' | 'AWAITING_RESPONSE' | 'APPROVED' | 'REJECTED' | null;
+      is_suspended: boolean;
+      rejection_reason: string | null;
+    }>('/associates/me/status/', { includeAuth: true }),
+
+  updateMe: (data: { bio?: string; website?: string; location?: string; profile_image?: string }) =>
+    apiRequest<Associate>('/associates/me/update/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  createPost: (data: {
+    post_type: 'UPDATE' | 'OPPORTUNITY' | 'EVENT' | 'RESOURCE';
+    title?: string;
+    body: string;
+    image_url?: string;
+    external_url?: string;
+    cta_label?: string;
+    deadline?: string;
+  }) =>
+    apiRequest<AssociatePost>('/associates/me/posts/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deletePost: (postId: number) =>
+    apiRequest<void>(`/associates/me/posts/${postId}/delete/`, {
+      method: 'DELETE',
+    }),
+
+  getPostsByTag: (tagSlug: string) =>
+    apiRequest<{ results: any[] }>(`/hubs/posts/by_tag/?tag=${encodeURIComponent(tagSlug)}`, { includeAuth: false }),
+
+  getAssociatePostsByTag: (tagSlug: string) =>
+    apiRequest<AssociatePost[]>(`/associates/posts/by_tag/?tag=${encodeURIComponent(tagSlug)}`, { includeAuth: false }),
 };
 
 // ============================================

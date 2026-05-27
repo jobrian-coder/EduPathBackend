@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import viewsets, filters, status, permissions
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
@@ -34,23 +35,42 @@ class UniversityViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def programs(self, request, pk=None):
-        """Get all programs offered by a specific university"""
+        """Get all programs offered by a specific university using flat Course rows"""
         university = self.get_object()
-        course_universities = CourseUniversity.objects.filter(university=university).select_related('course')
+
+        # Query flat Course rows whose institution matches the university name or short_name
+        courses = Course.objects.filter(
+            Q(institution__iexact=university.name) |
+            Q(institution__iexact=university.short_name) |
+            Q(institution__icontains=university.short_name)
+        )
+
         category = request.query_params.get('category')
         if category:
-            course_universities = course_universities.filter(course__category=category)
+            courses = courses.filter(category__icontains=category)
+
         search = request.query_params.get('search')
         if search:
-            course_universities = course_universities.filter(course__name__icontains=search)
-        ordering = request.query_params.get('ordering', 'course__name')
-        if ordering in ['course__name', '-course__name', 'fees_ksh', '-fees_ksh', 'cutoff_points', '-cutoff_points']:
-            course_universities = course_universities.order_by(ordering)
-        serializer = CourseUniversitySerializer(course_universities, many=True)
+            courses = courses.filter(
+                Q(name__icontains=search) | Q(category__icontains=search)
+            )
+
+        ordering = request.query_params.get('ordering', 'category')
+        ordering_map = {
+            'course__name': 'category',
+            '-course__name': '-category',
+            'fees_ksh': 'avg_fees_ksh',
+            '-fees_ksh': '-avg_fees_ksh',
+            'cutoff_points': 'cutoff_2023',
+            '-cutoff_points': '-cutoff_2023',
+        }
+        courses = courses.order_by(ordering_map.get(ordering, 'category'))
+
+        serializer = CourseSerializer(courses, many=True)
         return Response({
             'university': UniversitySerializer(university).data,
             'programs': serializer.data,
-            'total_programs': course_universities.count()
+            'total_programs': courses.count()
         })
 
 
@@ -133,33 +153,47 @@ def course_list_grouped(request):
         q   — filter by category name (case-insensitive contains)
         hub — filter by related_hub (exact)
     """
-    search = request.query_params.get('q', '').strip()
-    hub    = request.query_params.get('hub', '').strip()
+    import traceback
+    try:
+        search = request.query_params.get('q', '').strip()
+        hub    = request.query_params.get('hub', '').strip()
 
-    qs = Course.objects.all().order_by('category', 'cutoff_2023')
-    if search:
-        qs = qs.filter(category__icontains=search)
-    if hub:
-        qs = qs.filter(related_hub=hub)
+        qs = Course.objects.all().order_by('category', 'cutoff_2023')
+        if search:
+            qs = qs.filter(
+                Q(category__icontains=search) |
+                Q(name__icontains=search) |
+                Q(description__icontains=search) |
+                Q(institution__icontains=search)
+            )
+        if hub:
+            qs = qs.filter(related_hub=hub)
 
-    grouped = {}
-    for course in qs:
-        cat = course.category
-        if cat not in grouped:
-            grouped[cat] = {
-                'category':     cat,
-                'description':  course.description,
-                'pros':         course.pros,
-                'cons':         course.cons,
-                'careers':      course.careers,
-                'related_hub':  course.related_hub,
-                'avg_fees_ksh': course.avg_fees_ksh,
-                'is_enriched':  course.is_enriched,
-                'programmes':   [],
-            }
-        grouped[cat]['programmes'].append(_build_programme_entry(course))
+        grouped = {}
+        for course in qs:
+            cat = course.category
+            if cat not in grouped:
+                grouped[cat] = {
+                    'category':     cat,
+                    'description':  course.description,
+                    'pros':         course.pros,
+                    'cons':         course.cons,
+                    'careers':      course.careers,
+                    'related_hub':  course.related_hub,
+                    'avg_fees_ksh': course.avg_fees_ksh,
+                    'is_enriched':  course.is_enriched,
+                    'programmes':   [],
+                }
+            grouped[cat]['programmes'].append(_build_programme_entry(course))
 
-    return Response(list(grouped.values()))
+        return Response(list(grouped.values()))
+    except Exception as e:
+        print(f"ERROR in course_list_grouped: {str(e)}")
+        print(traceback.format_exc())
+        return Response(
+            {'error': f'Internal server error: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])

@@ -1,19 +1,38 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Sparkles, ArrowRight, Loader, GraduationCap, BookmarkCheck, Bookmark } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Sparkles, ArrowRight, Loader, GraduationCap, BookmarkCheck, Bookmark, Download, Users, MessageCircle, FileText } from 'lucide-react';
 import api, { type AdvisorRecommendation } from '../../../services/api';
 import { InterviewChat } from '../components/InterviewChat';
 import { RecommendationCard, getSavedRecommendations, type SavedRecommendation } from '../components/RecommendationCard';
+import AIChat from '../components/AIChat';
+import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+
+interface SuggestedHub {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  color: string;
+  category: string;
+  member_count: number;
+  description: string;
+}
 
 export const AdvisorPage: React.FC = () => {
+  const [mode, setMode] = useState<'interview' | 'chat'>('interview');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const navigate = useNavigate();
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [recommendations, setRecommendations] = useState<AdvisorRecommendation[] | null>(null);
+  const [suggestedHubs, setSuggestedHubs] = useState<SuggestedHub[]>([]);
   const [isFetchingRecommendations, setIsFetchingRecommendations] = useState(false);
   const [academicProfile, setAcademicProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
   const [allSaved, setAllSaved] = useState(false);
   const [saveAllPulse, setSaveAllPulse] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Fetch academic profile on mount
   useEffect(() => {
@@ -54,6 +73,7 @@ export const AdvisorPage: React.FC = () => {
         console.warn('[Advisor] No recommendations returned from API');
       }
       setRecommendations(res.recommendations);
+      setSuggestedHubs(res.suggested_hubs || []);
     } catch (err: any) {
       console.error('[Advisor] Failed to load recommendations:', err);
       setRecommendationsError(err?.message || 'Failed to load recommendations. Please try again.');
@@ -65,7 +85,128 @@ export const AdvisorPage: React.FC = () => {
   const handleStartOver = () => {
     setSessionId(null);
     setRecommendations(null);
+    setSuggestedHubs([]);
     setAllSaved(false);
+  };
+
+  const handleDownloadPDF = () => {
+    if (!recommendations || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = 210;
+      const margin = 15;
+      const contentW = pageW - margin * 2;
+      let y = 20;
+
+      const checkPage = (needed: number) => {
+        if (y + needed > 280) { pdf.addPage(); y = 20; }
+      };
+
+      // Header Banner
+      pdf.setFontSize(22);
+      pdf.setTextColor(15, 118, 110);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('EduPath — Course Recommendations', margin, y);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated on ${new Date().toLocaleDateString()} | Personal Career Guidance`, margin, y);
+      y += 10;
+
+      // Divider Line
+      pdf.setDrawColor(20, 184, 166);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 10;
+
+      recommendations.forEach((rec, idx) => {
+        checkPage(60);
+
+        // Rank + Course Name
+        pdf.setFontSize(14);
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${idx + 1}. ${rec.course_name}`, margin, y);
+        y += 7;
+
+        // Institution
+        pdf.setFontSize(10);
+        pdf.setTextColor(71, 85, 105);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Institution: ${rec.institution}`, margin + 4, y);
+        y += 5;
+
+        // Score / match
+        if (rec.match_score != null) {
+          pdf.text(`Match Score: ${rec.match_score}%`, margin + 4, y);
+          y += 5;
+        }
+
+        // Hub Category
+        if (rec.hub_category) {
+          pdf.text(`Hub Category: ${rec.hub_category}`, margin + 4, y);
+          y += 5;
+        }
+
+        // Avg Fees
+        if (rec.avg_fees_ksh != null) {
+          const formattedFee = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(rec.avg_fees_ksh);
+          pdf.text(`Average Fees: ${formattedFee} / year`, margin + 4, y);
+          y += 5;
+        }
+
+        // Cutoffs
+        if (rec.cutoff_2023 != null || rec.cutoff_2022 != null) {
+          const cutoffsStr = [
+            rec.cutoff_2023 != null ? `2023: ${rec.cutoff_2023}` : null,
+            rec.cutoff_2022 != null ? `2022: ${rec.cutoff_2022}` : null
+          ].filter(Boolean).join(' | ');
+          pdf.text(`Cluster Cutoff Points — ${cutoffsStr}`, margin + 4, y);
+          y += 5;
+        }
+
+        // Career paths
+        if (rec.career_paths && rec.career_paths.length > 0) {
+          pdf.text(`Recommended Careers: ${rec.career_paths.join(', ')}`, margin + 4, y);
+          y += 5;
+        }
+
+        // Detailed matching reasoning explanation
+        if (rec.match_explanation) {
+          checkPage(20);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(15, 118, 110);
+          pdf.text('Why Recommended:', margin + 4, y);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(51, 65, 85);
+          y += 5;
+
+          const lines = pdf.splitTextToSize(rec.match_explanation, contentW - 8);
+          lines.forEach((line: string) => {
+            checkPage(5);
+            pdf.text(line, margin + 8, y);
+            y += 4.5;
+          });
+        }
+
+        y += 4;
+        // Light separator between recommendation cards
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(margin, y, pageW - margin, y);
+        y += 8;
+      });
+
+      pdf.save('edupath-course-recommendations.pdf');
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to download PDF. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Sync allSaved state when recommendations are loaded
@@ -112,8 +253,34 @@ export const AdvisorPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Mode Toggle */}
+        <div className="flex justify-center gap-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm p-2 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit mx-auto">
+          <button
+            onClick={() => setMode('interview')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+              mode === 'interview'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+            }`}
+          >
+            <FileText className="w-5 h-5" />
+            Get Recommendations
+          </button>
+          <button
+            onClick={() => setMode('chat')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+              mode === 'chat'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+            }`}
+          >
+            <MessageCircle className="w-5 h-5" />
+            Ask AI Anything
+          </button>
+        </div>
+
         {/* Academic Profile Alert */}
-        {!profileLoading && !hasGrades && !sessionId && !recommendations && (
+        {mode === 'interview' && !profileLoading && !hasGrades && !sessionId && !recommendations && (
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-2xl p-4 flex items-start gap-3">
             <GraduationCap className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -129,7 +296,7 @@ export const AdvisorPage: React.FC = () => {
         )}
 
         {/* Profile Badge */}
-        {!profileLoading && hasGrades && !sessionId && !recommendations && (
+        {mode === 'interview' && !profileLoading && hasGrades && !sessionId && !recommendations && (
           <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700/30 rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-teal-100 dark:bg-teal-800 rounded-full flex items-center justify-center">
@@ -156,6 +323,16 @@ export const AdvisorPage: React.FC = () => {
         {/* Content Section */}
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-white/20 dark:border-slate-700/50">
           
+          {/* Chat Mode */}
+          {mode === 'chat' && (
+            <div className="h-[600px]">
+              <AIChat />
+            </div>
+          )}
+          
+          {/* Interview Mode */}
+          {mode === 'interview' && (
+            <>
           {/* Landing State */}
           {!sessionId && !recommendations && (
             <div className="p-12 text-center space-y-8">
@@ -231,7 +408,7 @@ export const AdvisorPage: React.FC = () => {
 
           {/* Results State */}
           {recommendations && !recommendationsError && (
-            <div className="p-8 space-y-8 bg-slate-50 dark:bg-slate-900/50">
+            <div ref={resultsRef} className="p-8 space-y-8 bg-slate-50 dark:bg-slate-900/50">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Your Top 5 Course Matches</h2>
@@ -241,7 +418,15 @@ export const AdvisorPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600 transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    {isDownloading ? 'Generating...' : 'Download PDF'}
+                  </button>
                   <button
                     onClick={handleSaveAll}
                     disabled={allSaved}
@@ -265,6 +450,43 @@ export const AdvisorPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Suggested Hubs */}
+              {suggestedHubs.length > 0 && (
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-2xl p-6 border border-teal-200 dark:border-teal-800">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recommended Hubs for You</h3>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    Based on your course matches, we recommend joining these communities to connect with peers and professionals.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {suggestedHubs.map(hub => (
+                      <div
+                        key={hub.id}
+                        onClick={() => navigate(`/hubs/${hub.slug}`)}
+                        className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-500 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-3xl">{hub.icon}</div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                              {hub.name}
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {hub.member_count.toLocaleString()} members
+                            </p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">
+                              {hub.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {recommendations.length > 0 ? (
                 <div className="grid gap-6">
                   {recommendations.map((rec, idx) => (
@@ -284,6 +506,8 @@ export const AdvisorPage: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
+          </>
           )}
           
         </div>

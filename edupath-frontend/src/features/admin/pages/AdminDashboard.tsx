@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { useToast } from '../hooks/useToast';
-import { 
+import {
   Users, 
   ShieldCheck,
   Flag,
   FileText,
   Activity,
+  Sparkles,
 } from 'lucide-react';
+import { Button } from '../../../components/common/Button';
 import api from '../../../services/api';
 import type { DashboardStats, RecentStudentPost, RecentAssociatePost, HubHealth } from '../../../services/api';
+import { downloadDashboardPdf } from '../utils/adminPdf';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -20,6 +23,20 @@ export default function AdminDashboard() {
   const [hubHealth, setHubHealth] = useState<HubHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
+  const [reindexing, setReindexing] = useState(false);
+
+  const handleReindex = async () => {
+    setReindexing(true);
+    try {
+      const res = await api.admin.triggerReindex();
+      addToast(res.message || 'AI database successfully updated!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      addToast(err?.message || 'Failed to update AI database.', 'error');
+    } finally {
+      setReindexing(false);
+    }
+  };
 
   const refreshFeeds = async () => {
     try {
@@ -63,15 +80,16 @@ export default function AdminDashboard() {
   }, [addToast]);
 
   const getStatCardColor = (key: keyof DashboardStats) => {
+    if (!stats) return 'bg-teal-500/20 border-teal-500/40 text-teal-400';
     if (key === 'open_reports') {
-      return stats?.open_reports === 0 
+      return stats.open_reports === 0
         ? 'bg-teal-500/20 border-teal-500/40 text-teal-400'
         : stats.open_reports > 5
         ? 'bg-red-500/20 border-red-500/40 text-red-400'
         : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
     }
     if (key === 'pending_applications') {
-      return stats?.pending_applications === 0
+      return stats.pending_applications === 0
         ? 'bg-slate-500/20 border-slate-500/40 text-slate-400'
         : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
     }
@@ -86,12 +104,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDownloadPdf = () => downloadDashboardPdf({
+    stats,
+    studentPosts: recentStudentPosts,
+    associatePosts: recentAssociatePosts,
+    hubHealth,
+  });
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-        <p className="text-slate-400">Platform overview and moderation hub</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+          <p className="text-slate-400">Platform overview and moderation hub</p>
+        </div>
+        <Button
+          onClick={handleReindex}
+          disabled={reindexing}
+          className="bg-slate-800 hover:bg-slate-700 border border-teal-500/30 text-teal-300 transition-all duration-300"
+        >
+          <Sparkles className={`w-4 h-4 mr-2 ${reindexing ? 'animate-spin' : ''}`} />
+          {reindexing ? 'Updating AI...' : 'Sync AI Database'}
+        </Button>
       </div>
 
       {loading ? (

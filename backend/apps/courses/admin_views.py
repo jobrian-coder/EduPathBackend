@@ -178,6 +178,141 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
             'updated': updated,
             'errors': errors
         })
+    
+    @action(detail=False, methods=['post'])
+    def trigger_reindex(self, request):
+        """
+        Triggers reindexing of courses into ChromaDB.
+        """
+        try:
+            import chromadb
+            from chromadb.config import Settings
+            from sentence_transformers import SentenceTransformer
+            from django.conf import settings
+            from apps.courses.models import Course
+            
+            # Use same config as in vector_service and index_courses script
+            EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
+            COLLECTION_NAME = "edupath_courses"
+            
+            embedder = SentenceTransformer(EMBED_MODEL_NAME)
+            db_path = str(settings.CHROMA_DB_PATH)
+            
+            client = chromadb.PersistentClient(
+                path=db_path,
+                settings=Settings(anonymized_telemetry=False)
+            )
+            
+            # Recreate collection to ensure clean state
+            try:
+                client.delete_collection(COLLECTION_NAME)
+            except Exception:
+                pass
+                
+            collection = client.create_collection(
+                name=COLLECTION_NAME,
+                metadata={"hnsw:space": "cosine"}
+            )
+            
+            # Group courses by category
+            all_courses = Course.objects.all().order_by('category')
+            grouped = {}
+            for course in all_courses:
+                cat = course.category
+                if cat not in grouped:
+                    grouped[cat] = {
+                        'rep': course, 
+                        'institutions': [], 
+                        'cutoffs_2023': [], 
+                        'cutoffs_2022': [], 
+                        'fees': []
+                    }
+                g = grouped[cat]
+                if course.institution:
+                    g['institutions'].append(course.institution)
+                if course.cutoff_2023:
+                    g['cutoffs_2023'].append(float(course.cutoff_2023))
+                if course.cutoff_2022:
+                    g['cutoffs_2022'].append(float(course.cutoff_2022))
+                if course.avg_fees_ksh:
+                    g['fees'].append(course.avg_fees_ksh)
+
+            course_groups = list(grouped.values())
+            
+            documents = []
+            metadatas = []
+            ids = []
+
+            for g in course_groups:
+                course = g['rep']
+                inst_names = g['institutions']
+                cutoff_2023s = g['cutoffs_2023']
+                cutoff_2022s = g['cutoffs_2022']
+                fees = g['fees']
+
+                avg_cutoff = sum(cutoff_2023s) / len(cutoff_2023s) if cutoff_2023s else None
+                avg_cutoff_2022 = sum(cutoff_2022s) / len(cutoff_2022s) if cutoff_2022s else None
+                avg_fees = sum(fees) / len(fees) if fees else None
+                institutions_str = ", ".join(inst_names[:3]) + (f" and {len(inst_names)-3} others" if len(inst_names) > 3 else "")
+                
+                text_parts = [
+                    f"Course Name: {course.name}",
+                    f"Category (Hub): {course.category}",
+                    f"Description: {course.description}",
+                    f"Career Opportunities: {', '.join(course.careers) if course.careers else 'Unknown'}",
+                    f"Pros: {', '.join(course.pros) if course.pros else 'N/A'}",
+                    f"Cons: {', '.join(course.cons) if course.cons else 'N/A'}",
+                    f"Required Subjects: {', '.join(course.mandatory_subjects) if course.mandatory_subjects else 'N/A'}",
+                ]
+                doc_text = "\n".join(text_parts)
+                
+                meta = {
+                    "course_id": str(course.id),
+                    "course_name": course.name,
+                    "hub_category": course.category,
+                    "institution": institutions_str or "Unknown",
+                    "careers": ", ".join(course.careers[:3]) if course.careers else "",
+                }
+                
+                if avg_cutoff is not None:
+                    meta["cutoff_2023"] = float(avg_cutoff)
+                if avg_cutoff_2022 is not None:
+                    meta["cutoff_2022"] = float(avg_cutoff_2022)
+                if avg_fees is not None:
+                    meta["avg_fees_ksh"] = float(avg_fees)
+                    
+                documents.append(doc_text)
+                metadatas.append(meta)
+                ids.append(str(course.id))
+                
+            # Batch upsert to avoid memory spikes
+            batch_size = 100
+            for i in range(0, len(documents), batch_size):
+                batch_docs = documents[i:i+batch_size]
+                batch_metas = metadatas[i:i+batch_size]
+                batch_ids = ids[i:i+batch_size]
+                
+                embeddings = embedder.encode(batch_docs).tolist()
+                
+                collection.upsert(
+                    ids=batch_ids,
+                    embeddings=embeddings,
+                    documents=batch_docs,
+                    metadatas=batch_metas
+                )
+                
+            return Response({
+                "status": "success", 
+                "message": f"Successfully indexed {len(documents)} courses to AI database."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "error", 
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 
 class AdminCourseUniversityViewSet(viewsets.ModelViewSet):

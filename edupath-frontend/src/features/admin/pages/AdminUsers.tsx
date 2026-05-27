@@ -6,6 +6,7 @@ import { Button } from '../../../components/common/Button';
 import { Input } from '../../../components/common/Input';
 import api, { type User as ApiUser } from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
+import { downloadUsersPdf } from '../utils/adminPdf';
 import { 
   Plus, 
   X,
@@ -248,7 +249,7 @@ export default function AdminUsers() {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
             <span className="text-xs font-medium text-white">
-              {user.first_name?.[0] || user.email[0].toUpperCase()}
+              {user.first_name?.[0] || user.email?.[0]?.toUpperCase() || '?'}
             </span>
           </div>
           <span className="text-white">{user.email}</span>
@@ -310,8 +311,10 @@ export default function AdminUsers() {
     },
   ];
 
+  const handleDownloadPdf = () => downloadUsersPdf(users);
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>

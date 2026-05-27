@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 import uuid
 
 
@@ -93,6 +94,9 @@ class Course(models.Model):
 
     def __str__(self):
         return f"{self.category} — {self.institution or 'Unknown'}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
 
 class CourseUniversity(models.Model):

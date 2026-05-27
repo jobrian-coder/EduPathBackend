@@ -7,19 +7,32 @@ export function useAuth() {
 
   useEffect(() => {
     const token = localStorage.getItem('edupath.auth.token')
+    const cachedUser = localStorage.getItem('edupath.user')
     
     if (!token) {
       setLoading(false)
       return
     }
+
+    // Immediately use cached user while validating token in background
+    if (cachedUser) {
+      try {
+        setUser(JSON.parse(cachedUser))
+      } catch {
+        // Invalid cached user, will fetch from API
+      }
+    }
     
+    // Validate token and get fresh user data
     ;(async () => {
       try {
         const me = await api.auth.getProfile()
         setUser(me)
+        localStorage.setItem('edupath.user', JSON.stringify(me))
       } catch (error) {
         localStorage.removeItem('edupath.auth.token')
         localStorage.removeItem('edupath.user')
+        setUser(null)
       } finally {
         setLoading(false)
       }

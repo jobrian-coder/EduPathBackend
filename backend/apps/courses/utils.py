@@ -83,10 +83,10 @@ def calculate_cluster_points(raw_cluster_total, mean_points):
     """Apply KUCCPS formula to derive cluster points on 0-48 scale."""
     if raw_cluster_total is None or mean_points is None:
         return None
-    
+
     if raw_cluster_total <= 0 or mean_points <= 0:
         return None
-    
+
     try:
         base = (raw_cluster_total * mean_points) / (48 * 84)
         if base <= 0:
@@ -94,3 +94,40 @@ def calculate_cluster_points(raw_cluster_total, mean_points):
         return (base ** 0.5) * 48
     except (TypeError, ValueError, ZeroDivisionError):
         return None
+
+
+import re
+from .models import Course
+
+
+def parse_hashtags(text: str) -> list:
+    """
+    Extract hashtags from text and match against Course.tag_slug.
+    Returns a list of dicts: [{tag: 'computer-science', course_id: 'uuid', course_name: 'Computer Science'}, ...]
+    """
+    if not text:
+        return []
+
+    # Extract hashtags (case-insensitive, allow alphanumeric and hyphens)
+    hashtag_pattern = r'#([a-zA-Z0-9-]+)'
+    matches = re.findall(hashtag_pattern, text)
+
+    if not matches:
+        return []
+
+    # Normalize to lowercase for matching
+    tag_slugs = {tag.lower() for tag in matches}
+
+    # Query courses matching these tag_slugs
+    courses = Course.objects.filter(tag_slug__in=tag_slugs).values('id', 'tag_slug', 'category')
+
+    # Build result list
+    result = []
+    for course in courses:
+        result.append({
+            'tag': course['tag_slug'],
+            'course_id': str(course['id']),
+            'course_name': course['category'],
+        })
+
+    return result

@@ -1,10 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-
+import { GraduationCap, Menu, X } from 'lucide-react'
 
 import businessIcon from '../../../assets/hubs/businesshubicon.png'
 import engineeringIcon from '../../../assets/hubs/engineeringhubicon.png'
 import techIcon from '../../../assets/hubs/techhubicon.jpeg'
+import healthIcon from '../../../assets/hubs/healthhubicon.png'
+import lawIcon from '../../../assets/hubs/lawhubicon.png'
+import eduhubIcon from '../../../assets/hubs/eduhubicon.jpeg'
+import agricultureIcon from '../../../assets/hubs/agriculturehubicon.jpeg'
+import hospitality from '../../../assets/hubs/hospitalityhubicon.png'
 
 import edupathIcon from '../../../assets/login/edupathicong.png'
 
@@ -81,7 +86,7 @@ export default function Landing() {
     if (searchQuery.trim()) {
       navigate(`/directory?search=${encodeURIComponent(searchQuery.trim())}`)
     } else {
-      navigate('/directory')
+      navigate('/auth')
     }
   }
 
@@ -99,21 +104,115 @@ export default function Landing() {
     // Navigate to directory with university filter
     navigate(`/directory?view=universities&search=${encodeURIComponent(universityName)}`)
   }
+  // Floating image tiles for hero background
+  const floatingImages = [
+    { src: techIcon, label: 'Tech', delay: '0s', x: '5%', y: '10%', size: 'w-16 h-16', rotate: '-6deg' },
+    { src: engineeringIcon, label: 'Engineering', delay: '0.4s', x: '88%', y: '8%', size: 'w-14 h-14', rotate: '8deg' },
+    { src: healthIcon, label: 'Health', delay: '0.8s', x: '3%', y: '60%', size: 'w-12 h-12', rotate: '-4deg' },
+    { src: lawIcon, label: 'Law', delay: '1.2s', x: '90%', y: '55%', size: 'w-14 h-14', rotate: '5deg' },
+    { src: businessIcon, label: 'Business', delay: '0.6s', x: '80%', y: '30%', size: 'w-12 h-12', rotate: '-8deg' },
+    { src: eduhubIcon, label: 'Education', delay: '1s', x: '10%', y: '35%', size: 'w-10 h-10', rotate: '6deg' },
+    { src: agricultureIcon, label: 'Agriculture', delay: '1.4s', x: '50%', y: '5%', size: 'w-10 h-10', rotate: '3deg' },
+    { src: hospitality, label: 'Hospitality', delay: '0.2s', x: '70%', y: '75%', size: 'w-12 h-12', rotate: '-5deg' },
+  ]
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden">
-      {/* Dynamic Animated Background Mesh */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-teal-400/20 blur-[120px] mix-blend-multiply dark:mix-blend-overlay"></div>
-        <div className="absolute top-[10%] -right-[10%] w-[45vw] h-[45vw] rounded-full bg-cyan-400/20 blur-[120px] mix-blend-multiply dark:mix-blend-overlay"></div>
-        <div className="absolute -bottom-[20%] left-[20%] w-[60vw] h-[60vw] rounded-full bg-emerald-400/20 blur-[120px] mix-blend-multiply dark:mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-[50px] dark:bg-slate-900/40 dark:backdrop-blur-[60px]"></div>
+
+      {/* ── Landing Navbar ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/40 dark:border-slate-700/40 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 font-bold text-xl group flex-shrink-0">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-md group-hover:shadow-lg transition-shadow">
+              <GraduationCap size={20} />
+            </div>
+            <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">EduPath</span>
+          </Link>
+
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+            <Link to="/how-it-works" className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60 hover:text-teal-700 dark:hover:text-teal-300 transition-all">About</Link>
+            <Link to="/how-it-works" className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60 hover:text-teal-700 dark:hover:text-teal-300 transition-all">How it Works</Link>
+            <Link to="/hubs" className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60 hover:text-teal-700 dark:hover:text-teal-300 transition-all">Hubs</Link>
+            <Link to="/directory" className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60 hover:text-teal-700 dark:hover:text-teal-300 transition-all">Directory</Link>
+            <Link to="/associates" className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60 hover:text-teal-700 dark:hover:text-teal-300 transition-all">Associates</Link>
+          </nav>
+
+          {/* CTA Buttons */}
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+            <Link to="/auth" className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Sign In</Link>
+            <Link to="/auth" className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-400 hover:to-cyan-400 shadow-md hover:shadow-lg transition-all">
+              Get Started
+            </Link>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+            onClick={() => setMobileMenuOpen(v => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/40 dark:border-slate-700/40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-6 py-4 flex flex-col gap-2 text-sm font-medium">
+            <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800">About</Link>
+            <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800">How it Works</Link>
+            <Link to="/hubs" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800">Hubs</Link>
+            <Link to="/directory" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800">Directory</Link>
+            <Link to="/associates" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800">Associates</Link>
+            <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Sign In</Link>
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold">Get Started</Link>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Hero Background: Mesh + Floating Hub Images ── */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Teal/cyan gradient blobs */}
+        <div className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw] rounded-full bg-teal-400/25 blur-[130px]"></div>
+        <div className="absolute top-[5%] -right-[8%] w-[45vw] h-[45vw] rounded-full bg-cyan-400/20 blur-[120px]"></div>
+        <div className="absolute bottom-[10%] left-[25%] w-[50vw] h-[40vw] rounded-full bg-emerald-400/15 blur-[110px]"></div>
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]" style={{backgroundImage: 'linear-gradient(#0d9488 1px, transparent 1px), linear-gradient(90deg, #0d9488 1px, transparent 1px)', backgroundSize: '60px 60px'}}></div>
+        {/* Frosted overlay */}
+        <div className="absolute inset-0 bg-white/20 dark:bg-slate-900/40 backdrop-blur-[2px]"></div>
+
+        {/* Floating hub image tiles */}
+        {floatingImages.map((img, i) => (
+          <div
+            key={i}
+            className="absolute animate-pulse"
+            style={{
+              left: img.x,
+              top: img.y,
+              animationDelay: img.delay,
+              animationDuration: `${3 + i * 0.5}s`,
+            }}
+          >
+            <div
+              className={`${img.size} rounded-2xl overflow-hidden shadow-xl border-2 border-white/60 dark:border-white/10 backdrop-blur-sm`}
+              style={{ transform: `rotate(${img.rotate})` }}
+            >
+              <img src={img.src} alt={img.label} className="w-full h-full object-cover opacity-60 dark:opacity-30" />
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Main Content Overlay */}
-      <div className="relative z-10 flex flex-col items-center pt-24 pb-32 px-6">
-        {/* Modern Hero Area */}
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col items-center pt-36 pb-32 px-6">
+        {/* Hero Area */}
         <div className="max-w-5xl w-full text-center space-y-10">
-          <div className="inline-flex items-center gap-3 rounded-full bg-white/40 dark:bg-slate-800/40 border border-white/50 dark:border-slate-700/50 backdrop-blur-md px-5 py-2 text-sm font-medium text-teal-800 dark:text-teal-300 shadow-sm hover:scale-105 transition-transform duration-300 cursor-default">
+          <div className="inline-flex items-center gap-3 rounded-full bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/50 backdrop-blur-md px-5 py-2 text-sm font-medium text-teal-800 dark:text-teal-300 shadow-sm hover:scale-105 transition-transform duration-300 cursor-default">
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
@@ -122,7 +221,7 @@ export default function Landing() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm leading-tight">
-            Design your future  <br className="hidden md:block"/>
+            Design your future <br className="hidden md:block"/>
             with <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">crystal clarity</span>.
           </h1>
 
@@ -132,8 +231,8 @@ export default function Landing() {
 
           {/* Fluid Search Bar */}
           <div className="mx-auto max-w-2xl flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex-1 flex items-center gap-3 w-full rounded-[2rem] bg-white/60 dark:bg-slate-900/60 border border-white/60 dark:border-slate-700/50 backdrop-blur-xl px-6 py-4 shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-within:ring-4 focus-within:ring-teal-500/20 transition-all duration-300">
-              <svg className="h-6 w-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-1 flex items-center gap-3 w-full rounded-[2rem] bg-white/70 dark:bg-slate-900/70 border border-white/70 dark:border-slate-700/50 backdrop-blur-xl px-6 py-4 shadow-[0_8px_30px_rgb(0,0,0,0.08)] focus-within:ring-4 focus-within:ring-teal-500/20 transition-all duration-300">
+              <svg className="h-6 w-6 text-teal-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -152,14 +251,28 @@ export default function Landing() {
             </button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 pt-6">
-            <Link to="/directory" className="px-6 py-3 rounded-full bg-white/50 hover:bg-white/80 dark:bg-slate-800/50 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm">
+          {/* Stats row */}
+          <div className="flex flex-wrap justify-center gap-6 pt-2">
+            {[
+              { label: 'Courses Listed', value: '500+' },
+              { label: 'Universities', value: '30+' },
+              { label: 'Career Hubs', value: '12' },
+            ].map(stat => (
+              <div key={stat.label} className="px-6 py-3 rounded-2xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/50 dark:border-slate-700/40 shadow-sm">
+                <div className="text-2xl font-extrabold text-teal-600 dark:text-teal-400">{stat.value}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4 pt-2">
+            <Link to="/directory" className="px-6 py-3 rounded-full bg-white/60 hover:bg-white/90 dark:bg-slate-800/60 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm border border-white/50 dark:border-slate-700/40">
               View Directory
             </Link>
-            <Link to="/courses/compare" className="px-6 py-3 rounded-full bg-white/50 hover:bg-white/80 dark:bg-slate-800/50 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm">
+            <Link to="/courses/compare" className="px-6 py-3 rounded-full bg-white/60 hover:bg-white/90 dark:bg-slate-800/60 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm border border-white/50 dark:border-slate-700/40">
               Compare Options
             </Link>
-            <Link to="/hubs" className="px-6 py-3 rounded-full bg-white/50 hover:bg-white/80 dark:bg-slate-800/50 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm">
+            <Link to="/hubs" className="px-6 py-3 rounded-full bg-white/60 hover:bg-white/90 dark:bg-slate-800/60 dark:hover:bg-slate-700/80 backdrop-blur-md text-slate-800 dark:text-white font-semibold transition-all hover:scale-[1.03] shadow-sm border border-white/50 dark:border-slate-700/40">
               Discover Hubs
             </Link>
           </div>

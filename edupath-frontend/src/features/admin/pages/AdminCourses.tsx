@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { DataTable, type Column } from '../components/DataTable';
 import { useToast } from '../hooks/useToast';
@@ -11,8 +11,10 @@ import {
   GraduationCap,
   BookOpen,
   DollarSign,
-  Building2
+  Building2,
+  Sparkles
 } from 'lucide-react';
+import { downloadCoursesPdf } from '../utils/adminPdf';
 
 interface CourseFormData {
   name: string;
@@ -68,6 +70,41 @@ export default function AdminCourses() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { addToast } = useToast();
+  const [reindexing, setReindexing] = useState(false);
+  const [institutionFilter, setInstitutionFilter] = useState<string>('all');
+  const [feesMin, setFeesMin] = useState<string>('');
+  const [feesMax, setFeesMax] = useState<string>('');
+  const [cutoffMin, setCutoffMin] = useState<string>('');
+  const [cutoffMax, setCutoffMax] = useState<string>('');
+
+  const institutions = useMemo(
+    () => Array.from(new Set(courses.map(c => c.institution).filter(Boolean))).sort() as string[],
+    [courses]
+  );
+
+  const displayedCourses = useMemo(() => {
+    return courses.filter(c => {
+      if (institutionFilter !== 'all' && c.institution !== institutionFilter) return false;
+      if (feesMin !== '' && (c.avg_fees_ksh == null || c.avg_fees_ksh < Number(feesMin))) return false;
+      if (feesMax !== '' && (c.avg_fees_ksh == null || c.avg_fees_ksh > Number(feesMax))) return false;
+      if (cutoffMin !== '' && (c.cutoff_2023 == null || Number(c.cutoff_2023) < Number(cutoffMin))) return false;
+      if (cutoffMax !== '' && (c.cutoff_2023 == null || Number(c.cutoff_2023) > Number(cutoffMax))) return false;
+      return true;
+    });
+  }, [courses, institutionFilter, feesMin, feesMax, cutoffMin, cutoffMax]);
+
+  const handleReindex = async () => {
+    setReindexing(true);
+    try {
+      const res = await api.admin.triggerReindex();
+      addToast(res.message || 'AI database successfully updated!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      addToast(err?.message || 'Failed to update AI database.', 'error');
+    } finally {
+      setReindexing(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -131,6 +168,11 @@ export default function AdminCourses() {
   const clearFilters = () => {
     setSearchQuery('');
     setCategoryFilter('all');
+    setInstitutionFilter('all');
+    setFeesMin('');
+    setFeesMax('');
+    setCutoffMin('');
+    setCutoffMax('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -280,25 +322,37 @@ export default function AdminCourses() {
     return acc;
   }, {} as Record<string, number>);
 
+  const handleDownloadPdf = () => downloadCoursesPdf(courses);
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Courses</h1>
           <p className="text-slate-400">Manage all courses in the system</p>
         </div>
-        <Button
-          onClick={() => handleOpenModal()}
-          className="bg-teal-600 hover:bg-teal-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Course
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleReindex}
+            disabled={reindexing}
+            className="bg-slate-800 hover:bg-slate-700 border border-teal-500/30 text-teal-300 transition-all duration-300"
+          >
+            <Sparkles className={`w-4 h-4 mr-2 ${reindexing ? 'animate-spin' : ''}`} />
+            {reindexing ? 'Updating AI...' : 'Sync AI Database'}
+          </Button>
+          <Button
+            onClick={() => handleOpenModal()}
+            className="bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Course
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 md:p-5">
+      <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 md:p-5 space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-300">Search courses</label>
@@ -310,7 +364,6 @@ export default function AdminCourses() {
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
             />
           </div>
-
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-300">Category</label>
             <select
@@ -320,24 +373,86 @@ export default function AdminCourses() {
             >
               <option value="all">All categories</option>
               {CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+                <option key={category} value={category}>{category}</option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Institution</label>
+            <select
+              value={institutionFilter}
+              onChange={(e) => setInstitutionFilter(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="all">All institutions</option>
+              {institutions.map(inst => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Min Fees (KSh)</label>
+            <Input
+              type="number"
+              value={feesMin}
+              onChange={(e) => setFeesMin(e.target.value)}
+              placeholder="e.g. 50,000"
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Max Fees (KSh)</label>
+            <Input
+              type="number"
+              value={feesMax}
+              onChange={(e) => setFeesMax(e.target.value)}
+              placeholder="e.g. 300,000"
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Cutoff 2023 Range</label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                step="0.001"
+                value={cutoffMin}
+                onChange={(e) => setCutoffMin(e.target.value)}
+                placeholder="Min"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              />
+              <Input
+                type="number"
+                step="0.001"
+                value={cutoffMax}
+                onChange={(e) => setCutoffMax(e.target.value)}
+                placeholder="Max"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-slate-400">
-            Showing <span className="text-white font-medium">{courses.length}</span> courses
+            Showing <span className="text-white font-medium">{displayedCourses.length}</span>
+            {displayedCourses.length !== courses.length && (
+              <span> of <span className="text-white font-medium">{courses.length}</span></span>
+            )}
+            {' '}courses
+            {(institutionFilter !== 'all' || feesMin !== '' || feesMax !== '' || cutoffMin !== '' || cutoffMax !== '') && (
+              <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-teal-500/20 text-teal-300">filtered</span>
+            )}
           </div>
           <button
             type="button"
             onClick={clearFilters}
             className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-teal-500 hover:text-teal-300"
           >
-            Clear filters
+            Clear all filters
           </button>
         </div>
       </div>
@@ -367,7 +482,7 @@ export default function AdminCourses() {
 
       {/* Data Table */}
       <DataTable
-        data={courses}
+        data={displayedCourses}
         columns={columns}
         keyExtractor={(course) => course.id}
         loading={loading}
@@ -378,7 +493,7 @@ export default function AdminCourses() {
         onEdit={handleOpenModal}
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
-        emptyMessage="No courses found. Add your first course to get started."
+        emptyMessage="No courses match the current filters."
       />
 
       {/* Modal */}

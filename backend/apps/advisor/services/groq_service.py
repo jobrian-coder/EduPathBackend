@@ -259,8 +259,8 @@ class GroqInterviewService:
         completion = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.75,
-            max_tokens=612,
+            temperature=0.85,
+            max_tokens=1024,
             response_format={"type": "json_object"},
         )
         return completion.choices[0].message.content.strip()

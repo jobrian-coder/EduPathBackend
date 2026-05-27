@@ -85,7 +85,7 @@ def associate_posts(request, associate_id):
 @permission_classes([IsAdmin])
 def create_associate_post(request, associate_id):
     """
-    POST /api/associates/{associate_id}/posts/
+    POST /api/associates/{associate_id}/posts/create/
     Admin-only endpoint — creates a post on behalf of an Associate.
     """
     associate = get_object_or_404(Associate, id=associate_id)
@@ -98,6 +98,132 @@ def create_associate_post(request, associate_id):
             status=status.HTTP_201_CREATED
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_associate_profile(request):
+    """
+    GET /api/associates/me/
+    Returns the Associate profile owned by the current user, or 404.
+    """
+    try:
+        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+    except Associate.DoesNotExist:
+        return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = AssociatePublicSerializer(associate, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_application_status(request):
+    """
+    GET /api/associates/me/status/
+    Returns the current user's associate application status.
+    Returns 404 if no application exists.
+    """
+    try:
+        associate = Associate.objects.get(user=request.user)
+        return Response({
+            'has_application': True,
+            'is_verified': associate.is_verified,
+            'application_status': associate.application_status,
+            'is_suspended': associate.is_suspended,
+            'rejection_reason': associate.rejection_reason,
+        })
+    except Associate.DoesNotExist:
+        return Response({
+            'has_application': False,
+            'is_verified': False,
+            'application_status': None,
+        })
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_my_associate_profile(request):
+    """
+    PATCH /api/associates/me/update/
+    Allows the owning user to update their associate bio, website, location, profile_image.
+    """
+    try:
+        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+    except Associate.DoesNotExist:
+        return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+
+    allowed_fields = {'bio', 'website', 'location', 'profile_image'}
+    data = {k: v for k, v in request.data.items() if k in allowed_fields}
+    for field, value in data.items():
+        setattr(associate, field, value)
+    associate.save()
+    serializer = AssociatePublicSerializer(associate, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_my_associate_post(request):
+    """
+    POST /api/associates/me/posts/
+    Allows the owning user to create a post for their associate profile.
+    """
+    try:
+        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+    except Associate.DoesNotExist:
+        return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = AssociatePostCreateSerializer(data=request.data)
+    if serializer.is_valid():
+        # Parse hashtags from body
+        body = serializer.validated_data.get('body', '')
+        from apps.courses.utils import parse_hashtags
+        tags = parse_hashtags(body)
+        post = serializer.save(associate=associate, tags=tags)
+        return Response(AssociatePostPublicSerializer(post).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_my_associate_post(request, post_id):
+    """
+    DELETE /api/associates/me/posts/{post_id}/
+    Allows the owning user to delete one of their own associate posts.
+    """
+    try:
+        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+    except Associate.DoesNotExist:
+        return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+
+    post = get_object_or_404(AssociatePost, id=post_id, associate=associate)
+    post.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def associate_posts_by_tag(request):
+    """
+    GET /api/associates/posts/by_tag/?tag=computer-science
+    Public endpoint — returns associate posts filtered by course tag.
+    """
+    tag_slug = request.query_params.get('tag')
+    if not tag_slug:
+        return Response({'error': 'tag parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from django.db.models import Q
+    posts_qs = AssociatePost.objects.filter(
+        is_visible=True,
+        associate__is_verified=True,
+        associate__is_suspended=False
+    ).filter(
+        Q(tags__contains=[{'tag': tag_slug}]) | Q(tags__contains=[{'tag': tag_slug.lower()}])
+    ).select_related('associate').order_by('-created_at')
+
+    serializer = AssociatePostPublicSerializer(posts_qs, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['POST'])

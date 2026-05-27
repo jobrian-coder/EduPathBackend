@@ -6,8 +6,8 @@ import { Footer } from './components/common/Footer'
 
 function App() {
   const location = useLocation()
-  const hideSidebar = location.pathname.startsWith('/auth')
-  const isHomePage = location.pathname === '/'
+  const isLandingPage = location.pathname === '/'
+  const hideSidebar = isLandingPage || location.pathname.startsWith('/auth') || location.pathname.startsWith('/associates')
 
   return (
     <>
@@ -22,7 +22,7 @@ function App() {
           <main className={`flex-1 ${hideSidebar ? '' : 'p-4 md:p-6'} bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl`}>
             <Outlet />
           </main>
-          {isHomePage && !hideSidebar && <Footer />}
+          {isLandingPage && <Footer />}
         </div>
       </div>
     </>

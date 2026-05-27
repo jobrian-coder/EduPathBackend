@@ -16,8 +16,11 @@ import HowItWorks from '../features/landing/pages/HowItWorks'
 import LegalPage from '../features/legal/pages/LegalPage'
 // Associate imports
 import AssociateApply from '../features/associates/pages/AssociateApply'
-import AssociatePage from '../features/associates/pages/AssociatePage'
+import AssociateLanding from '../features/associates/pages/AssociateLanding'
 import AssociateDirectory from '../features/associates/pages/AssociateDirectory'
+import AssociateDashboard from '../features/associates/pages/AssociateDashboard'
+import AssociateCreatePost from '../features/associates/pages/AssociateCreatePost'
+import AssociatePage from '../features/associates/pages/AssociatePage'
 // Admin imports
 import AdminDashboard from '../features/admin/pages/AdminDashboard'
 import AdminCourses from '../features/admin/pages/AdminCourses'
@@ -46,6 +49,7 @@ export const AppRoutes: RouteObject[] = [
       { path: 'societies', element: <Navigate to="/hubs" replace /> },
       { path: 'hubs', element: <HubFeedV2 /> },
       { path: 'hubs/:slug', element: <HubFeedV2 /> },
+      { path: 'hubs/:hubId/associates/:associateId', element: <AssociatePage /> },
       { path: 'hub/:slug', element: <HubProfile /> },
       { path: 'posts/:id', element: <PostDetail /> },
       { path: 'profile', element: <RequireAuth><Profile /></RequireAuth> },
@@ -55,10 +59,11 @@ export const AppRoutes: RouteObject[] = [
       { path: 'auth', element: <AuthPage /> },
       { path: 'legal', element: <LegalPage /> },
       // Associate routes
-      { path: 'associates', element: <AssociateDirectory /> },
+      { path: 'associates', element: <AssociateLanding /> },
+      { path: 'associates/directory', element: <AssociateDirectory /> },
       { path: 'associates/apply', element: <AssociateApply /> },
-      { path: 'hubs/:hubId/associates/:associateId', element: <AssociatePage /> },
-      { path: 'hubs/_/associates/:associateId', element: <AssociatePage /> },
+      { path: 'associates/dashboard', element: <RequireAuth><AssociateDashboard /></RequireAuth> },
+      { path: 'associates/dashboard/create', element: <RequireAuth><AssociateCreatePost /></RequireAuth> },
       // Admin routes
       { path: 'admin', element: <RequireAdmin><AdminWrapper><AdminDashboard /></AdminWrapper></RequireAdmin> },
       { path: 'admin/hubs/moderate', element: <RequireAdmin><AdminWrapper><AdminHubModeration /></AdminWrapper></RequireAdmin> },

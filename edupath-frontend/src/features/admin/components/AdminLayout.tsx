@@ -8,15 +8,24 @@ import {
   ShieldCheck,
   FileText,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Download,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  onDownloadPdf?: () => void;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ children, onDownloadPdf }: AdminLayoutProps) {
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handlePdf = () => {
+    if (!onDownloadPdf || pdfLoading) return;
+    setPdfLoading(true);
+    try { onDownloadPdf(); } finally { setTimeout(() => setPdfLoading(false), 800); }
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -138,6 +147,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950 via-slate-950 to-teal-950/20">
         <div className="p-6 md:p-8">
+          {onDownloadPdf && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handlePdf}
+                disabled={pdfLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500/15 border border-teal-500/40 text-teal-300 text-sm font-medium hover:bg-teal-500/25 transition-colors disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                {pdfLoading ? 'Generating…' : 'Download PDF'}
+              </button>
+            </div>
+          )}
           {children}
         </div>
       </main>

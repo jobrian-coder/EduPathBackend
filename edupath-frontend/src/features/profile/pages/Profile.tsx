@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
-import { listBookmarks } from '../../../lib/bookmarks'
-import type { BookmarkItem } from '../../../lib/bookmarks'
-import api from '../../../services/api'
-import { getSavedRecommendations, type SavedRecommendation } from '../../advisor/components/RecommendationCard'
+import api, { type Bookmark } from '../../../services/api'
 import { TermsAcceptanceModal, hasConsented } from '../../legal/components/TermsAcceptanceModal'
 
 // interface ProfileStats {
@@ -44,44 +41,37 @@ const DEFAULT_INTERESTS = ['AI Research', 'Fullstack Development', 'Community Me
 //   { id: 3, title: 'Commented on "Public health internships in Nairobi"', time: '1 week ago' },
 // ]
 
-function useBookmarks(): BookmarkItem[] {
-  const [items, setItems] = useState<BookmarkItem[]>([])
-
-  useEffect(() => {
-    setItems(listBookmarks())
-    const handler = () => setItems(listBookmarks())
-    window.addEventListener('bookmarks:changed', handler)
-    return () => window.removeEventListener('bookmarks:changed', handler)
-  }, [])
-
-  return items
-}
-
-function useSavedRecommendations(): { items: SavedRecommendation[]; remove: (key: string) => void } {
-  const [items, setItems] = useState<SavedRecommendation[]>([])
-
-  const refresh = () => setItems(getSavedRecommendations())
-
-  useEffect(() => {
-    refresh()
-    window.addEventListener('storage', refresh)
-    return () => window.removeEventListener('storage', refresh)
-  }, [])
-
-  const remove = (key: string) => {
-    const updated = getSavedRecommendations().filter(
-      r => `${r.course_name}__${r.institution}` !== key
-    )
-    localStorage.setItem('edupath_saved_recommendations', JSON.stringify(updated))
-    setItems(updated)
+// Helper to fetch course/university details for bookmarks
+async function enrichBookmark(bookmark: Bookmark) {
+  try {
+    if (bookmark.bookmark_type === 'course') {
+      const course = await api.courses.getById(bookmark.bookmark_id)
+      return {
+        id: bookmark.bookmark_id,
+        type: 'course' as const,
+        title: course.name,
+        meta: course.institution || course.category,
+        payload: course,
+      }
+    } else if (bookmark.bookmark_type === 'university') {
+      const university = await api.courses.getUniversity(bookmark.bookmark_id)
+      return {
+        id: bookmark.bookmark_id,
+        type: 'university' as const,
+        title: university.name,
+        meta: university.location,
+        payload: university,
+      }
+    }
+    return null
+  } catch {
+    return null
   }
-
-  return { items, remove }
 }
 
 export default function Profile() {
-  const bookmarks = useBookmarks()
-  const { items: savedRecs, remove: removeRec } = useSavedRecommendations()
+  const [bookmarks, setBookmarks] = useState<any[]>([])
+  const [savedRecs, setSavedRecs] = useState<any[]>([])
   const [user, setUser] = useState<any | null>(null)
   const [editing, setEditing] = useState(false)
   const [bioDraft, setBioDraft] = useState('')
@@ -151,6 +141,25 @@ export default function Profile() {
       fetchAchievements()
       fetchAnalytics()
       api.associates.listFollowed().then(setFollowedAssociates).catch(() => {})
+      
+      // Fetch bookmarks from backend
+      api.bookmarks.list().then(async (backendBookmarks) => {
+        const enriched = await Promise.all(
+          backendBookmarks.map(enrichBookmark)
+        )
+        setBookmarks(enriched.filter(Boolean))
+      }).catch(() => {})
+      
+      // Fetch saved recommendations from localStorage (temporary until backend endpoint is added)
+      try {
+        const saved = localStorage.getItem('edupath_saved_recommendations')
+        if (saved) {
+          const recs = JSON.parse(saved)
+          setSavedRecs(Array.isArray(recs) ? recs.slice(0, 6) : [])
+        }
+      } catch {
+        // ignore
+      }
     }
   }, [user?.id])
 
@@ -211,9 +220,8 @@ export default function Profile() {
     window.addEventListener('academic:saved', handler)
     return () => window.removeEventListener('academic:saved', handler)
   }, [])
-  const bookmarkedCourses = useMemo(() => bookmarks.filter(b => b.type === 'course'), [bookmarks])
-  const bookmarkedPosts = useMemo(() => bookmarks.filter(b => b.type === 'post'), [bookmarks])
-  const bookmarkedUniversities = useMemo(() => bookmarks.filter(b => b.type === 'university'), [bookmarks])
+  const bookmarkedCourses = useMemo(() => bookmarks.filter(b => b?.type === 'course'), [bookmarks])
+  const bookmarkedPosts = useMemo(() => bookmarks.filter(b => b?.type === 'post'), [bookmarks])
 
   // Simple cluster formula helper (uses payload if provided)
   const clusterPoints = (raw: number, mean: number) => {
@@ -222,11 +230,11 @@ export default function Profile() {
     if (base <= 0) return 0
     return Math.sqrt(base) * 48
   }
-  const eligibilityBadge = (item: BookmarkItem) => {
+  const eligibilityBadge = (item: any) => {
     const payload = item.payload || {}
     const userMean = Number(payload.mean_points) || 0
     const rawCluster = Number(payload.raw_cluster) || 0
-    const courseCutoff = Number(payload.required_points || payload.cluster_points) || 0
+    const courseCutoff = Number(payload.required_points || payload.cluster_points || payload.cutoff_2023) || 0
     const userPoints = clusterPoints(rawCluster, userMean)
     if (userPoints == null || !courseCutoff) return 'Unknown'
     return userPoints >= courseCutoff ? 'Eligible ✅' : 'Not eligible ❌'
@@ -247,57 +255,57 @@ export default function Profile() {
 
   return (
     <PageContainer title="Profile">
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-6xl mx-auto p-4 space-y-6">
-          {/* Bio Card (persistent) */}
-          <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-lg">
+      <div className="min-h-screen theme-bg">
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+          {/* Profile Header - Full Width */}
+          <Card className="relative overflow-hidden border-0 theme-surface text-slate-900 dark:text-white card-shadow">
             <div className="absolute inset-0">
               <div className="absolute -top-32 -right-24 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
               <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-teal-500/10 blur-3xl" />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-teal-50/50 dark:from-blue-900/20 dark:via-transparent dark:to-teal-900/20" />
             </div>
-          <CardContent className="relative z-10 p-6 md:p-8 flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="flex items-center gap-6 md:flex-1">
-              <img src={profile.profilePicture} className="w-24 h-24 rounded-full border-4 border-white/80 shadow-2xl" alt="Profile photo" />
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">{profile.role}</div>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{profile.fullName}</h2>
-                <div className="text-sm text-slate-600 dark:text-slate-300">@{profile.username} · {profile.location}</div>
-                {!editing ? (
-                  <p className="mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{profile.bio}</p>
-                ) : (
-                  <div className="mt-3 max-w-2xl space-y-2">
-                    <textarea value={bioDraft} onChange={e=>setBioDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Your bio..." />
-                    <input value={locationDraft} onChange={e=>setLocationDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Location" />
+            <CardContent className="relative z-10 p-6 md:p-8 flex flex-col gap-6 md:flex-row md:items-center">
+              <div className="flex items-center gap-6 md:flex-1">
+                <img src={profile.profilePicture} className="w-24 h-24 rounded-full border-4 border-white/80 shadow-2xl" alt="Profile photo" />
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">{profile.role}</div>
+                  <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{profile.fullName}</h2>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">@{profile.username} · {profile.location}</div>
+                  {!editing ? (
+                    <p className="mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{profile.bio}</p>
+                  ) : (
+                    <div className="mt-3 max-w-2xl space-y-2">
+                      <textarea value={bioDraft} onChange={e=>setBioDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Your bio..." />
+                      <input value={locationDraft} onChange={e=>setLocationDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Location" />
+                    </div>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-300">
+                    {academic?.kcse_year && (
+                      <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
+                        <span className="text-lg">🎓</span>
+                        <span>KCSE {academic.kcse_year}</span>
+                      </span>
+                    )}
+                    {academic?.kcse_school && (
+                      <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
+                        <span className="text-lg">🏫</span>
+                        <span>{academic.kcse_school}</span>
+                      </span>
+                    )}
+                    {academic?.kcse_mean_points && (
+                      <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
+                        <span className="text-lg">⭐</span>
+                        <span>{Number(academic.kcse_mean_points).toFixed(1)}/84 Points</span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
+                      <span className="text-lg">🌐</span>
+                      <span>Open to collaborations</span>
+                    </span>
                   </div>
-                )}
-                <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-300">
-                  {academic?.kcse_year && (
-                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
-                      <span className="text-lg">🎓</span>
-                      <span>KCSE {academic.kcse_year}</span>
-                    </span>
-                  )}
-                  {academic?.kcse_school && (
-                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
-                      <span className="text-lg">🏫</span>
-                      <span>{academic.kcse_school}</span>
-                    </span>
-                  )}
-                  {academic?.kcse_mean_points && (
-                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
-                      <span className="text-lg">⭐</span>
-                      <span>{Number(academic.kcse_mean_points).toFixed(1)}/84 Points</span>
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-700 px-3 py-2">
-                    <span className="text-lg">🌐</span>
-                    <span>Open to collaborations</span>
-                  </span>
                 </div>
               </div>
-            </div>
-            <div className="flex w-full flex-col items-stretch gap-3 md:w-auto">
+              <div className="flex w-full flex-col items-stretch gap-3 md:w-auto">
               <div className="grid grid-cols-3 gap-2 text-center text-sm">
                 {[
                   { label: 'Posts', value: analytics?.total_posts || 0 },
@@ -340,141 +348,157 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* ── Saved Courses & Universities (always visible, top priority) ── */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="font-semibold text-slate-900 dark:text-white">📚 Saved Courses</div>
-                <Link to="/directory" className="text-sm text-teal-600 hover:text-teal-700">Browse →</Link>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {bookmarkedCourses.length === 0 ? (
-                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                  <div className="text-3xl mb-2">🎓</div>
-                  <div className="text-sm">No courses saved yet.</div>
-                  <Link to="/directory" className="mt-2 inline-block text-sm text-teal-600 hover:underline">Explore courses →</Link>
+          {/* Two Column Layout: Interests/Grades | Saved Courses */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left: User Interests and Grades */}
+            <Card className="theme-surface card-shadow theme-border">
+              <CardHeader>
+                <div className="font-semibold text-slate-900 dark:text-white text-lg">👤 User Interests and Grades</div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Interests Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Interests</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {DEFAULT_INTERESTS.map((interest, i) => (
+                      <span key={i} className="px-3 py-1.5 rounded-full bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-sm font-medium">{interest}</span>
+                    ))}
+                    <button className="px-3 py-1.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-sm text-slate-600 dark:text-slate-300 hover:border-teal-500 hover:text-teal-600 transition">+ Add</button>
+                  </div>
                 </div>
-              ) : (
-                bookmarkedCourses.map(item => (
-                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
-                      <div className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{eligibilityBadge(item)}</div>
+
+                {/* Academic Summary */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Academic Profile</h3>
+                  {!academic?.kcse_grades || Object.keys(academic.kcse_grades).length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                      <div className="text-3xl mb-2">📚</div>
+                      <div className="text-sm mb-3">No grades added yet</div>
+                      <Link to="/profile/academic" className="inline-block px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm font-medium">
+                        Add KCSE Grades
+                      </Link>
                     </div>
-                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.meta}</div>}
-                    <Link to={`/courses/${item.id}`} className="mt-2 text-sm text-teal-500 hover:text-teal-600 block">View course →</Link>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {academic?.kcse_mean_points != null && (
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-700">
+                          <div className="text-xs uppercase tracking-wide text-teal-600 dark:text-teal-400 font-semibold mb-1">KCSE Mean Points</div>
+                          <div className="text-3xl font-bold text-teal-700 dark:text-teal-300">{Number(academic.kcse_mean_points).toFixed(1)}<span className="text-lg text-slate-500">/84</span></div>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-2">
+                        {Object.entries(academic.kcse_grades).slice(0, 6).map(([code, grade]: any) => (
+                          <div key={code} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center">
+                            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{code}</div>
+                            <div className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{grade}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {Object.keys(academic.kcse_grades).length > 6 && (
+                        <Link to="/profile/academic" className="block text-center text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400">
+                          View all {Object.keys(academic.kcse_grades).length} subjects →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
+            {/* Right: Saved Courses */}
+            <Card className="theme-surface card-shadow theme-border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-slate-900 dark:text-white text-lg">📚 Saved Courses</div>
+                  <Link to="/directory" className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium">Browse →</Link>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {bookmarkedCourses.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                    <div className="text-4xl mb-3">�</div>
+                    <div className="text-sm mb-3">No courses saved yet</div>
+                    <Link to="/directory" className="inline-block px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm font-medium">
+                      Explore Courses
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                    {bookmarkedCourses.map(item => (
+                      <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all bg-white dark:bg-slate-800">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-slate-800 dark:text-slate-100 text-sm leading-tight">{item.title}</div>
+                            {item.meta && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.meta}</div>}
+                          </div>
+                          <div className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 whitespace-nowrap">{eligibilityBadge(item)}</div>
+                        </div>
+                        <Link to={`/courses/${item.id}`} className="mt-2 text-xs text-teal-500 hover:text-teal-600 dark:text-teal-400 block font-medium">View details →</Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Full Width: Recommended Courses and Hubs */}
+          <Card className="theme-surface card-shadow theme-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="font-semibold text-slate-900 dark:text-white">🏛️ Saved Universities</div>
-                <Link to="/directory" className="text-sm text-teal-600 hover:text-teal-700">Browse →</Link>
+                <div className="font-semibold text-slate-900 dark:text-white text-lg">✨ Recommended Courses and Hubs</div>
+                <Link to="/advisor" className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium">
+                  {savedRecs.length > 0 ? 'Get new recommendations →' : 'Start EduGuide AI →'}
+                </Link>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {bookmarkedUniversities.length === 0 ? (
-                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                  <div className="text-3xl mb-2">🏫</div>
-                  <div className="text-sm">No universities saved yet.</div>
-                  <Link to="/directory" className="mt-2 inline-block text-sm text-teal-600 hover:underline">Explore universities →</Link>
-                </div>
-              ) : (
-                bookmarkedUniversities.map(item => (
-                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all">
-                    <div className="font-medium text-slate-800 dark:text-slate-100">{item.title}</div>
-                    {item.meta && <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.meta}</div>}
-                    <Link to={`/universities/${item.id}/programs`} className="mt-2 text-sm text-teal-500 hover:text-teal-600 block">View university →</Link>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── Saved EduGuide Recommendations ── */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-slate-900 dark:text-white">🤖 Saved EduGuide Recommendations</div>
-              <Link to="/advisor" className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400">
-                {savedRecs.length > 0 ? 'Get new →' : 'Start EduGuide →'}
-              </Link>
-            </div>
-          </CardHeader>
           <CardContent>
             {savedRecs.length === 0 ? (
-              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                <div className="text-3xl mb-2">✨</div>
-                <div className="text-sm">No AI recommendations saved yet.</div>
-                <Link to="/advisor" className="mt-2 inline-block text-sm text-teal-600 hover:underline">
-                  Chat with EduGuide to get personalised matches →
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                <div className="text-5xl mb-3">✨</div>
+                <div className="text-base mb-3 font-medium">No AI recommendations yet</div>
+                <div className="text-sm mb-4">Get personalized course recommendations based on your academic profile</div>
+                <Link to="/advisor" className="inline-block px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 font-medium">
+                  Start EduGuide AI →
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3">
-                {savedRecs.map(rec => {
-                  const key = `${rec.course_name}__${rec.institution}`
-                  return (
-                    <div
-                      key={key}
-                      className="flex items-start justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300">
-                            #{rec.rank} Match
-                          </span>
-                          <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
-                            {rec.match_score}%
-                          </span>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
-                            {rec.hub_category}
-                          </span>
-                        </div>
-                        <div className="font-semibold text-slate-800 dark:text-white leading-tight">
-                          {rec.course_name}
-                        </div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                          {rec.institution}
-                          {rec.cutoff_2023 != null && (
-                            <span className="ml-2 text-slate-400">· Cutoff {rec.cutoff_2023}</span>
-                          )}
-                          {rec.avg_fees_ksh != null && (
-                            <span className="ml-2 text-slate-400">
-                              · KSh {rec.avg_fees_ksh.toLocaleString()}/yr
-                            </span>
-                          )}
-                        </div>
-                        {rec.career_paths?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {rec.career_paths.slice(0, 3).map((c, i) => (
-                              <span key={i} className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                {c}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="text-xs text-slate-400 mt-2">
-                          Saved {new Date(rec.saved_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeRec(key)}
-                        title="Remove"
-                        className="flex-shrink-0 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors text-lg leading-none mt-1"
-                      >
-                        ×
-                      </button>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {savedRecs.map((rec, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 transition-all bg-white dark:bg-slate-800"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide px-2 py-1 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300">
+                        #{idx + 1} Match
+                      </span>
+                      <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                        {rec.match_score || '95'}%
+                      </span>
                     </div>
-                  )
-                })}
+                    <div className="font-semibold text-slate-800 dark:text-white leading-tight mb-1">
+                      {rec.course_name || rec.name}
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      {rec.institution}
+                    </div>
+                    {rec.cutoff_2023 && (
+                      <div className="text-xs text-slate-400 mt-2">
+                        Cutoff: {rec.cutoff_2023} points
+                      </div>
+                    )}
+                    {rec.career_paths?.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {rec.career_paths.slice(0, 2).map((c: string, i: number) => (
+                          <span key={i} className="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

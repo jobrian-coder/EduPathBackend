@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import type { AssociateApplication } from '../../../services/api';
+import { downloadApplicationsPdf } from '../utils/adminPdf';
 
 type Tab = 'pending' | 'awaiting' | 'history';
 
@@ -105,8 +106,10 @@ export default function AdminAssociateApplications() {
     setRequestInfoQuestion('');
   };
 
+  const handleDownloadPdf = () => downloadApplicationsPdf(applications);
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white mb-2">Associate Applications</h1>

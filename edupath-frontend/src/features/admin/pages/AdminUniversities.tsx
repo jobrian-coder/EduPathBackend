@@ -13,6 +13,7 @@ import {
   Globe,
   Users
 } from 'lucide-react';
+import { downloadUniversitiesPdf } from '../utils/adminPdf';
 
 interface UniversityFormData {
   name: string;
@@ -193,8 +194,10 @@ export default function AdminUniversities() {
     }
   };
 
+  const handleDownloadPdf = () => downloadUniversitiesPdf(universities);
+
   return (
-    <AdminLayout>
+    <AdminLayout onDownloadPdf={handleDownloadPdf}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>

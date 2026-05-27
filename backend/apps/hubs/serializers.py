@@ -123,6 +123,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['hub', 'title', 'content', 'post_type', 'is_expert_post', 'tags']
+        read_only_fields = ['tags']
 
 
 class CommentSerializer(serializers.ModelSerializer):

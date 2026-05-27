@@ -5,12 +5,25 @@ import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import { Button } from '../../../components/common/Button'
 import { Input } from '../../../components/common/Input'
 import { Badge } from '../../../components/common/Badge'
-import api, { type CourseUniversity, type University } from '../../../services/api'
+import api, { type University } from '../../../services/api'
+
+type FlatCourse = {
+  id: string
+  name: string
+  category: string
+  description?: string
+  duration?: string
+  avg_fees_ksh?: number
+  cutoff_2023?: number
+  institution?: string
+  programme_code?: string
+  related_hub?: string
+}
 
 export default function UniversityPrograms() {
   const { id } = useParams<{ id: string }>()
   const [university, setUniversity] = useState<University | null>(null)
-  const [programs, setPrograms] = useState<CourseUniversity[]>([])
+  const [programs, setPrograms] = useState<FlatCourse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -50,7 +63,7 @@ export default function UniversityPrograms() {
 
         const data = await api.courses.getUniversityPrograms(universityId, params)
         setUniversity(data.university)
-        setPrograms(data.programs)
+        setPrograms(data.programs as unknown as FlatCourse[])
         setTotalPrograms(data.total_programs)
       } catch (err: any) {
         setError(err?.message || 'Failed to load university programs')
@@ -101,37 +114,57 @@ export default function UniversityPrograms() {
   return (
     <PageContainer>
       <div className="space-y-6">
-        {/* University Header */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl">{university.logo}</div>
-                <div>
-                  <h1 className="text-2xl font-bold text-black">{university.name}</h1>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-                    <span>{university.location}</span>
-                    <Badge variant={university.type === 'Public' ? 'default' : 'secondary'}>
-                      {university.type}
-                    </Badge>
-                    <span>Rank #{university.ranking}</span>
+        {/* University Header with Logo Background */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50/20 dark:from-teal-950/20 dark:via-slate-900/40 dark:to-slate-950/80 border border-teal-100/50 dark:border-slate-800/80 shadow-sm">
+          {/* Large Background Logo */}
+          <div className="absolute -right-20 -top-20 text-[300px] opacity-10 select-none">
+            {university.logo}
+          </div>
+          <div className="absolute -left-10 -bottom-10 text-[200px] opacity-5 select-none rotate-12">
+            {university.logo}
+          </div>
+          
+          {/* Content */}
+          <Card className="relative bg-transparent border-0">
+            <CardContent className="p-8">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="flex items-center space-x-4 flex-wrap sm:flex-nowrap">
+                  <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-5xl border border-slate-200 dark:border-slate-700 shadow-md">
+                    {university.logo}
                   </div>
-                  <div className="text-sm text-gray-700 mt-2 max-w-2xl">
-                    {university.description}
+                  <div>
+                    <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{university.name}</h1>
+                    <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-300 mt-2 flex-wrap gap-y-2">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        {university.location}
+                      </span>
+                      <Badge variant={university.type === 'Public' ? 'default' : 'secondary'} className="bg-teal-50 text-teal-800 border border-teal-200/50 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900/40 font-semibold">
+                        {university.type}
+                      </Badge>
+                      <span className="text-teal-600 dark:text-teal-400 font-semibold">Rank #{university.ranking}</span>
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-350 mt-3 max-w-2xl leading-relaxed">
+                      {university.description}
+                    </div>
                   </div>
                 </div>
+                <div className="flex space-x-2">
+                  <Link to="/directory">
+                    <Button variant="outline" size="sm" className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700/80 shadow-sm">
+                      ← Back to Directory
+                    </Button>
+                  </Link>
+                  <a href={university.website} target="_blank" rel="noopener noreferrer">
+                    <Button variant="default" size="sm" className="bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm">
+                      Visit Website
+                    </Button>
+                  </a>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Link to="/directory">
-                  <Button variant="outline" size="sm">← Back to Directory</Button>
-                </Link>
-                <a href={university.website} target="_blank" rel="noopener noreferrer">
-                  <Button variant="default" size="sm">Visit Website</Button>
-                </a>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Filters and Search */}
         <Card>
@@ -153,11 +186,11 @@ export default function UniversityPrograms() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium text-sm transition-shadow"
                 >
-                  <option value="">All Categories</option>
+                  <option value="" className="text-slate-800 dark:text-slate-200">All Categories</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat} className="text-slate-800 dark:text-slate-200">{cat}</option>
                   ))}
                 </select>
               </div>
@@ -167,10 +200,10 @@ export default function UniversityPrograms() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium text-sm transition-shadow"
                 >
                   {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value} className="text-slate-800 dark:text-slate-200">{option.label}</option>
                   ))}
                 </select>
               </div>
@@ -180,7 +213,7 @@ export default function UniversityPrograms() {
 
         {/* Programs Count */}
         <div className="flex items-center justify-between">
-          <div className="text-black">
+          <div className="text-slate-700 dark:text-slate-300 font-bold text-sm">
             Showing {programs.length} of {totalPrograms} programs
           </div>
           {(searchQuery || selectedCategory) && (
@@ -212,82 +245,64 @@ export default function UniversityPrograms() {
             </Card>
           ) : (
             programs.map((program) => (
-              <Card key={program.id} className="hover:bg-teal-50 hover:border-teal-300 transition-colors">
-                <CardContent className="p-4">
+              <Card key={program.id} className="group relative border border-slate-200/80 dark:border-slate-800/80 hover:border-teal-500/50 hover:shadow-md transition-all duration-300 bg-white dark:bg-slate-900/40 overflow-hidden">
+                <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-black mb-2">
-                        {typeof program.course === 'object' && program.course !== null ? program.course.name : program.course}
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors mb-2.5">
+                        {program.name}
                       </h3>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4 bg-slate-50/50 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
                         <div>
-                          <div className="text-gray-600">Category</div>
-                          <div className="text-black">
-                            {typeof program.course === 'object' && program.course !== null ? program.course.category : '—'}
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Category</div>
+                          <div className="text-slate-800 dark:text-slate-200 font-semibold">{program.category || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Duration</div>
+                          <div className="text-slate-800 dark:text-slate-200 font-semibold">{program.duration || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Fees (KSh)</div>
+                          <div className="text-emerald-700 dark:text-emerald-400 font-bold">
+                            {program.avg_fees_ksh ? `Ksh ${program.avg_fees_ksh.toLocaleString()}` : '—'}
                           </div>
                         </div>
                         <div>
-                          <div className="text-gray-600">Duration</div>
-                          <div className="text-black">
-                            {typeof program.course === 'object' && program.course !== null ? program.course.duration : '—'}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-gray-600">Fees (KSh)</div>
-                          <div className="text-black font-medium">
-                            {program.fees_ksh?.toLocaleString() || '—'}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-gray-600">Cutoff Points</div>
-                          <div className="text-black font-medium">
-                            {program.cutoff_points || '—'}
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Cutoff Points</div>
+                          <div className="text-cyan-700 dark:text-cyan-400 font-bold">
+                            {program.cutoff_2023 || '—'}
                           </div>
                         </div>
                       </div>
 
-                      {typeof program.course === 'object' && program.course !== null && program.course.description && (
+                      {program.description && (
                         <div className="mb-4">
-                          <div className="text-gray-600 text-sm mb-1">Description</div>
-                          <div className="text-gray-700 text-sm">
-                            {program.course.description.length > 200 
-                              ? `${program.course.description.substring(0, 200)}...`
-                              : program.course.description
-                            }
+                          <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Description</div>
+                          <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            {program.description.length > 200
+                              ? `${program.description.substring(0, 200)}...`
+                              : program.description}
                           </div>
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
                         <div className="flex items-center gap-2">
-                          <Link 
-                            to={`/courses/${typeof program.course === 'object' && program.course !== null ? program.course.id : program.course}`}
-                            className="text-teal-400 hover:text-teal-300 text-sm font-medium"
+                          <Link
+                            to={`/courses/${program.id}`}
+                            className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold flex items-center gap-1.5"
                           >
                             View Course Details
+                            <svg className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                           </Link>
-                          {program.course_url && (
-                            <a 
-                              href={program.course_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-green-400 hover:text-green-300 text-sm font-medium"
-                            >
-                              Apply Now →
-                            </a>
-                          )}
                         </div>
-                        <ProgramDiscussionsBadge 
-                          programName={typeof program.course === 'object' && program.course !== null ? program.course.name : program.course} 
-                        />
+                        <ProgramDiscussionsBadge programName={program.name} />
                       </div>
                     </div>
-                    
+
                     <div className="ml-4">
-                      <Badge variant="secondary">
-                        {typeof program.course === 'object' && program.course !== null ? program.course.category : 'Course'}
-                      </Badge>
+                      <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 font-semibold border-slate-200/50">{program.category || 'Course'}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -297,27 +312,27 @@ export default function UniversityPrograms() {
         </div>
 
         {/* University Stats */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-black">University Information</h3>
+        <Card className="border border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-800/80">
+            <h3 className="text-lg font-bold text-slate-850 dark:text-slate-100">University Information</h3>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <div className="text-gray-600">Established</div>
-                <div className="text-black font-medium">{university.established}</div>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 text-sm">
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <div className="text-xs uppercase font-semibold text-slate-400 dark:text-slate-500 mb-1">Established</div>
+                <div className="text-slate-800 dark:text-slate-200 font-bold text-base">{university.established}</div>
               </div>
-              <div>
-                <div className="text-gray-600">Students</div>
-                <div className="text-black font-medium">{university.students}</div>
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <div className="text-xs uppercase font-semibold text-slate-400 dark:text-slate-500 mb-1">Students</div>
+                <div className="text-slate-800 dark:text-slate-200 font-bold text-base">{university.students}</div>
               </div>
-              <div>
-                <div className="text-gray-600">Type</div>
-                <div className="text-black font-medium">{university.type}</div>
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <div className="text-xs uppercase font-semibold text-slate-400 dark:text-slate-500 mb-1">Type</div>
+                <div className="text-slate-800 dark:text-slate-200 font-bold text-base">{university.type}</div>
               </div>
-              <div>
-                <div className="text-gray-600">Ranking</div>
-                <div className="text-black font-medium">#{university.ranking}</div>
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <div className="text-xs uppercase font-semibold text-slate-400 dark:text-slate-500 mb-1">Ranking</div>
+                <div className="text-slate-800 dark:text-slate-200 font-bold text-base">#{university.ranking}</div>
               </div>
             </div>
             

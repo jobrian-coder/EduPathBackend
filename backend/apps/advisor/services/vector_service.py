@@ -6,10 +6,11 @@ sentence-transformers are only loaded when the advisor endpoints are actually
 hit, not on Django startup (keeps migrate / admin commands fast).
 """
 
-import chromadb
-from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
 from django.conf import settings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 COLLECTION_NAME = "edupath_courses"
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
@@ -34,9 +35,10 @@ HUB_CATEGORIES = [
 ]
 
 
-def _get_embedder() -> SentenceTransformer:
+def _get_embedder():
     global _embedder
     if _embedder is None:
+        from sentence_transformers import SentenceTransformer
         _embedder = SentenceTransformer(EMBED_MODEL_NAME)
     return _embedder
 
@@ -44,6 +46,8 @@ def _get_embedder() -> SentenceTransformer:
 def _get_collection():
     global _client, _collection
     if _collection is None:
+        import chromadb
+        from chromadb.config import Settings
         db_path = str(settings.CHROMA_DB_PATH)
         _client = chromadb.PersistentClient(
             path=db_path,

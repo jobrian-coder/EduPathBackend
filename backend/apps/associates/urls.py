@@ -9,6 +9,12 @@ from .views import (
     unfollow_associate,
     list_followed_associates,
     get_associate_details,
+    get_my_associate_profile,
+    get_my_application_status,
+    update_my_associate_profile,
+    create_my_associate_post,
+    delete_my_associate_post,
+    associate_posts_by_tag,
 )
 from .admin_views import (
     dashboard_stats,
@@ -50,6 +56,16 @@ urlpatterns = [
 
     # Admin-only post creation
     path('<int:associate_id>/posts/create/', create_associate_post, name='create-associate-post'),
+
+    # Associate self-service (owner only)
+    path('me/', get_my_associate_profile, name='my-associate-profile'),
+    path('me/status/', get_my_application_status, name='my-application-status'),
+    path('me/update/', update_my_associate_profile, name='update-my-associate-profile'),
+    path('me/posts/', create_my_associate_post, name='create-my-associate-post'),
+    path('me/posts/<int:post_id>/delete/', delete_my_associate_post, name='delete-my-associate-post'),
+
+    # Public tag filtering
+    path('posts/by_tag/', associate_posts_by_tag, name='associate-posts-by-tag'),
 
     # Moderation reports (authenticated)
     path('reports/', create_report, name='create-report'),
