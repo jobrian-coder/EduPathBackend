@@ -336,3 +336,165 @@ def request_application_info(request, associate_id):
     associate.save()
     # TODO: Send email with question
     return Response({'message': 'Information requested'})
+
+
+# ─── Associates management ───────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def list_all_associates(request):
+    """Return all associates (verified + pending) with activity stats."""
+    from apps.authentication.models import User as AuthUser
+    from .models import Follow
+
+    associates = Associate.objects.select_related('hub').all().order_by('-created_at')
+    data = []
+    for assoc in associates:
+        post_count = AssociatePost.objects.filter(associate=assoc).count()
+        follower_count = Follow.objects.filter(associate=assoc).count()
+        data.append({
+            'id': assoc.id,
+            'name': assoc.name,
+            'associate_type': assoc.associate_type,
+            'hub': assoc.hub.name if assoc.hub else 'Unknown',
+            'hub_id': str(assoc.hub.id) if assoc.hub else None,
+            'profile_image': assoc.profile_image,
+            'website': assoc.website,
+            'location': assoc.location,
+            'contact_email': assoc.contact_email,
+            'is_verified': assoc.is_verified,
+            'is_suspended': assoc.is_suspended,
+            'strike_count': assoc.strike_count,
+            'application_status': assoc.application_status,
+            'post_count': post_count,
+            'follower_count': follower_count,
+            'created_at': assoc.created_at.isoformat(),
+        })
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def toggle_suspend_associate(request, associate_id):
+    """Toggle the suspended status of an associate."""
+    associate = Associate.objects.get(id=associate_id)
+    associate.is_suspended = not associate.is_suspended
+    associate.save()
+    action = 'suspended' if associate.is_suspended else 'unsuspended'
+    return Response({'message': f'Associate {action}', 'is_suspended': associate.is_suspended})
+
+
+# ─── Platform analytics ───────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def platform_analytics(request):
+    """Aggregated analytics for the admin analytics dashboard."""
+    from django.db.models.functions import TruncMonth
+    from apps.authentication.models import User as AuthUser
+    from apps.courses.models import Course
+    from .models import Follow
+
+    # User role breakdown
+    role_qs = (
+        AuthUser.objects
+        .values('role')
+        .annotate(count=models.Count('id'))
+        .order_by('role')
+    )
+    user_roles = [{'role': r['role'], 'count': r['count']} for r in role_qs]
+
+    # Associate type breakdown (verified only)
+    type_qs = (
+        Associate.objects
+        .filter(is_verified=True, is_suspended=False)
+        .values('associate_type')
+        .annotate(count=models.Count('id'))
+    )
+    associate_types = [{'type': t['associate_type'], 'count': t['count']} for t in type_qs]
+
+    # Associate post type breakdown
+    post_type_qs = (
+        AssociatePost.objects
+        .filter(is_visible=True)
+        .values('post_type')
+        .annotate(count=models.Count('id'))
+    )
+    associate_post_types = [{'type': pt['post_type'], 'count': pt['count']} for pt in post_type_qs]
+
+    # Application status breakdown
+    app_qs = (
+        Associate.objects
+        .values('application_status')
+        .annotate(count=models.Count('id'))
+    )
+    application_statuses = [{'status': a['application_status'], 'count': a['count']} for a in app_qs]
+
+    # Courses by category
+    try:
+        cat_qs = (
+            Course.objects
+            .values('category')
+            .annotate(count=models.Count('id'))
+            .order_by('-count')
+        )
+        courses_by_category = [{'category': c['category'], 'count': c['count']} for c in cat_qs]
+    except Exception:
+        courses_by_category = []
+
+    # User registrations by month (last 6 months)
+    six_months_ago = timezone.now() - timedelta(days=180)
+    reg_qs = (
+        AuthUser.objects
+        .filter(date_joined__gte=six_months_ago)
+        .annotate(month=TruncMonth('date_joined'))
+        .values('month')
+        .annotate(count=models.Count('id'))
+        .order_by('month')
+    )
+    registrations_by_month = [
+        {'month': r['month'].strftime('%b %Y'), 'count': r['count']}
+        for r in reg_qs
+    ]
+
+    # Hub activity (reuse hub_health logic)
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    from apps.hubs.models import CareerHub
+    hubs = CareerHub.objects.all()
+    hub_activity = []
+    for hub in hubs:
+        student_posts_7d = Post.objects.filter(hub=hub, created_at__gte=seven_days_ago).count()
+        assoc_ids = Associate.objects.filter(hub=hub, is_verified=True).values_list('id', flat=True)
+        associate_posts_7d = AssociatePost.objects.filter(
+            associate_id__in=assoc_ids, created_at__gte=seven_days_ago, is_visible=True
+        ).count()
+        open_reports = ModerationReport.objects.filter(
+            associate_post__associate__hub=hub, status='OPEN'
+        ).count()
+        hub_activity.append({
+            'name': hub.name,
+            'student_posts': student_posts_7d,
+            'associate_posts': associate_posts_7d,
+            'open_reports': open_reports,
+        })
+
+    # Top associates by followers
+    all_associates = Associate.objects.filter(is_verified=True, is_suspended=False)
+    top_associates = []
+    for assoc in all_associates:
+        fc = Follow.objects.filter(associate=assoc).count()
+        pc = AssociatePost.objects.filter(associate=assoc, is_visible=True).count()
+        top_associates.append({'name': assoc.name, 'type': assoc.associate_type, 'followers': fc, 'posts': pc})
+    top_associates.sort(key=lambda x: x['followers'], reverse=True)
+    top_associates = top_associates[:8]
+
+    return Response({
+        'user_roles': user_roles,
+        'associate_types': associate_types,
+        'associate_post_types': associate_post_types,
+        'application_statuses': application_statuses,
+        'courses_by_category': courses_by_category,
+        'registrations_by_month': registrations_by_month,
+        'hub_activity': hub_activity,
+        'top_associates': top_associates,
+    })

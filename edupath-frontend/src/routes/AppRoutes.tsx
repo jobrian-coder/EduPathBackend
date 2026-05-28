@@ -28,6 +28,8 @@ import AdminUniversities from '../features/admin/pages/AdminUniversities'
 import AdminUsers from '../features/admin/pages/AdminUsers'
 import AdminHubModeration from '../features/admin/pages/AdminHubModeration'
 import AdminAssociateApplications from '../features/admin/pages/AdminAssociateApplications'
+import AdminAssociates from '../features/admin/pages/AdminAssociates'
+import AdminAnalytics from '../features/admin/pages/AdminAnalytics'
 import { ToastProvider } from '../features/admin/hooks/useToast'
 import { HomeGate, RequireAuth, RequireAdmin } from './guards'
 
@@ -71,6 +73,8 @@ export const AppRoutes: RouteObject[] = [
       { path: 'admin/courses', element: <RequireAdmin><AdminWrapper><AdminCourses /></AdminWrapper></RequireAdmin> },
       { path: 'admin/universities', element: <RequireAdmin><AdminWrapper><AdminUniversities /></AdminWrapper></RequireAdmin> },
       { path: 'admin/users', element: <RequireAdmin><AdminWrapper><AdminUsers /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/associates', element: <RequireAdmin><AdminWrapper><AdminAssociates /></AdminWrapper></RequireAdmin> },
+      { path: 'admin/analytics', element: <RequireAdmin><AdminWrapper><AdminAnalytics /></AdminWrapper></RequireAdmin> },
     ],
   },
 ]

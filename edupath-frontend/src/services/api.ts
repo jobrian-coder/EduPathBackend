@@ -1250,6 +1250,54 @@ export const adminApplicationsAPI = {
     }),
 };
 
+// ============================================
+// ADMIN ASSOCIATES MANAGEMENT API
+// ============================================
+
+export interface AdminAssociate {
+  id: number;
+  name: string;
+  associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
+  hub: string;
+  hub_id: string | null;
+  profile_image: string | null;
+  website: string | null;
+  location: string | null;
+  contact_email: string;
+  is_verified: boolean;
+  is_suspended: boolean;
+  strike_count: number;
+  application_status: 'PENDING' | 'AWAITING_RESPONSE' | 'APPROVED' | 'REJECTED';
+  post_count: number;
+  follower_count: number;
+  created_at: string;
+}
+
+export interface PlatformAnalytics {
+  user_roles: { role: string; count: number }[];
+  associate_types: { type: string; count: number }[];
+  associate_post_types: { type: string; count: number }[];
+  application_statuses: { status: string; count: number }[];
+  courses_by_category: { category: string; count: number }[];
+  registrations_by_month: { month: string; count: number }[];
+  hub_activity: { name: string; student_posts: number; associate_posts: number; open_reports: number }[];
+  top_associates: { name: string; type: string; followers: number; posts: number }[];
+}
+
+export const adminManagementAPI = {
+  listAllAssociates: () =>
+    apiRequest<AdminAssociate[]>('/associates/admin/associates/'),
+
+  toggleSuspendAssociate: (associateId: number) =>
+    apiRequest<{ message: string; is_suspended: boolean }>(
+      `/associates/admin/associates/${associateId}/suspend/`,
+      { method: 'POST' }
+    ),
+
+  getPlatformAnalytics: () =>
+    apiRequest<PlatformAnalytics>('/associates/admin/analytics/'),
+};
+
 export default {
   auth: authAPI,
   careers: careersAPI,
@@ -1264,4 +1312,5 @@ export default {
   associates: associatesAPI,
   adminHub: adminHubAPI,
   adminApplications: adminApplicationsAPI,
+  adminManagement: adminManagementAPI,
 };

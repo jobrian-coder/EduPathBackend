@@ -10,6 +10,8 @@ import {
   LogOut,
   ChevronRight,
   Download,
+  BarChart2,
+  UserCheck,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -39,7 +41,9 @@ export function AdminLayout({ children, onDownloadPdf }: AdminLayoutProps) {
 
   const menuItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/admin/analytics', icon: BarChart2, label: 'Analytics' },
     { path: '/admin/hubs/moderate', icon: ShieldCheck, label: 'Hub Moderation' },
+    { path: '/admin/associates', icon: UserCheck, label: 'Associates' },
     { path: '/admin/associates/applications', icon: FileText, label: 'Applications' },
     { path: '/admin/courses', icon: GraduationCap, label: 'Courses' },
     { path: '/admin/universities', icon: Building2, label: 'Universities' },
@@ -93,8 +97,9 @@ export function AdminLayout({ children, onDownloadPdf }: AdminLayoutProps) {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path || 
-                            (item.path !== '/admin' && location.pathname.startsWith(item.path));
+            const exactPaths = ['/admin', '/admin/associates'];
+            const isActive = location.pathname === item.path ||
+                            (!exactPaths.includes(item.path) && location.pathname.startsWith(item.path));
             const Icon = item.icon;
             
             return (

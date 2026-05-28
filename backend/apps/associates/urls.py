@@ -34,6 +34,9 @@ from .admin_views import (
     approve_application,
     reject_application,
     request_application_info,
+    list_all_associates,
+    toggle_suspend_associate,
+    platform_analytics,
 )
 
 urlpatterns = [
@@ -96,4 +99,11 @@ urlpatterns = [
     path('admin/applications/<int:associate_id>/approve/', approve_application, name='admin-approve-application'),
     path('admin/applications/<int:associate_id>/reject/', reject_application, name='admin-reject-application'),
     path('admin/applications/<int:associate_id>/request-info/', request_application_info, name='admin-request-application-info'),
+
+    # Associates management
+    path('admin/associates/', list_all_associates, name='admin-list-all-associates'),
+    path('admin/associates/<int:associate_id>/suspend/', toggle_suspend_associate, name='admin-toggle-suspend-associate'),
+
+    # Platform analytics
+    path('admin/analytics/', platform_analytics, name='admin-platform-analytics'),
 ]
