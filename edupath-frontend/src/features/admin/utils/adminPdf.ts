@@ -236,7 +236,7 @@ export function downloadDashboardPdf(data: {
 
 export function downloadUsersPdf(users: {
   email: string; first_name?: string; last_name?: string;
-  role: string; is_active: boolean; is_staff: boolean; date_joined?: string;
+  role: string; is_active?: boolean; is_staff?: boolean; date_joined?: string;
 }[]) {
   const pdf = initPdf();
   addPageBackground(pdf);

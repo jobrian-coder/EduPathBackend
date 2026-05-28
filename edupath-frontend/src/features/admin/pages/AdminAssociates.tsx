@@ -14,6 +14,8 @@ import {
   ChevronUp,
   Star,
   BookOpen,
+  Calendar,
+  X,
 } from 'lucide-react';
 import api, { type AdminAssociate } from '../../../services/api';
 
@@ -44,6 +46,8 @@ export default function AdminAssociates() {
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -91,6 +95,8 @@ export default function AdminAssociates() {
     if (statusFilter) list = list.filter(a => a.application_status === statusFilter);
     if (suspendedFilter === 'active') list = list.filter(a => !a.is_suspended);
     if (suspendedFilter === 'suspended') list = list.filter(a => a.is_suspended);
+    if (dateFrom) list = list.filter(a => new Date(a.created_at) >= new Date(dateFrom));
+    if (dateTo) list = list.filter(a => new Date(a.created_at) <= new Date(dateTo + 'T23:59:59'));
     list.sort((a, b) => {
       let av: number | string, bv: number | string;
       if (sortKey === 'followers') { av = a.follower_count; bv = b.follower_count; }
@@ -182,14 +188,39 @@ export default function AdminAssociates() {
               <option value="active">Active only</option>
               <option value="suspended">Suspended only</option>
             </select>
-            {(search || typeFilter || statusFilter || suspendedFilter) && (
-              <button onClick={() => { setSearch(''); setTypeFilter(''); setStatusFilter(''); setSuspendedFilter(''); }}
+            {(search || typeFilter || statusFilter || suspendedFilter || dateFrom || dateTo) && (
+              <button onClick={() => { setSearch(''); setTypeFilter(''); setStatusFilter(''); setSuspendedFilter(''); setDateFrom(''); setDateTo(''); }}
                 className="px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm hover:border-teal-500 hover:text-teal-300 transition-colors">
                 Clear
               </button>
             )}
           </div>
-          <p className="text-xs text-slate-500">{displayed.length} of {associates.length} associates</p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-xs text-slate-400">Joined from</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+                className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500 [color-scheme:dark]"
+              />
+              <span className="text-xs text-slate-400">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+                min={dateFrom || undefined}
+                className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500 [color-scheme:dark]"
+              />
+              {(dateFrom || dateTo) && (
+                <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-slate-500 hover:text-slate-300 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 ml-auto">{displayed.length} of {associates.length} associates</p>
+          </div>
         </div>
 
         {/* Table */}

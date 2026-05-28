@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import { Button } from '../../../components/common/Button'
 import { Input } from '../../../components/common/Input'
 import { Badge } from '../../../components/common/Badge'
+import { SlidersHorizontal, X } from 'lucide-react'
 import api, { type University } from '../../../services/api'
 
 type FlatCourse = {
@@ -30,6 +31,12 @@ export default function UniversityPrograms() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [sortBy, setSortBy] = useState('course__name')
   const [totalPrograms, setTotalPrograms] = useState(0)
+  const [feesMin, setFeesMin] = useState('')
+  const [feesMax, setFeesMax] = useState('')
+  const [cutoffMin, setCutoffMin] = useState('')
+  const [cutoffMax, setCutoffMax] = useState('')
+  const [durationFilter, setDurationFilter] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
 
   const categories = [
     'Technology', 'Medicine', 'Engineering', 'Law', 
@@ -74,6 +81,34 @@ export default function UniversityPrograms() {
 
     fetchPrograms()
   }, [id, searchQuery, selectedCategory, sortBy])
+
+  const durations = useMemo(() => {
+    const s = new Set(programs.map(p => p.duration).filter(Boolean) as string[])
+    return Array.from(s).sort()
+  }, [programs])
+
+  const displayedPrograms = useMemo(() => {
+    return programs.filter(p => {
+      if (feesMin && (p.avg_fees_ksh ?? 0) < Number(feesMin)) return false
+      if (feesMax && (p.avg_fees_ksh ?? Infinity) > Number(feesMax)) return false
+      if (cutoffMin && (p.cutoff_2023 ?? 0) < Number(cutoffMin)) return false
+      if (cutoffMax && (p.cutoff_2023 ?? Infinity) > Number(cutoffMax)) return false
+      if (durationFilter && p.duration !== durationFilter) return false
+      return true
+    })
+  }, [programs, feesMin, feesMax, cutoffMin, cutoffMax, durationFilter])
+
+  const activeFilterCount = [feesMin, feesMax, cutoffMin, cutoffMax, durationFilter, selectedCategory].filter(Boolean).length
+
+  const clearAllFilters = () => {
+    setSearchQuery('')
+    setSelectedCategory('')
+    setFeesMin('')
+    setFeesMax('')
+    setCutoffMin('')
+    setCutoffMax('')
+    setDurationFilter('')
+  }
 
   if (loading) {
     return (
@@ -168,9 +203,9 @@ export default function UniversityPrograms() {
 
         {/* Filters and Search */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search */}
+          <CardContent className="p-4 space-y-3">
+            {/* Row 1: search + category + sort + toggle */}
+            <div className="flex flex-col lg:flex-row gap-3">
               <div className="flex-1">
                 <Input
                   type="text"
@@ -180,63 +215,130 @@ export default function UniversityPrograms() {
                   className="w-full"
                 />
               </div>
-              
-              {/* Category Filter */}
-              <div className="lg:w-48">
+              <div className="lg:w-44">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium text-sm transition-shadow"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                 >
-                  <option value="" className="text-slate-800 dark:text-slate-200">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat} className="text-slate-800 dark:text-slate-200">{cat}</option>
-                  ))}
+                  <option value="">All Categories</option>
+                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
-
-              {/* Sort */}
-              <div className="lg:w-48">
+              <div className="lg:w-44">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium text-sm transition-shadow"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                 >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value} className="text-slate-800 dark:text-slate-200">{option.label}</option>
-                  ))}
+                  {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
+              <button
+                onClick={() => setShowFilters(v => !v)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  showFilters
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                More Filters
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/30 dark:bg-teal-500 text-xs font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
             </div>
+
+            {/* Row 2: advanced filters panel */}
+            {showFilters && (
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Min Fees (KSh)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 50000"
+                    value={feesMin}
+                    onChange={e => setFeesMin(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Max Fees (KSh)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 300000"
+                    value={feesMax}
+                    onChange={e => setFeesMax(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Min Cutoff Pts</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 30"
+                    value={cutoffMin}
+                    onChange={e => setCutoffMin(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Max Cutoff Pts</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 45"
+                    value={cutoffMax}
+                    onChange={e => setCutoffMax(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Duration</label>
+                  <select
+                    value={durationFilter}
+                    onChange={e => setDurationFilter(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Any Duration</option>
+                    {durations.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Active filter chips */}
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap gap-2 items-center pt-1">
+                <span className="text-xs text-slate-500">Active:</span>
+                {selectedCategory && <Chip label={`Category: ${selectedCategory}`} onRemove={() => setSelectedCategory('')} />}
+                {feesMin && <Chip label={`Fees ≥ ${Number(feesMin).toLocaleString()}`} onRemove={() => setFeesMin('')} />}
+                {feesMax && <Chip label={`Fees ≤ ${Number(feesMax).toLocaleString()}`} onRemove={() => setFeesMax('')} />}
+                {cutoffMin && <Chip label={`Cutoff ≥ ${cutoffMin}`} onRemove={() => setCutoffMin('')} />}
+                {cutoffMax && <Chip label={`Cutoff ≤ ${cutoffMax}`} onRemove={() => setCutoffMax('')} />}
+                {durationFilter && <Chip label={`Duration: ${durationFilter}`} onRemove={() => setDurationFilter('')} />}
+                <button onClick={clearAllFilters} className="text-xs text-red-400 hover:text-red-300 ml-1">Clear all</button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Programs Count */}
         <div className="flex items-center justify-between">
           <div className="text-slate-700 dark:text-slate-300 font-bold text-sm">
-            Showing {programs.length} of {totalPrograms} programs
+            Showing {displayedPrograms.length}{displayedPrograms.length !== totalPrograms ? ` of ${totalPrograms}` : ''} programs
           </div>
-          {(searchQuery || selectedCategory) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearchQuery('')
-                setSelectedCategory('')
-              }}
-            >
-              Clear Filters
-            </Button>
-          )}
         </div>
 
         {/* Programs List */}
         <div className="space-y-4">
-          {programs.length === 0 ? (
+          {displayedPrograms.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <div className="text-gray-600">
-                  {searchQuery || selectedCategory 
+                  {searchQuery || selectedCategory || activeFilterCount > 0
                     ? 'No programs found matching your criteria.'
                     : 'No programs available for this university.'
                   }
@@ -244,7 +346,7 @@ export default function UniversityPrograms() {
               </CardContent>
             </Card>
           ) : (
-            programs.map((program) => (
+            displayedPrograms.map((program) => (
               <Card key={program.id} className="group relative border border-slate-200/80 dark:border-slate-800/80 hover:border-teal-500/50 hover:shadow-md transition-all duration-300 bg-white dark:bg-slate-900/40 overflow-hidden">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
@@ -350,6 +452,17 @@ export default function UniversityPrograms() {
         </Card>
       </div>
     </PageContainer>
+  )
+}
+
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 text-xs font-medium">
+      {label}
+      <button onClick={onRemove} className="ml-0.5 hover:text-teal-900 dark:hover:text-white transition-colors">
+        <X className="w-3 h-3" />
+      </button>
+    </span>
   )
 }
 

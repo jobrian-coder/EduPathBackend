@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { DataTable, type Column } from '../components/DataTable';
 import { useToast } from '../hooks/useToast';
@@ -14,7 +14,8 @@ import {
   XCircle,
   Shield,
   Trash2,
-  User as UserIcon
+  User as UserIcon,
+  Calendar,
 } from 'lucide-react';
 
 type UserData = ApiUser & { date_joined: string };
@@ -60,6 +61,8 @@ export default function AdminUsers() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -128,7 +131,19 @@ export default function AdminUsers() {
     setSearchQuery('');
     setRoleFilter('all');
     setStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
   };
+
+  const displayedUsers = useMemo(() => {
+    if (!dateFrom && !dateTo) return users;
+    return users.filter(u => {
+      const joined = new Date(u.date_joined);
+      if (dateFrom && joined < new Date(dateFrom)) return false;
+      if (dateTo && joined > new Date(dateTo + 'T23:59:59')) return false;
+      return true;
+    });
+  }, [users, dateFrom, dateTo]);
 
   const getBulkTargets = () => {
     const targets = selectedIds.filter((id) => id !== currentUser?.id);
@@ -374,9 +389,37 @@ export default function AdminUsers() {
           </div>
         </div>
 
+        {/* Date range filter */}
+        <div className="mt-4 border-t border-slate-800 pt-4 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-500" />
+            <span className="text-sm text-slate-400">Joined from</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 [color-scheme:dark]"
+            />
+            <span className="text-sm text-slate-400">to</span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={e => setDateTo(e.target.value)}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 [color-scheme:dark]"
+            />
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-700 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-slate-400">
-            Showing <span className="text-white font-medium">{users.length}</span> users
+            Showing <span className="text-white font-medium">{displayedUsers.length}</span>
+            {displayedUsers.length !== users.length && <span> of {users.length}</span>} users
           </div>
           <button
             type="button"
@@ -502,7 +545,7 @@ export default function AdminUsers() {
 
       {/* Data Table */}
       <DataTable
-        data={users}
+        data={displayedUsers}
         columns={columns}
         keyExtractor={(user) => user.id}
         loading={loading}
