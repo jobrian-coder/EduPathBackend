@@ -60,7 +60,8 @@ class AssociatePost(models.Model):
     post_type = models.CharField(max_length=20, choices=POST_TYPES)
     title = models.CharField(max_length=150, blank=True, null=True)  # Required for all types (nullable for migration)
     body = models.TextField()  # Required for all types
-    image_url = models.URLField(blank=True, null=True)  # Used only by Event posts
+    image = models.ImageField(upload_to='associate_posts/', blank=True, null=True)  # Upload image from device
+    image_url = models.URLField(blank=True, null=True)  # External image URL (optional fallback)
     external_url = models.URLField(blank=True, null=True)
     cta_label = models.CharField(max_length=60, blank=True, null=True)  # Call-to-action button label
     deadline = models.DateField(blank=True, null=True)  # Application deadline or event date

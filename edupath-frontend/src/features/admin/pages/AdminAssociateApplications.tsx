@@ -12,7 +12,8 @@ import {
   Calendar,
   Send,
   Clock,
-  History
+  History,
+  Link as LinkIcon
 } from 'lucide-react';
 import api from '../../../services/api';
 import type { AssociateApplication } from '../../../services/api';
@@ -28,6 +29,8 @@ export default function AdminAssociateApplications() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [requestInfoQuestion, setRequestInfoQuestion] = useState('');
+  const [linkUserId, setLinkUserId] = useState('');
+  const [showLinkInput, setShowLinkInput] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -47,16 +50,32 @@ export default function AdminAssociateApplications() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm('Approve this application?')) return;
+  const handleApprove = async (id: number, userId?: string) => {
     setActionLoading(true);
     try {
-      await api.adminApplications.approveApplication(id);
-      addToast('Application approved', 'success');
+      const response = await api.adminApplications.approveApplication(id, userId);
+      const linkMethod = response.link_method;
+      const linkedEmail = response.linked_user?.email;
+      
+      if (linkMethod === 'email_match') {
+        addToast(`Approved and linked to ${linkedEmail}`, 'success');
+      } else if (linkMethod === 'username_match') {
+        addToast(`Approved and linked by username match`, 'success');
+      } else if (linkMethod === 'admin_assigned') {
+        addToast(`Approved and linked to user ${userId}`, 'success');
+      } else if (linkMethod === 'already_linked') {
+        addToast('Approved (already linked to user)', 'success');
+      } else {
+        addToast('Approved but no user linked (will need manual linking)', 'warning');
+      }
+      
       setExpandedId(null);
+      setLinkUserId('');
+      setShowLinkInput(false);
       loadApplications(tab);
-    } catch (error) {
-      addToast('Failed to approve application', 'error');
+    } catch (error: any) {
+      const message = error?.response?.data?.error || 'Failed to approve application';
+      addToast(message, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -174,10 +193,15 @@ export default function AdminAssociateApplications() {
               onApprove={() => handleApprove(app.id)}
               onReject={() => handleReject(app.id)}
               onRequestInfo={() => handleRequestInfo(app.id)}
+              onApproveWithLink={(userId) => handleApprove(app.id, userId)}
               rejectReason={rejectReason}
               setRejectReason={setRejectReason}
               requestInfoQuestion={requestInfoQuestion}
               setRequestInfoQuestion={setRequestInfoQuestion}
+              linkUserId={linkUserId}
+              setLinkUserId={setLinkUserId}
+              showLinkInput={showLinkInput}
+              setShowLinkInput={setShowLinkInput}
               actionLoading={actionLoading}
               isHistory={tab === 'history'}
             />
@@ -195,10 +219,15 @@ function ApplicationCard({
   onApprove,
   onReject,
   onRequestInfo,
+  onApproveWithLink,
   rejectReason,
   setRejectReason,
   requestInfoQuestion,
   setRequestInfoQuestion,
+  linkUserId,
+  setLinkUserId,
+  showLinkInput,
+  setShowLinkInput,
   actionLoading,
   isHistory,
 }: {
@@ -208,10 +237,15 @@ function ApplicationCard({
   onApprove: () => void;
   onReject: () => void;
   onRequestInfo: () => void;
+  onApproveWithLink: (userId: string) => void;
   rejectReason: string;
   setRejectReason: (v: string) => void;
   requestInfoQuestion: string;
   setRequestInfoQuestion: (v: string) => void;
+  linkUserId: string;
+  setLinkUserId: (v: string) => void;
+  showLinkInput: boolean;
+  setShowLinkInput: (v: boolean) => void;
   actionLoading: boolean;
   isHistory: boolean;
 }) {
@@ -257,6 +291,12 @@ function ApplicationCard({
                 <Calendar className="w-3.5 h-3.5" />
                 {new Date(app.created_at).toLocaleDateString()}
               </span>
+              {app.user_id && (
+                <span className="flex items-center gap-1 text-teal-400">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  Linked to user
+                </span>
+              )}
             </div>
           </div>
           <div className="text-slate-500">
@@ -363,6 +403,51 @@ function ApplicationCard({
               </div>
 
               {app.application_status === 'PENDING' && (
+                <div className="flex flex-col gap-2 p-3 bg-slate-900/40 rounded-lg border border-slate-800">
+                  {!showLinkInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowLinkInput(true)}
+                      className="text-left text-xs text-teal-400 hover:text-teal-300 font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      Approve & link to a specific User ID / Email / Username
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-400 font-medium">Link Custom User Account</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={linkUserId}
+                          onChange={(e) => setLinkUserId(e.target.value)}
+                          placeholder="User ID, email, or username..."
+                          className="flex-1 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-white text-xs focus:ring-1 focus:ring-teal-500 focus:border-transparent"
+                        />
+                        <button
+                          onClick={() => onApproveWithLink(linkUserId)}
+                          disabled={actionLoading || !linkUserId.trim()}
+                          className="px-3 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                        >
+                          Approve & Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLinkInput(false);
+                            setLinkUserId('');
+                          }}
+                          className="px-3 py-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {app.application_status === 'PENDING' && (
                 <div className="flex gap-3 items-start">
                   <input
                     type="text"
@@ -394,6 +479,7 @@ function ApplicationCard({
               )}
             </div>
           )}
+
         </div>
       )}
     </div>

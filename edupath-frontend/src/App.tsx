@@ -3,6 +3,7 @@ import './index.css'
 import { Navbar } from './components/common/Navbar'
 import CompactSidebar from './components/common/CompactSidebar'
 import { Footer } from './components/common/Footer'
+import { BackButton } from './components/common/BackButton'
 
 function App() {
   const location = useLocation()
@@ -19,6 +20,7 @@ function App() {
         )}
         <div className="flex min-h-screen flex-col">
           {!hideSidebar && <Navbar />}
+          {!hideSidebar && <BackButton />}
           <main className={`flex-1 ${hideSidebar ? '' : 'p-4 md:p-6'} bg-white bg-opacity-90 dark:bg-slate-900/60 dark:border-slate-700 backdrop-blur-xl`}>
             <Outlet />
           </main>

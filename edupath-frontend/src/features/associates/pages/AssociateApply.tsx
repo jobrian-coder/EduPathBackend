@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { User, CheckCircle, ChevronDown } from 'lucide-react'
 import api from '../../../services/api'
 import type { Hub } from '../../../services/api'
@@ -10,6 +11,7 @@ const TYPE_OPTIONS = [
 ]
 
 export default function AssociateApply() {
+  const navigate = useNavigate()
   const [hubs, setHubs] = useState<Hub[]>([])
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -48,7 +50,7 @@ export default function AssociateApply() {
         contact_email: form.contact_email,
         hub_id: form.hub_id,
       })
-      setSubmitted(true)
+      navigate('/associates/dashboard/create')
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {
@@ -108,7 +110,7 @@ export default function AssociateApply() {
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="e.g. James Mwangi or Moringa School"
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -147,7 +149,7 @@ export default function AssociateApply() {
                 required
                 value={form.hub_id}
                 onChange={e => setForm(f => ({ ...f, hub_id: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <option value="">Select a hub…</option>
                 {hubs.map(h => (
@@ -172,8 +174,8 @@ export default function AssociateApply() {
               value={form.bio}
               onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
               placeholder="Describe your background, what you offer students, and why you're joining EduPath..."
-              className={`w-full px-4 py-2.5 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none ${
-                bioOver ? 'border-red-500' : 'border-slate-700'
+              className={`w-full px-4 py-2.5 bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none ${
+                bioOver ? 'border-red-500' : 'border-slate-300'
               }`}
             />
             {bioOver && <p className="text-xs text-red-400 mt-1">Bio must be 300 characters or fewer.</p>}
@@ -190,7 +192,7 @@ export default function AssociateApply() {
               value={form.contact_email}
               onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))}
               placeholder="you@example.com"
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -203,7 +205,7 @@ export default function AssociateApply() {
                 value={form.website}
                 onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
                 placeholder="https://example.com"
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
             {/* Location */}
@@ -214,7 +216,7 @@ export default function AssociateApply() {
                 value={form.location}
                 onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                 placeholder="e.g. Nairobi, Kenya"
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
           </div>

@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 
                   'role', 'profile_picture', 'bio', 'location', 'created_at',
                   'is_active', 'is_staff', 'is_superuser', 'date_joined',
-                  'profile_completion', 'profile_completion_details']
+                  'profile_completion', 'profile_completion_details', 'ai_trials_balance']
         read_only_fields = ['id', 'created_at', 'date_joined', 'profile_completion', 'profile_completion_details']
     
     def get_profile_completion(self, obj):
@@ -75,7 +75,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
+        # Auto-link to an Associate application if one exists with the same contact email (case-insensitive)
+        from apps.associates.models import Associate
+        try:
+            associate = Associate.objects.get(contact_email__iexact=user.email)
+            if not associate.user:
+                associate.user = user
+                associate.save()
+        except Associate.DoesNotExist:
+            pass
         return user
+
 
 
 class AcademicProfileSerializer(serializers.ModelSerializer):

@@ -47,6 +47,18 @@ export function useAuth() {
     } finally {
       localStorage.removeItem('edupath.auth.token')
       localStorage.removeItem('edupath.user')
+      // Clear persisted advisor session so a new user starts fresh
+      const advisorKeys = [
+        'edupath.advisor.mode',
+        'edupath.advisor.sessionId',
+        'edupath.advisor.recommendations',
+        'edupath.advisor.suggestedHubs',
+        'edupath.advisor.interviewMessages',
+        'edupath.advisor.interviewQuestionCount',
+        'edupath.advisor.chatConversationId',
+        'edupath.advisor.chatMessages',
+      ]
+      advisorKeys.forEach(k => sessionStorage.removeItem(k))
       window.location.href = '/auth'
     }
   }

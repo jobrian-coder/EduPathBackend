@@ -245,6 +245,12 @@ export default function AssociateDashboard() {
               <Eye className="w-4 h-4" /> View Public Page
             </button>
             <button
+              onClick={() => navigate('/hubs')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 text-sm transition-colors"
+            >
+              <Users className="w-4 h-4" /> Go to Hubs
+            </button>
+            <button
               onClick={() => navigate('/associates/dashboard/create')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium transition-colors"
             >

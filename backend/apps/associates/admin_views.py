@@ -1,4 +1,5 @@
 from django.db import models
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -287,8 +288,10 @@ def associate_applications(request):
             'application_status': assoc.application_status,
             'rejection_reason': assoc.rejection_reason,
             'admin_notes': assoc.admin_notes,
+            'user_id': str(assoc.user.id) if assoc.user else None,
             'created_at': assoc.created_at.isoformat(),
         })
+
 
     return Response(data)
 
@@ -296,20 +299,102 @@ def associate_applications(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def approve_application(request, associate_id):
-    """Approve an associate application and link to existing user account by contact email."""
-    associate = Associate.objects.get(id=associate_id)
+    """Approve an associate application and link to existing user account."""
+    from apps.authentication.models import User
+    from rest_framework import status
+    
+    associate = get_object_or_404(Associate, id=associate_id)
     associate.is_verified = True
     associate.application_status = 'APPROVED'
-    # Auto-link to a User account if one exists with the same contact email
+    
+    linked_user = None
+    link_method = None
+    
+    # Only try to link if no user is currently linked
     if not associate.user:
-        try:
-            linked_user = User.objects.get(email=associate.contact_email)
+        # Method 1: Try to find user by contact email (case-insensitive)
+        if associate.contact_email:
+            try:
+                linked_user = User.objects.get(email__iexact=associate.contact_email)
+                link_method = 'email_match'
+            except User.DoesNotExist:
+                pass
+        
+        # Method 2: Try to find user by name matching username (case-insensitive)
+        if not linked_user and associate.name:
+            try:
+                linked_user = User.objects.get(username__iexact=associate.name.replace(' ', '_'))
+                link_method = 'username_match'
+            except User.DoesNotExist:
+                pass
+            
+            # Try without underscores too
+            if not linked_user:
+                try:
+                    linked_user = User.objects.get(username__iexact=associate.name.replace(' ', ''))
+                    link_method = 'username_match'
+                except User.DoesNotExist:
+                    pass
+        
+        # Method 3: Admin can provide a user_id in the request to manually link
+        if not linked_user:
+            user_id = request.data.get('user_id')
+            if user_id:
+                try:
+                    # User model uses UUID, handle string input
+                    import uuid
+                    if isinstance(user_id, str):
+                        user_id = uuid.UUID(user_id)
+                    linked_user = User.objects.get(id=user_id)
+                    link_method = 'admin_assigned'
+                except (User.DoesNotExist, ValueError) as e:
+                    return Response(
+                        {'error': f'User with id {user_id} does not exist or invalid ID format'}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        
+        # Assign the linked user if found
+        if linked_user:
+            # Check if this user already has another associate profile
+            existing = Associate.objects.filter(user=linked_user).exclude(id=associate.id).first()
+            if existing:
+                return Response(
+                    {
+                        'error': f'User {linked_user.email} is already linked to associate "{existing.name}" (ID: {existing.id}). '
+                                 f'Cannot link to "{associate.name}". Consider rejecting this application or manually creating a separate account.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             associate.user = linked_user
-        except User.DoesNotExist:
-            pass
-    associate.save()
+            associate.save()
+            linked_user.role = 'expert'
+            linked_user.save()
+        else:
+            associate.save()
+    else:
+        associate.save()
+        linked_user = associate.user
+        link_method = 'already_linked'
+        if linked_user:
+            linked_user.role = 'expert'
+            linked_user.save()
+    
     # TODO: Send confirmation email
-    return Response({'message': 'Application approved'})
+    response_data = {
+        'message': 'Application approved',
+        'associate_id': associate.id,
+        'name': associate.name,
+        'linked_user': {
+            'id': str(linked_user.id) if linked_user else None,
+            'email': linked_user.email if linked_user else None,
+            'username': linked_user.username if linked_user else None,
+        } if linked_user else None,
+        'link_method': link_method,
+    }
+    
+    return Response(response_data)
+
 
 
 @api_view(['POST'])

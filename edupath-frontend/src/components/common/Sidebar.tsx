@@ -16,13 +16,17 @@ export function Sidebar() {
           <BookOpen size={18}/> Directory
         </NavLink>
         <NavLink to="/courses/compare" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
-          <Layers size={18}/> Courses
+          <Layers size={18}/> Compare
         </NavLink>
         <NavLink to="/hubs" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Users size={18}/> Hubs
         </NavLink>
         <NavLink to="/profile" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
-          <User size={18}/> Profile
+          <div className="relative">
+            <User size={18}/>
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
+          </div>
+          Profile
         </NavLink>
       </div>
     </div>

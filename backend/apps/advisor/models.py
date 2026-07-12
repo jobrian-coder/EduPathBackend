@@ -28,6 +28,8 @@ class AdvisorSession(models.Model):
     )
     # Store rolling LLM message history as JSON list of {role, content} dicts
     message_history = models.JSONField(default=list, blank=True)
+    # Cache the recommendation pipeline result so repeated GET calls skip re-computation
+    cached_recommendations = models.JSONField(null=True, blank=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -145,6 +145,7 @@ export interface User {
   is_staff?: boolean;
   is_superuser?: boolean;
   email_verified?: boolean;
+  ai_trials_balance?: number;
 }
 
 export const authAPI = {
@@ -178,6 +179,12 @@ export const authAPI = {
     apiRequest<User>('/auth/profile/me/', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  purchaseTrial: (paymentMethod: string, phoneNumber?: string, amount?: number) =>
+    apiRequest<{ message: string; ai_trials_balance: number }>('/auth/profile/purchase_trial/', {
+      method: 'POST',
+      body: JSON.stringify({ payment_method: paymentMethod, phone_number: phoneNumber, amount }),
     }),
 };
 
@@ -972,6 +979,7 @@ export const adminAPI = {
 
 export interface Associate {
   id: number;
+  user: string | null; // User ID of the owner (null if not linked)
   name: string;
   associate_type: 'MENTOR' | 'SOCIETY' | 'SCHOOL';
   bio: string;
@@ -1227,6 +1235,7 @@ export interface AssociateApplication {
   application_status: 'PENDING' | 'AWAITING_RESPONSE' | 'APPROVED' | 'REJECTED';
   rejection_reason: string | null;
   admin_notes: string | null;
+  user_id: string | null; // User ID if linked to an account
   created_at: string;
 }
 
@@ -1234,8 +1243,17 @@ export const adminApplicationsAPI = {
   listApplications: (status: 'pending' | 'awaiting' | 'history' = 'pending') =>
     apiRequest<AssociateApplication[]>(`/associates/admin/applications/?status=${status}`),
 
-  approveApplication: (associateId: number) =>
-    apiRequest<{ message: string }>(`/associates/admin/applications/${associateId}/approve/`, { method: 'POST' }),
+  approveApplication: (associateId: number, userId?: string) =>
+    apiRequest<{ 
+      message: string; 
+      associate_id: number;
+      name: string;
+      linked_user: { id: string; email: string; username: string } | null;
+      link_method: 'email_match' | 'username_match' | 'admin_assigned' | 'already_linked' | null;
+    }>(`/associates/admin/applications/${associateId}/approve/`, { 
+      method: 'POST',
+      body: userId ? JSON.stringify({ user_id: userId }) : undefined
+    }),
 
   rejectApplication: (associateId: number, reason: string) =>
     apiRequest<{ message: string }>(`/associates/admin/applications/${associateId}/reject/`, {

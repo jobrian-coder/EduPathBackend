@@ -25,6 +25,18 @@ class StartAdvisorView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Please log in or create an account to claim your free trial."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            
+        if request.user.ai_trials_balance <= 0:
+            return Response(
+                {"error": "No trial credits remaining. Please purchase a trial token to proceed."},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+            
         try:
             service = GroqInterviewService()
             result = service.start_session()
@@ -34,9 +46,13 @@ class StartAdvisorView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        # Decrement credit balance
+        request.user.ai_trials_balance -= 1
+        request.user.save()
+
         # Create session in DB
         session = AdvisorSession.objects.create(
-            user=request.user if request.user.is_authenticated else None,
+            user=request.user,
             status='interviewing',
             question_count=0,
             message_history=[],
@@ -166,7 +182,18 @@ class RecommendationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Fetch user's academic profile for eligibility filtering
+        # ── Return cached result if already computed ────────────────────────
+        if session.cached_recommendations:
+            cached = session.cached_recommendations
+            return Response({
+                "session_id": str(session.id),
+                "profile_text": session.profile_text,
+                "recommendations": cached.get("recommendations", []),
+                "suggested_hubs": cached.get("suggested_hubs", []),
+                "academic_profile_used": cached.get("academic_profile_used", False),
+            })
+
+        # ── Fetch academic profile once ───────────────────────────────────────
         academic_profile = None
         if request.user.is_authenticated:
             from apps.authentication.models import AcademicProfile
@@ -175,6 +202,7 @@ class RecommendationsView(APIView):
             except AcademicProfile.DoesNotExist:
                 pass
 
+        # ── Run recommendation pipeline ───────────────────────────────────────
         try:
             recommender = RecommenderService()
             recommendations = recommender.recommend(
@@ -189,59 +217,89 @@ class RecommendationsView(APIView):
 
         # Attach up to 2 Associates per recommendation from its related_hub
         recommendations = self._attach_associates(recommendations)
-        
+
         # Get 2 hub recommendations based on the courses
         suggested_hubs = self._get_suggested_hubs(recommendations)
 
-        return Response(
-            {
-                "session_id": str(session.id),
-                "profile_text": session.profile_text,
-                "recommendations": recommendations,
-                "suggested_hubs": suggested_hubs,
-                "academic_profile_used": academic_profile is not None,
-            }
-        )
+        # ── Persist to cache so next call is instant ──────────────────────────
+        cache_payload = {
+            "recommendations": recommendations,
+            "suggested_hubs": suggested_hubs,
+            "academic_profile_used": academic_profile is not None,
+        }
+        session.cached_recommendations = cache_payload
+        session.save(update_fields=["cached_recommendations"])
+
+        return Response({
+            "session_id": str(session.id),
+            "profile_text": session.profile_text,
+            "recommendations": recommendations,
+            "suggested_hubs": suggested_hubs,
+            "academic_profile_used": academic_profile is not None,
+        })
 
     def _attach_associates(self, recommendations: list) -> list:
         """
-        For each recommendation append up to 2 Associates from the course's related_hub.
-        Prioritises MENTORs over SOCIETYs. SCHOOLs are excluded.
-        Lookup is a single SQL query per hub using the hub name/category match.
+        Attach up to 2 Associates per recommendation.
+        Uses 2 batched queries total instead of 2 × N queries.
         """
         from apps.associates.models import Associate
         from apps.hubs.models import CareerHub
 
-        for rec in recommendations:
-            hub_category = rec.get('hub_category', '')
-            rec['associates'] = []
-            if not hub_category:
-                continue
+        categories = list({
+            rec.get('hub_category', '').lower()
+            for rec in recommendations
+            if rec.get('hub_category')
+        })
+        if not categories:
+            for rec in recommendations:
+                rec['associates'] = []
+            return recommendations
 
-            # Resolve hub by category (case-insensitive)
-            hub = CareerHub.objects.filter(category__iexact=hub_category).first()
+        # 1 query: resolve all needed hubs at once
+        from django.db.models import Q
+        q = Q()
+        for cat in categories:
+            q |= Q(category__iexact=cat)
+        hub_map: dict = {h.category.lower(): h for h in CareerHub.objects.filter(q)}
+
+        if not hub_map:
+            for rec in recommendations:
+                rec['associates'] = []
+            return recommendations
+
+        hub_ids = [h.id for h in hub_map.values()]
+
+        # 1 query: fetch all relevant associates across all hubs
+        associates_qs = Associate.objects.filter(
+            hub_id__in=hub_ids,
+            is_verified=True,
+            is_suspended=False,
+            associate_type__in=['MENTOR', 'SOCIETY'],
+        ).only('id', 'name', 'associate_type', 'bio', 'profile_image', 'hub_id')
+
+        # Build hub_id → [associate, ...] map
+        from collections import defaultdict
+        hub_associates: dict = defaultdict(list)
+        for a in associates_qs:
+            hub_associates[a.hub_id].append(a)
+
+        for rec in recommendations:
+            cat = rec.get('hub_category', '').lower()
+            hub = hub_map.get(cat)
+            rec['associates'] = []
             if not hub:
                 continue
-
-            # Single queryset — verified, not suspended, MENTOR or SOCIETY only
-            qs = Associate.objects.filter(
-                hub=hub,
-                is_verified=True,
-                is_suspended=False,
-                associate_type__in=['MENTOR', 'SOCIETY'],
-            )[:10]
-
-            # Prioritise MENTORs, then SOCIETYs, take up to 2
-            mentors = [a for a in qs if a.associate_type == 'MENTOR']
-            societies = [a for a in qs if a.associate_type == 'SOCIETY']
+            pool = hub_associates.get(hub.id, [])
+            mentors = [a for a in pool if a.associate_type == 'MENTOR']
+            societies = [a for a in pool if a.associate_type == 'SOCIETY']
             selected = (mentors + societies)[:2]
-
             rec['associates'] = [
                 {
                     'id': a.id,
                     'name': a.name,
                     'associate_type': a.associate_type,
-                    'bio': a.bio[:200],
+                    'bio': a.bio[:200] if a.bio else '',
                     'profile_image': a.profile_image,
                 }
                 for a in selected
@@ -251,26 +309,29 @@ class RecommendationsView(APIView):
     
     def _get_suggested_hubs(self, recommendations: list) -> list:
         """
-        Suggest 2 hubs based on the course recommendations.
-        Counts hub_category occurrences and returns top 2 most relevant hubs.
+        Suggest 2 hubs — single batched query instead of one query per category.
         """
         from apps.hubs.models import CareerHub
         from collections import Counter
-        
-        # Count hub categories from recommendations
-        hub_categories = [rec.get('hub_category', '') for rec in recommendations if rec.get('hub_category')]
-        
+        from django.db.models import Q
+
+        hub_categories = [
+            rec.get('hub_category', '') for rec in recommendations if rec.get('hub_category')
+        ]
         if not hub_categories:
             return []
-        
-        # Get top 2 most common categories
-        category_counts = Counter(hub_categories)
-        top_categories = [cat for cat, _ in category_counts.most_common(2)]
-        
-        # Fetch hub details for these categories
+
+        top_categories = [cat for cat, _ in Counter(hub_categories).most_common(2)]
+
+        # Build OR filter for all top categories in one query
+        q = Q()
+        for cat in top_categories:
+            q |= Q(category__iexact=cat)
+        hubs = {h.category.lower(): h for h in CareerHub.objects.filter(q)}
+
         suggested_hubs = []
-        for category in top_categories:
-            hub = CareerHub.objects.filter(category__iexact=category).first()
+        for cat in top_categories:
+            hub = hubs.get(cat.lower())
             if hub:
                 suggested_hubs.append({
                     'id': str(hub.id),
@@ -280,9 +341,12 @@ class RecommendationsView(APIView):
                     'color': hub.color,
                     'category': hub.category,
                     'member_count': hub.member_count,
-                    'description': f"Join the {hub.name} community to connect with students and professionals in {hub.category}."
+                    'description': (
+                        f"Join the {hub.name} community to connect with "
+                        f"students and professionals in {hub.category}."
+                    ),
                 })
-        
+
         return suggested_hubs
 
 
@@ -294,8 +358,24 @@ class ChatStartView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Please log in or create an account to claim your free trial."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            
+        if request.user.ai_trials_balance <= 0:
+            return Response(
+                {"error": "No trial credits remaining. Please purchase a trial token to proceed."},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+            
+        # Decrement credit balance
+        request.user.ai_trials_balance -= 1
+        request.user.save()
+
         conversation = ChatConversation.objects.create(
-            user=request.user if request.user.is_authenticated else None,
+            user=request.user,
             context_type='advisor',  # Mark as advisor chat
             title='New Chat'
         )

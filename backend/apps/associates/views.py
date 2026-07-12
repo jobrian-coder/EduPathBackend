@@ -29,12 +29,28 @@ def apply_associate(request):
     """
     serializer = AssociateApplicationSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        from apps.authentication.models import User
+        user = request.user if request.user.is_authenticated else None
+        if not user:
+            contact_email = serializer.validated_data.get('contact_email')
+            if contact_email:
+                try:
+                    user = User.objects.get(email__iexact=contact_email)
+                except User.DoesNotExist:
+                    pass
+        
+        # Avoid IntegrityError if the user already has an Associate profile
+        if user and Associate.objects.filter(user=user).exists():
+            user = None
+            
+        serializer.save(user=user)
         return Response(
             {"message": "Application received. You will be contacted at your provided email once reviewed."},
             status=status.HTTP_201_CREATED
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 @api_view(['GET'])
@@ -100,6 +116,20 @@ def create_associate_post(request, associate_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def _get_associate_profile(user):
+    """Get the verified, non-suspended Associate profile for a user, auto-linking if necessary."""
+    try:
+        return Associate.objects.get(user=user, is_verified=True, is_suspended=False)
+    except Associate.DoesNotExist:
+        try:
+            assoc = Associate.objects.get(contact_email__iexact=user.email, is_verified=True, is_suspended=False)
+            assoc.user = user
+            assoc.save()
+            return assoc
+        except Associate.DoesNotExist:
+            raise Associate.DoesNotExist
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_associate_profile(request):
@@ -108,7 +138,7 @@ def get_my_associate_profile(request):
     Returns the Associate profile owned by the current user, or 404.
     """
     try:
-        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+        associate = _get_associate_profile(request.user)
     except Associate.DoesNotExist:
         return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -125,7 +155,12 @@ def get_my_application_status(request):
     Returns 404 if no application exists.
     """
     try:
-        associate = Associate.objects.get(user=request.user)
+        try:
+            associate = Associate.objects.get(user=request.user)
+        except Associate.DoesNotExist:
+            associate = Associate.objects.get(contact_email__iexact=request.user.email)
+            associate.user = request.user
+            associate.save()
         return Response({
             'has_application': True,
             'is_verified': associate.is_verified,
@@ -149,7 +184,7 @@ def update_my_associate_profile(request):
     Allows the owning user to update their associate bio, website, location, profile_image.
     """
     try:
-        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+        associate = _get_associate_profile(request.user)
     except Associate.DoesNotExist:
         return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -168,9 +203,11 @@ def create_my_associate_post(request):
     """
     POST /api/associates/me/posts/
     Allows the owning user to create a post for their associate profile.
+    Also creates a corresponding hub Post so it appears in the hub feed.
+    Supports multipart/form-data for image uploads.
     """
     try:
-        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+        associate = _get_associate_profile(request.user)
     except Associate.DoesNotExist:
         return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -180,8 +217,48 @@ def create_my_associate_post(request):
         body = serializer.validated_data.get('body', '')
         from apps.courses.utils import parse_hashtags
         tags = parse_hashtags(body)
-        post = serializer.save(associate=associate, tags=tags)
-        return Response(AssociatePostPublicSerializer(post).data, status=status.HTTP_201_CREATED)
+        associate_post = serializer.save(associate=associate, tags=tags)
+        
+        # If image was uploaded, set image_url to the uploaded image URL
+        if associate_post.image:
+            associate_post.image_url = request.build_absolute_uri(associate_post.image.url)
+            associate_post.save()
+        
+        # Also create a hub Post so it appears in the hub feed
+        from apps.hubs.models import Post
+        import uuid
+        
+        # Check if user is a member of the hub (required for hub posts)
+        if not associate.hub.members.filter(id=request.user.id).exists():
+            # Add user to hub if not already a member
+            associate.hub.members.add(request.user)
+        
+        # Map associate post type to hub post type
+        post_type_map = {
+            'UPDATE': 'discussion',
+            'OPPORTUNITY': 'discussion',
+            'EVENT': 'discussion',
+            'RESOURCE': 'guide',
+        }
+        
+        # Generate title if not provided
+        post_title = serializer.validated_data.get('title')
+        if not post_title:
+            post_type_display = dict(AssociatePost.POST_TYPES).get(serializer.validated_data.get('post_type', 'UPDATE'), 'Update')
+            post_title = f'{associate.name} - {post_type_display}'
+        
+        hub_post = Post.objects.create(
+            hub=associate.hub,
+            author=request.user,
+            title=post_title,
+            content=body,
+            post_type=post_type_map.get(serializer.validated_data.get('post_type', 'UPDATE'), 'discussion'),
+            is_expert_post=True,  # Mark as expert/associate post
+            tags=tags,
+            upvotes=associate_post.upvotes,
+        )
+        
+        return Response(AssociatePostPublicSerializer(associate_post).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -193,13 +270,14 @@ def delete_my_associate_post(request, post_id):
     Allows the owning user to delete one of their own associate posts.
     """
     try:
-        associate = Associate.objects.get(user=request.user, is_verified=True, is_suspended=False)
+        associate = _get_associate_profile(request.user)
     except Associate.DoesNotExist:
         return Response({'detail': 'No verified associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
 
     post = get_object_or_404(AssociatePost, id=post_id, associate=associate)
     post.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 @api_view(['GET'])

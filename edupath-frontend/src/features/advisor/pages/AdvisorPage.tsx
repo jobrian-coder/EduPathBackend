@@ -1,31 +1,34 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, ArrowRight, Loader, GraduationCap, BookmarkCheck, Bookmark, Download, Users, MessageCircle, FileText } from 'lucide-react';
-import api, { type AdvisorRecommendation } from '../../../services/api';
+import api from '../../../services/api';
 import { InterviewChat } from '../components/InterviewChat';
 import { RecommendationCard, getSavedRecommendations, type SavedRecommendation } from '../components/RecommendationCard';
 import AIChat from '../components/AIChat';
+import { TokenPaywall, AuthGate } from '../components/TokenPaywall';
 import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf';
-
-interface SuggestedHub {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  color: string;
-  category: string;
-  member_count: number;
-  description: string;
-}
+import { useAuth } from '../../../hooks/useAuth';
+import { useAdvisorSession } from '../context/AdvisorSessionContext';
+import { downloadRecommendationsPdf } from '../utils/advisorPdf';
+import { CreditCard, ShieldCheck, Lock, CheckCircle2, Coins, Wallet, LogIn, ChevronRight, HelpCircle } from 'lucide-react';
 
 export const AdvisorPage: React.FC = () => {
-  const [mode, setMode] = useState<'interview' | 'chat'>('interview');
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const {
+    mode, setMode,
+    sessionId, setSessionId,
+    recommendations, setRecommendations,
+    suggestedHubs, setSuggestedHubs,
+    interviewMessages, setInterviewMessages,
+    interviewQuestionCount, setInterviewQuestionCount,
+    chatConversationId, setChatConversationId,
+    clearAdvisorSession,
+  } = useAdvisorSession();
+
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [trialsBalance, setTrialsBalance] = useState<number | null>(null);
+
   const [isStarting, setIsStarting] = useState(false);
   const navigate = useNavigate();
   const resultsRef = useRef<HTMLDivElement>(null);
-  const [recommendations, setRecommendations] = useState<AdvisorRecommendation[] | null>(null);
-  const [suggestedHubs, setSuggestedHubs] = useState<SuggestedHub[]>([]);
   const [isFetchingRecommendations, setIsFetchingRecommendations] = useState(false);
   const [academicProfile, setAcademicProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -33,6 +36,140 @@ export const AdvisorPage: React.FC = () => {
   const [allSaved, setAllSaved] = useState(false);
   const [saveAllPulse, setSaveAllPulse] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Sync auth trials balance to local state
+  useEffect(() => {
+    if (user) {
+      setTrialsBalance(user.ai_trials_balance ?? 0);
+    } else {
+      setTrialsBalance(null);
+    }
+  }, [user]);
+
+  // Payment gateway states
+  const [activePaymentTab, setActivePaymentTab] = useState<'mpesa' | 'card' | 'paypal'>('mpesa');
+  
+  // Payment inputs and states
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [isProcessingMpesa, setIsProcessingMpesa] = useState(false);
+  const [mpesaStatusMsg, setMpesaStatusMsg] = useState('');
+  const [mpesaTimer, setMpesaTimer] = useState(15);
+  
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [isProcessingCard, setIsProcessingCard] = useState(false);
+  
+  const [isProcessingPaypal, setIsProcessingPaypal] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Sync mpesaPhone with user phone
+  useEffect(() => {
+    if (user?.phone_number) {
+      setMpesaPhone(user.phone_number);
+    }
+  }, [user]);
+
+  // Mpesa STK countdown effect
+  useEffect(() => {
+    let interval: any;
+    if (isProcessingMpesa && mpesaTimer > 0) {
+      interval = setInterval(() => {
+        setMpesaTimer(prev => prev - 1);
+      }, 1000);
+    } else if (mpesaTimer === 0 && isProcessingMpesa) {
+      handlePaymentSuccess('mpesa');
+    }
+    return () => clearInterval(interval);
+  }, [isProcessingMpesa, mpesaTimer]);
+
+  const handleMpesaPay = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mpesaPhone) return;
+    setIsProcessingMpesa(true);
+    setMpesaTimer(15);
+    setMpesaStatusMsg('Initiating M-Pesa Daraja STK Push...');
+    
+    setTimeout(() => {
+      setMpesaStatusMsg('STK Push sent! Please enter your PIN on your phone.');
+    }, 2000);
+  };
+
+  const handleCardPay = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cardNumber || !expiry || !cvc || !cardName) return;
+    setIsProcessingCard(true);
+    
+    setTimeout(() => {
+      handlePaymentSuccess('card');
+    }, 3000);
+  };
+
+  const handlePaypalPay = () => {
+    setIsProcessingPaypal(true);
+    setTimeout(() => {
+      handlePaymentSuccess('paypal');
+    }, 2000);
+  };
+
+  const handlePaymentSuccess = async (method: string) => {
+    try {
+      const res = await api.auth.purchaseTrial(method, method === 'mpesa' ? mpesaPhone : undefined, 45);
+      
+      // Update local storage user structure and state
+      const cachedUser = localStorage.getItem('edupath.user');
+      if (cachedUser) {
+        const u = JSON.parse(cachedUser);
+        u.ai_trials_balance = res.ai_trials_balance;
+        localStorage.setItem('edupath.user', JSON.stringify(u));
+      }
+      
+      setIsSuccess(true);
+      setTimeout(() => {
+        setTrialsBalance(res.ai_trials_balance);
+        setIsProcessingMpesa(false);
+        setIsProcessingCard(false);
+        setIsProcessingPaypal(false);
+        setIsSuccess(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert('Payment simulation failed. Please try again.');
+      setIsProcessingMpesa(false);
+      setIsProcessingCard(false);
+      setIsProcessingPaypal(false);
+    }
+  };
+
+  // Card input formatting helpers
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').substring(0, 16);
+    const formatted = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setCardNumber(formatted);
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    if (val.length >= 3) {
+      setExpiry(`${val.substring(0, 2)}/${val.substring(2)}`);
+    } else {
+      setExpiry(val);
+    }
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').substring(0, 3);
+    setCvc(val);
+  };
+
+  const showPaywall = isAuthenticated && 
+    ((mode === 'interview' && !sessionId && !recommendations && trialsBalance === 0) ||
+     (mode === 'chat' && !chatConversationId && trialsBalance === 0));
+
+  const showAuthGate = !isAuthenticated && 
+    ((mode === 'interview' && !sessionId && !recommendations) ||
+     (mode === 'chat' && !chatConversationId));
 
   // Fetch academic profile on mount
   useEffect(() => {
@@ -55,6 +192,15 @@ export const AdvisorPage: React.FC = () => {
     try {
       const res = await api.advisor.startSession();
       setSessionId(res.session_id);
+      // Decrement balance locally
+      setTrialsBalance(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
+      // Update cached user in localStorage
+      const cachedUser = localStorage.getItem('edupath.user');
+      if (cachedUser) {
+        const u = JSON.parse(cachedUser);
+        u.ai_trials_balance = Math.max(0, (u.ai_trials_balance ?? 1) - 1);
+        localStorage.setItem('edupath.user', JSON.stringify(u));
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to start advisor session.');
@@ -83,124 +229,19 @@ export const AdvisorPage: React.FC = () => {
   };
 
   const handleStartOver = () => {
-    setSessionId(null);
-    setRecommendations(null);
-    setSuggestedHubs([]);
+    clearAdvisorSession();
     setAllSaved(false);
   };
 
   const handleDownloadPDF = () => {
     if (!recommendations || isDownloading) return;
-
     setIsDownloading(true);
     try {
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = 210;
-      const margin = 15;
-      const contentW = pageW - margin * 2;
-      let y = 20;
-
-      const checkPage = (needed: number) => {
-        if (y + needed > 280) { pdf.addPage(); y = 20; }
-      };
-
-      // Header Banner
-      pdf.setFontSize(22);
-      pdf.setTextColor(15, 118, 110);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('EduPath — Course Recommendations', margin, y);
-      y += 8;
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(100, 116, 139);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on ${new Date().toLocaleDateString()} | Personal Career Guidance`, margin, y);
-      y += 10;
-
-      // Divider Line
-      pdf.setDrawColor(20, 184, 166);
-      pdf.setLineWidth(0.5);
-      pdf.line(margin, y, pageW - margin, y);
-      y += 10;
-
-      recommendations.forEach((rec, idx) => {
-        checkPage(60);
-
-        // Rank + Course Name
-        pdf.setFontSize(14);
-        pdf.setTextColor(15, 23, 42);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(`${idx + 1}. ${rec.course_name}`, margin, y);
-        y += 7;
-
-        // Institution
-        pdf.setFontSize(10);
-        pdf.setTextColor(71, 85, 105);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`Institution: ${rec.institution}`, margin + 4, y);
-        y += 5;
-
-        // Score / match
-        if (rec.match_score != null) {
-          pdf.text(`Match Score: ${rec.match_score}%`, margin + 4, y);
-          y += 5;
-        }
-
-        // Hub Category
-        if (rec.hub_category) {
-          pdf.text(`Hub Category: ${rec.hub_category}`, margin + 4, y);
-          y += 5;
-        }
-
-        // Avg Fees
-        if (rec.avg_fees_ksh != null) {
-          const formattedFee = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(rec.avg_fees_ksh);
-          pdf.text(`Average Fees: ${formattedFee} / year`, margin + 4, y);
-          y += 5;
-        }
-
-        // Cutoffs
-        if (rec.cutoff_2023 != null || rec.cutoff_2022 != null) {
-          const cutoffsStr = [
-            rec.cutoff_2023 != null ? `2023: ${rec.cutoff_2023}` : null,
-            rec.cutoff_2022 != null ? `2022: ${rec.cutoff_2022}` : null
-          ].filter(Boolean).join(' | ');
-          pdf.text(`Cluster Cutoff Points — ${cutoffsStr}`, margin + 4, y);
-          y += 5;
-        }
-
-        // Career paths
-        if (rec.career_paths && rec.career_paths.length > 0) {
-          pdf.text(`Recommended Careers: ${rec.career_paths.join(', ')}`, margin + 4, y);
-          y += 5;
-        }
-
-        // Detailed matching reasoning explanation
-        if (rec.match_explanation) {
-          checkPage(20);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(15, 118, 110);
-          pdf.text('Why Recommended:', margin + 4, y);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(51, 65, 85);
-          y += 5;
-
-          const lines = pdf.splitTextToSize(rec.match_explanation, contentW - 8);
-          lines.forEach((line: string) => {
-            checkPage(5);
-            pdf.text(line, margin + 8, y);
-            y += 4.5;
-          });
-        }
-
-        y += 4;
-        // Light separator between recommendation cards
-        pdf.setDrawColor(226, 232, 240);
-        pdf.line(margin, y, pageW - margin, y);
-        y += 8;
-      });
-
-      pdf.save('edupath-course-recommendations.pdf');
+      downloadRecommendationsPdf(
+        recommendations,
+        suggestedHubs,
+        hasGrades ? academicProfile?.kcse_mean_points : null,
+      );
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to download PDF. Please try again.');
@@ -237,7 +278,7 @@ export const AdvisorPage: React.FC = () => {
   const hasGrades = academicProfile?.kcse_mean_points != null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-800 dark:to-teal-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50/60 via-white to-cyan-50/40 dark:from-slate-900 dark:via-slate-800 dark:to-teal-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Header Section */}
@@ -251,30 +292,50 @@ export const AdvisorPage: React.FC = () => {
           <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
             Discover your perfect university path. Chat with our intelligent guide to uncover courses tailored to your unique interests, strengths, and goals.
           </p>
+          {isAuthenticated && (
+            <div className="flex justify-center mt-2">
+              {trialsBalance === 1 ? (
+                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 animate-pulse shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  ✨ 1 Free Demo Session Active
+                </div>
+              ) : trialsBalance !== null && trialsBalance > 1 ? (
+                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-teal-100/80 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-200 dark:border-teal-800 shadow-sm">
+                  <Coins className="w-3.5 h-3.5" />
+                  {trialsBalance} Trial Tokens Available
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-sm">
+                  <Lock className="w-3.5 h-3.5" />
+                  0 Tokens Remaining (Demo Used)
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex justify-center gap-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm p-2 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit mx-auto">
+        <div className="flex justify-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit mx-auto shadow-sm">
           <button
             onClick={() => setMode('interview')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
               mode === 'interview'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
+                : 'text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-slate-700'
             }`}
           >
-            <FileText className="w-5 h-5" />
+            <FileText className="w-4 h-4" />
             Get Recommendations
           </button>
           <button
             onClick={() => setMode('chat')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
               mode === 'chat'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
+                : 'text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-slate-700'
             }`}
           >
-            <MessageCircle className="w-5 h-5" />
+            <MessageCircle className="w-4 h-4" />
             Ask AI Anything
           </button>
         </div>
@@ -321,18 +382,29 @@ export const AdvisorPage: React.FC = () => {
         )}
         
         {/* Content Section */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-white/20 dark:border-slate-700/50">
+        <div className="bg-white dark:bg-slate-900 shadow-xl rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700/50" style={{ borderTop: '4px solid rgb(20 184 166)' }}>
           
-          {/* Chat Mode */}
-          {mode === 'chat' && (
-            <div className="h-[600px]">
-              <AIChat />
+          {authLoading ? (
+            <div className="p-16 text-center">
+              <Loader className="w-8 h-8 animate-spin mx-auto text-teal-600 dark:text-teal-400" />
+              <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm font-medium">Checking account status...</p>
             </div>
-          )}
-          
-          {/* Interview Mode */}
-          {mode === 'interview' && (
+          ) : showAuthGate ? (
+            <AuthGate onLearnMore={() => navigate('/how-it-works')} />
+          ) : showPaywall ? (
+            <TokenPaywall user={user} onPaymentSuccess={(newBalance) => setTrialsBalance(newBalance)} />
+          ) : (
             <>
+              {/* Chat Mode */}
+              {mode === 'chat' && (
+                <div className="h-[600px]">
+                  <AIChat />
+                </div>
+              )}
+              
+              {/* Interview Mode */}
+              {mode === 'interview' && (
+                <>
           {/* Landing State */}
           {!sessionId && !recommendations && (
             <div className="p-12 text-center space-y-8">
@@ -364,9 +436,13 @@ export const AdvisorPage: React.FC = () => {
           {/* Chat State */}
           {sessionId && !recommendations && !isFetchingRecommendations && (
             <div className="p-0">
-              <InterviewChat 
-                sessionId={sessionId} 
-                onComplete={() => handleInterviewComplete(sessionId)} 
+              <InterviewChat
+                sessionId={sessionId}
+                onComplete={() => handleInterviewComplete(sessionId)}
+                messages={interviewMessages}
+                setMessages={setInterviewMessages}
+                questionCount={interviewQuestionCount}
+                setQuestionCount={setInterviewQuestionCount}
               />
             </div>
           )}
@@ -408,7 +484,7 @@ export const AdvisorPage: React.FC = () => {
 
           {/* Results State */}
           {recommendations && !recommendationsError && (
-            <div ref={resultsRef} className="p-8 space-y-8 bg-slate-50 dark:bg-slate-900/50">
+            <div ref={resultsRef} className="p-8 space-y-8 bg-white dark:bg-slate-900/50">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Your Top 5 Course Matches</h2>
@@ -465,7 +541,7 @@ export const AdvisorPage: React.FC = () => {
                       <div
                         key={hub.id}
                         onClick={() => navigate(`/hubs/${hub.slug}`)}
-                        className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-500 transition-all cursor-pointer group"
+                        className="bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-md transition-all cursor-pointer group"
                       >
                         <div className="flex items-start gap-3">
                           <div className="text-3xl">{hub.icon}</div>
@@ -506,6 +582,8 @@ export const AdvisorPage: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
+          </>
           )}
           </>
           )}

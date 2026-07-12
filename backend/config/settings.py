@@ -177,3 +177,4 @@ SPECTACULAR_SETTINGS = {
 # AI Advisor — RAG Pipeline
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
 CHROMA_DB_PATH = config('CHROMA_DB_PATH', default='./chroma_store')
+

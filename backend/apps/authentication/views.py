@@ -71,6 +71,29 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def purchase_trial(self, request):
+        """Simulate purchasing an AI advisor trial credit"""
+        payment_method = request.data.get('payment_method', 'mpesa')
+        phone_number = request.data.get('phone_number')
+        amount = request.data.get('amount', 45)
+        
+        user = request.user
+        user.ai_trials_balance += 1
+        user.save()
+        
+        # Log activity
+        UserActivity.objects.create(
+            user=user,
+            activity_type='profile_updated',
+            description=f"Purchased 1 AI Advisor trial token using {payment_method.upper()} for KES {amount}."
+        )
+        
+        return Response({
+            'message': 'Payment successful and 1 trial credit has been added to your account.',
+            'ai_trials_balance': user.ai_trials_balance
+        })
     
     @action(detail=False, methods=['get', 'post', 'put'])
     def academic_profile(self, request):

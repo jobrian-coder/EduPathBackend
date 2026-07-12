@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Send, AlertTriangle, Image as ImageIcon, Link as LinkIcon, Calendar, Megaphone, FileText, X, Upload } from 'lucide-react'
 import api from '../../../services/api'
@@ -58,6 +58,15 @@ export default function AssociateCreatePost() {
   const [success, setSuccess] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isApproved, setIsApproved] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    api.associates.getApplicationStatus().then(res => {
+      setIsApproved(res.application_status === 'APPROVED' && res.is_verified)
+    }).catch(() => {
+      setIsApproved(false)
+    })
+  }, [])
 
   const selectedType = POST_TYPES.find(t => t.value === postType)!
   const SelectedIcon = selectedType.icon
@@ -105,12 +114,12 @@ export default function AssociateCreatePost() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-5 text-center px-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-5 text-center px-4">
         <div className="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center text-4xl">
           ✅
         </div>
-        <h2 className="text-2xl font-bold text-white">Post Published!</h2>
-        <p className="text-slate-400 text-sm max-w-xs">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Post Published!</h2>
+        <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xs">
           Your {selectedType.label.toLowerCase()} post is now live on your associate page.
         </p>
         <div className="flex gap-3">
@@ -124,7 +133,7 @@ export default function AssociateCreatePost() {
               setCtaLabel('')
               setDeadline('')
             }}
-            className="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 text-sm"
+            className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm"
           >
             Create another
           </button>
@@ -140,19 +149,19 @@ export default function AssociateCreatePost() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 py-10 px-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-4">
       <div className="max-w-2xl mx-auto">
 
         {/* Back link */}
         <button
           onClick={() => navigate('/associates')}
-          className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-6 transition-colors"
+          className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to My Posts
         </button>
 
-        <h1 className="text-2xl font-bold text-white mb-1">Create a Post</h1>
-        <p className="text-slate-400 text-sm mb-8">Choose a type, fill in the details, and publish to your page.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Create a Post</h1>
+        <p className="text-slate-600 dark:text-slate-400 text-sm mb-8">Choose a type, fill in the details, and publish to your page.</p>
 
         {/* Post type selector */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
@@ -195,12 +204,23 @@ export default function AssociateCreatePost() {
           </div>
         )}
 
+        {/* Approval banner */}
+        {isApproved === false && (
+          <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-5 text-amber-400 text-sm">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">Application Pending Approval</p>
+              <p className="text-amber-500/80 mt-1">You can draft your post now, but you'll only be able to publish it once your application is approved by our team.</p>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Title <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <input
@@ -213,13 +233,13 @@ export default function AssociateCreatePost() {
                 postType === 'RESOURCE'    ? 'e.g. KCSE Chemistry Revision Guide' :
                 'e.g. Company News Update'
               }
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
             />
           </div>
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Body <span className="text-red-400">*</span>
               <span className={`ml-2 text-xs font-normal ${body.length > 1000 ? 'text-red-400' : 'text-slate-500'}`}>
                 {body.length}/1000
@@ -236,14 +256,14 @@ export default function AssociateCreatePost() {
                 postType === 'RESOURCE'    ? 'Describe the resource and how it helps students…' :
                 'Write your update or announcement here…'
               }
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-sm"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-sm"
             />
           </div>
 
           {/* External URL — required for OPPORTUNITY, EVENT, RESOURCE */}
           {NEEDS_EXTERNAL.has(postType) && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {postType === 'RESOURCE' ? 'Resource URL' : 'Application / Registration Link'} <span className="text-red-400">*</span>
               </label>
               <input
@@ -251,7 +271,7 @@ export default function AssociateCreatePost() {
                 value={externalUrl}
                 onChange={e => setExternalUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
               />
             </div>
           )}
@@ -259,7 +279,7 @@ export default function AssociateCreatePost() {
           {/* CTA Label — required for OPPORTUNITY, EVENT, RESOURCE */}
           {NEEDS_CTA.has(postType) && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 Button Label <span className="text-red-400">*</span>
               </label>
               <input
@@ -271,7 +291,7 @@ export default function AssociateCreatePost() {
                   postType === 'EVENT'       ? 'e.g. Register Here' :
                   'e.g. View Resource'
                 }
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
               />
             </div>
           )}
@@ -279,7 +299,7 @@ export default function AssociateCreatePost() {
           {/* Deadline — optional for OPPORTUNITY, EVENT */}
           {NEEDS_DEADLINE.has(postType) && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {postType === 'EVENT' ? 'Event Date' : 'Application Deadline'}
                 <span className="text-slate-500 font-normal"> (optional)</span>
               </label>
@@ -287,14 +307,14 @@ export default function AssociateCreatePost() {
                 type="date"
                 value={deadline}
                 onChange={e => setDeadline(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
               />
             </div>
           )}
 
           {/* Image / Banner URL — available for all post types */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" />
                 Banner / Image URL
@@ -311,7 +331,7 @@ export default function AssociateCreatePost() {
                 postType === 'RESOURCE' ? 'https://... (preview image for your resource)' :
                 'https://... (image to accompany your update)'
               }
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
             />
             {imageUrl && (
               <div className="mt-3 relative">
@@ -331,7 +351,7 @@ export default function AssociateCreatePost() {
                 <button
                   type="button"
                   onClick={() => setImageUrl('')}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 rounded-lg text-slate-400 hover:text-white transition-colors"
+                  className="absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-slate-900/80 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -347,13 +367,13 @@ export default function AssociateCreatePost() {
             <button
               type="button"
               onClick={() => navigate('/associates')}
-              className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-sm font-medium transition-colors"
+              className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={submitting || body.length > 1000}
+              disabled={submitting || body.length > 1000 || isApproved === false}
               className="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4" />

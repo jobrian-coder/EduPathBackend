@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
 import eduguideIcon from '../../assets/eduguide.png'
+import { NotificationBell } from './NotificationBell'
 
 export function Navbar() {
   const navLink =
@@ -35,7 +36,7 @@ export function Navbar() {
             <Home size={18}/> Home
           </NavLink>
           <NavLink to="/courses/compare" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
-            <Bookmark size={18}/> Courses
+            <Bookmark size={18}/> Compare
           </NavLink>
           <NavLink to="/hubs" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
             <Users size={18}/> Hubs
@@ -46,14 +47,18 @@ export function Navbar() {
           </NavLink>
           {isAuthenticated ? (
             <>
+              <NotificationBell />
               {isAssociate && !isAdmin && (
                 <NavLink to="/associates/dashboard" className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
                   <LayoutDashboard size={18} /> My Dashboard
                 </NavLink>
               )}
               <NavLink to={isAdmin ? "/admin" : "/profile"} className={({isActive}) => `${navLink} ${isActive ? active : ''}`}>
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+                <div className="relative w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
                   <User size={12} className="text-white"/>
+                  {!isAdmin && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
+                  )}
                 </div>
                 {isAdmin ? 'Admin Dashboard' : 'Profile'}
               </NavLink>
@@ -83,7 +88,7 @@ export function Navbar() {
                   Home
                 </NavLink>
                 <NavLink to="/courses/compare" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
-                  Courses
+                  Compare
                 </NavLink>
                 <NavLink to="/hubs" onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
                   Hubs
@@ -102,8 +107,9 @@ export function Navbar() {
                         <LayoutDashboard size={16} /> My Dashboard
                       </NavLink>
                     )}
-                    <NavLink to={isAdmin ? "/admin" : "/profile"} onClick={() => setMenuOpen(false)} className={({isActive}) => `px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
-                      {isAdmin ? 'Admin Dashboard' : 'Profile'}
+                    <NavLink to={isAdmin ? "/admin" : "/profile"} onClick={() => setMenuOpen(false)} className={({isActive}) => `flex justify-between items-center px-3 py-2 rounded-md text-gray-700 dark:text-slate-200 ${isActive ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200' : 'hover:bg-teal-50 dark:hover:bg-slate-800/60'}`}>
+                      <span>{isAdmin ? 'Admin Dashboard' : 'Profile'}</span>
+                      {!isAdmin && <span className="w-2 h-2 bg-red-500 rounded-full" />}
                     </NavLink>
                     <button onClick={() => { logout(); setMenuOpen(false); }} className="mt-1 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white font-semibold">
                       Sign out

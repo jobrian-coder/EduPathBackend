@@ -83,17 +83,26 @@ export default function HubFeedV2() {
   // Feed sort & filter
   const [feedSortBy, setFeedSortBy] = useState<'newest' | 'popular' | 'discussed'>('newest')
   const [feedPostType, setFeedPostType] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const displayedPosts = useMemo(() => {
     let result = [...posts]
     if (feedPostType) result = result.filter(p => p.post_type === feedPostType)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(p => 
+        p.title.toLowerCase().includes(q) || 
+        p.content.toLowerCase().includes(q) ||
+        p.tags?.some(t => t.course_name?.toLowerCase().includes(q) || t.tag?.toLowerCase().includes(q))
+      )
+    }
     result.sort((a, b) => {
       if (feedSortBy === 'popular') return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes)
       if (feedSortBy === 'discussed') return b.comment_count - a.comment_count
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
     return result
-  }, [posts, feedSortBy, feedPostType])
+  }, [posts, feedSortBy, feedPostType, searchQuery])
 
   // Load associates for selected hub
   const loadAssociates = useCallback(async (hubId: string) => {
@@ -712,7 +721,15 @@ export default function HubFeedV2() {
                     <option value="discussion">💬 Discussions</option>
                     <option value="success_story">🎉 Success Stories</option>
                   </select>
-                  <span className="ml-auto text-xs text-slate-400">{displayedPosts.length} posts</span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => { e.stopPropagation(); setSearchQuery(e.target.value) }}
+                    onClick={e => e.stopPropagation()}
+                    placeholder="Search posts..."
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 w-full sm:w-48 ml-auto"
+                  />
+                  <span className="text-xs text-slate-400">{displayedPosts.length} posts</span>
                 </div>
               )
             }

@@ -22,6 +22,7 @@ class User(AbstractUser):
     location = models.CharField(max_length=100, blank=True, null=True)
     email_verified = models.BooleanField(default=False)
     mfa_enabled = models.BooleanField(default=False)
+    ai_trials_balance = models.IntegerField(default=1, help_text="Number of AI advisor trials remaining")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

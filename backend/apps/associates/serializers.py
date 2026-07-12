@@ -31,11 +31,16 @@ class AssociatePublicSerializer(serializers.ModelSerializer):
     """Serializer for public-facing Associate data — no admin fields."""
     follower_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = Associate
-        fields = ['id', 'name', 'associate_type', 'bio', 'profile_image', 'website', 'location', 'follower_count', 'is_following', 'created_at']
+        fields = ['id', 'user', 'name', 'associate_type', 'bio', 'profile_image', 'website', 'location', 'follower_count', 'is_following', 'created_at']
         read_only_fields = fields
+
+    def get_user(self, obj):
+        """Return user ID if linked, None otherwise."""
+        return str(obj.user.id) if obj.user else None
 
     def get_follower_count(self, obj):
         return obj.followers.count()
@@ -63,7 +68,7 @@ class AssociatePostCreateSerializer(serializers.ModelSerializer):
     """Serializer for admin-only post creation."""
     class Meta:
         model = AssociatePost
-        fields = ['post_type', 'title', 'body', 'image_url', 'external_url', 'cta_label', 'deadline']
+        fields = ['post_type', 'title', 'body', 'image', 'image_url', 'external_url', 'cta_label', 'deadline']
         read_only_fields = ['is_visible']
 
     def validate_post_type(self, value):

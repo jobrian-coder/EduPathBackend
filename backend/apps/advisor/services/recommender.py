@@ -13,31 +13,12 @@ from django.conf import settings
 from .vector_service import CourseVectorStore
 
 # ─── Reranking prompt ─────────────────────────────────────────────────────────
-RERANK_SYSTEM = """You are an expert Kenyan university admissions advisor.
-You will be given a student profile and a list of candidate university courses.
-Your task is to select and rank the TOP 5 courses that best match the student.
+RERANK_SYSTEM = """You are a Kenyan university admissions advisor. Rank the TOP 5 courses from the provided candidates that best match the student profile.
 
-Important: Consider the student's KCSE mean points and cluster points. Only recommend
-courses where the student is likely to meet the cutoff points based on their academic performance.
-
-OUTPUT RULES — CRITICAL:
-- Output ONLY a valid JSON array. No prose, no markdown, no code fences.
-- The array must contain EXACTLY 5 objects.
-- Each object must have these exact keys (no others):
-  {
-    "rank": <1-5>,
-    "course_name": "<name>",
-    "institution": "<institution or 'Various universities'>",
-    "hub_category": "<category>",
-    "match_explanation": "<2-3 sentence personalised explanation>",
-    "career_paths": ["<career1>", "<career2>", "<career3>"],
-    "cutoff_2023": <number or null>,
-    "cutoff_2022": <number or null>,
-    "avg_fees_ksh": <number or null>,
-    "match_score": <integer 1-100>
-  }
-- Use only information from the provided candidates; do not invent courses.
-- If a field is missing in the candidate data, use null."""
+OUTPUT: a valid JSON array only — no prose, no markdown, no code fences.
+EXACTLY 5 objects, each with:
+{"rank":<1-5>,"course_name":"","institution":"","hub_category":"","match_explanation":"<2 sentences>","career_paths":["","",""],"cutoff_2023":<n|null>,"cutoff_2022":<n|null>,"avg_fees_ksh":<n|null>,"match_score":<1-100>}
+Use only data from candidates. Null for missing fields."""
 
 
 class RecommenderService:
@@ -60,7 +41,7 @@ class RecommenderService:
         Returns list of 5 dicts.
         """
         # Stage 2a — vector retrieval
-        hits = self.vector_store.query(profile_text, n_results=25)
+        hits = self.vector_store.query(profile_text, n_results=15)
         if not hits:
             return []
 
@@ -72,7 +53,7 @@ class RecommenderService:
             return []
 
         # Stage 2c — diversity rerank
-        shortlist = self.vector_store.diversity_rerank(hits, n=15)
+        shortlist = self.vector_store.diversity_rerank(hits, n=8)
 
         # Stage 2d — Groq personalised rerank
         candidates_text = self._format_candidates(shortlist, academic_profile)
@@ -98,10 +79,10 @@ class RecommenderService:
         ]
 
         raw = self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=messages,
-            temperature=0.3,
-            max_tokens=2048,
+            temperature=0.2,
+            max_tokens=900,
         ).choices[0].message.content.strip()
 
         return self._parse_recommendations(raw)

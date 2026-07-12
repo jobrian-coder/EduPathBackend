@@ -25,11 +25,14 @@ export default function CompactSidebar() {
       
       {/* Profile Section prominently on top */}
       <NavLink to="/profile" className="flex items-center gap-3 px-1 py-2 mb-4 rounded-xl hover:bg-teal-50 dark:hover:bg-slate-800/60 transition-colors">
-        <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+        <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
           {isAuthenticated && (user as any)?.avatar ? (
             <img src={(user as any).avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
           ) : (
             <User size={20} className="text-white"/>
+          )}
+          {isAuthenticated && (
+            <span className="absolute top-0 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
           )}
         </div>
         <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">
@@ -50,7 +53,7 @@ export default function CompactSidebar() {
         </NavLink>
         <NavLink to="/courses/compare" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Layers size={20} className="flex-shrink-0"/>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Courses</span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Compare</span>
         </NavLink>
         <NavLink to="/hubs" className={({isActive}) => `${item} ${isActive ? active : ''}`}>
           <Users size={20} className="flex-shrink-0"/>

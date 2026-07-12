@@ -158,14 +158,26 @@ def course_list_grouped(request):
         search = request.query_params.get('q', '').strip()
         hub    = request.query_params.get('hub', '').strip()
 
-        qs = Course.objects.all().order_by('category', 'cutoff_2023')
+        from django.db.models import Case, When, Value, IntegerField
+        
+        qs = Course.objects.all()
         if search:
             qs = qs.filter(
                 Q(category__icontains=search) |
                 Q(name__icontains=search) |
                 Q(description__icontains=search) |
                 Q(institution__icontains=search)
-            )
+            ).annotate(
+                match_rank=Case(
+                    When(category__istartswith=search, then=Value(1)),
+                    When(category__icontains=search, then=Value(2)),
+                    When(name__icontains=search, then=Value(3)),
+                    default=Value(4),
+                    output_field=IntegerField(),
+                )
+            ).order_by('match_rank', 'category', 'cutoff_2023')
+        else:
+            qs = qs.order_by('category', 'cutoff_2023')
         if hub:
             qs = qs.filter(related_hub=hub)
 
