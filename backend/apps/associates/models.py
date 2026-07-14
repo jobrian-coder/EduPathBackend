@@ -24,6 +24,13 @@ class Associate(models.Model):
     is_suspended = models.BooleanField(default=False)
     strike_count = models.IntegerField(default=0)
 
+    TIER_CHOICES = [
+        ('FREE', 'Free'),
+        ('STANDARD', 'Standard'),
+        ('PREMIUM', 'Premium'),
+    ]
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='FREE')
+
     APPLICATION_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('AWAITING_RESPONSE', 'Awaiting Response'),
@@ -42,6 +49,11 @@ class Associate(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_monthly_post_count(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.posts.filter(created_at__year=now.year, created_at__month=now.month).count()
 
 
 class AssociatePost(models.Model):

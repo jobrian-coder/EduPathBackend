@@ -167,6 +167,8 @@ def get_my_application_status(request):
             'application_status': associate.application_status,
             'is_suspended': associate.is_suspended,
             'rejection_reason': associate.rejection_reason,
+            'tier': associate.tier,
+            'associate_id': associate.id,
         })
     except Associate.DoesNotExist:
         return Response({
@@ -213,6 +215,25 @@ def create_my_associate_post(request):
 
     serializer = AssociatePostCreateSerializer(data=request.data)
     if serializer.is_valid():
+        tier = associate.tier
+        post_type = serializer.validated_data.get('post_type', 'UPDATE')
+        
+        # 1. Post type restriction for FREE tier
+        if tier == 'FREE' and post_type != 'UPDATE':
+            return Response(
+                {'detail': 'Only Text Updates are allowed on the Free plan. Upgrade to Standard or Premium to post opportunities, events, or resources.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # 2. Monthly count limit
+        monthly_limit = 3 if tier == 'FREE' else (10 if tier == 'STANDARD' else None)
+        if monthly_limit is not None:
+            current_count = associate.get_monthly_post_count()
+            if current_count >= monthly_limit:
+                return Response(
+                    {'detail': f'Monthly post limit of {monthly_limit} reached for your {tier.capitalize()} plan. Upgrade to post more.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         # Parse hashtags from body
         body = serializer.validated_data.get('body', '')
         from apps.courses.utils import parse_hashtags
@@ -378,5 +399,37 @@ def get_associate_details(request, associate_id):
     Authenticated endpoint — get Associate details with follow status.
     """
     associate = get_object_or_404(Associate, id=associate_id, is_verified=True, is_suspended=False)
+    serializer = AssociatePublicSerializer(associate, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upgrade_tier(request):
+    """
+    POST /api/associates/me/upgrade/
+    Allows upgrading subscription tier (FREE, STANDARD, PREMIUM).
+    """
+    try:
+        associate = _get_associate_profile(request.user)
+    except Associate.DoesNotExist:
+        try:
+            associate = Associate.objects.get(user=request.user)
+        except Associate.DoesNotExist:
+            try:
+                associate = Associate.objects.get(contact_email__iexact=request.user.email)
+                associate.user = request.user
+                associate.save()
+            except Associate.DoesNotExist:
+                return Response({'detail': 'No associate profile found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+        
+    tier = request.data.get('tier')
+    if tier not in ['FREE', 'STANDARD', 'PREMIUM']:
+        return Response({'detail': 'Invalid subscription tier.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    associate.tier = tier
+    associate.save()
+    
+    # Return updated profile data
     serializer = AssociatePublicSerializer(associate, context={'request': request})
     return Response(serializer.data)

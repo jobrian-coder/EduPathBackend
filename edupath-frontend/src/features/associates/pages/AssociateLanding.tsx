@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Grid, LayoutGrid, Users, MapPin, Globe, Calendar, Heart, Share2, AlertCircle, CheckCircle, Clock, ArrowRight, Edit, Trash2, Image, FileText, Link as LinkIcon, Megaphone } from 'lucide-react'
+import { Plus, LogOut, Grid, LayoutGrid, Users, MapPin, Globe, Calendar, Heart, Share2, AlertCircle, CheckCircle, Clock, ArrowRight, Edit, Trash2, Image, FileText, Link as LinkIcon, Megaphone, Sparkles, Lock, CreditCard, ShieldCheck, CheckCircle2, Coins, Loader, X } from 'lucide-react'
 import api from '../../../services/api'
 import type { Associate, AssociatePost, Hub } from '../../../services/api'
 import { useAuth } from '../../../hooks/useAuth'
@@ -11,6 +11,8 @@ type ApplicationStatus = {
   application_status: 'PENDING' | 'AWAITING_RESPONSE' | 'APPROVED' | 'REJECTED' | null
   is_suspended: boolean
   rejection_reason: string | null
+  tier?: 'FREE' | 'STANDARD' | 'PREMIUM'
+  associate_id?: number
 }
 
 const TYPE_CONFIG = {
@@ -43,6 +45,99 @@ export default function AssociateLanding() {
   const [activeTab, setActiveTab] = useState<'profile' | 'hubs'>('profile')
   const [appStatus, setAppStatus] = useState<ApplicationStatus | null>(null)
   const [showPostTypeSelector, setShowPostTypeSelector] = useState(false)
+
+  // Upgrade / Tier selection states
+  const [selectedTier, setSelectedTier] = useState<'FREE' | 'STANDARD' | 'PREMIUM'>('STANDARD')
+  const [activeUpgradeTab, setActiveUpgradeTab] = useState<'mpesa' | 'card' | 'paypal'>('mpesa')
+  const [showUpgradeCheckout, setShowUpgradeCheckout] = useState(false)
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false)
+  const [upgradeMpesaPhone, setUpgradeMpesaPhone] = useState(user?.phone_number || '')
+  const [upgradeMsg, setUpgradeMsg] = useState('')
+  const [upgradeCardName, setUpgradeCardName] = useState('')
+  const [upgradeCardNumber, setUpgradeCardNumber] = useState('')
+  const [upgradeExpiry, setUpgradeExpiry] = useState('')
+  const [upgradeCvc, setUpgradeCvc] = useState('')
+
+  const handleUpgradeTier = async (tier: 'FREE' | 'STANDARD' | 'PREMIUM', skipPayment = false) => {
+    if (tier === 'FREE') {
+      if (!confirm('Are you sure you want to change your plan to FREE?')) return;
+    }
+    
+    setIsProcessingUpgrade(true)
+    setUpgradeMsg(activeUpgradeTab === 'mpesa' ? 'Initiating M-Pesa STK Push...' : 'Authorizing transaction...')
+    
+    const performUpgrade = async () => {
+      try {
+        const res = await api.associates.upgradeTier(tier)
+        // Update local app status and profile tier
+        if (appStatus) {
+          setAppStatus({ ...appStatus, tier: tier })
+        }
+        if (myAssociate) {
+          setMyAssociate({ ...myAssociate, tier: tier })
+        }
+        setShowUpgradeCheckout(false)
+        alert(`Successfully upgraded to ${tier} plan!`)
+      } catch (err: any) {
+        alert(err?.message || 'Failed to upgrade plan.')
+      } finally {
+        setIsProcessingUpgrade(false)
+      }
+    }
+
+    if (tier === 'FREE' || skipPayment) {
+      performUpgrade();
+    } else {
+      setTimeout(performUpgrade, 2000); // simulate checkout delay
+    }
+  }
+
+  const ASSOCIATE_PLANS = [
+    {
+      value: 'FREE',
+      name: 'Free Plan',
+      price: 'KES 0',
+      period: '/mo',
+      desc: 'Get started with basic posting capabilities.',
+      features: [
+        'Up to 3 posts per month',
+        'Text Updates only',
+        'Standard feed priority'
+      ],
+      borderCls: 'border-slate-800 bg-slate-900/40',
+      activeCls: 'border-slate-700 bg-slate-800/40'
+    },
+    {
+      value: 'STANDARD',
+      name: 'Standard Plan',
+      price: 'KES 1,000',
+      period: '/mo',
+      desc: 'Ideal for mentors and small societies.',
+      features: [
+        'Up to 10 posts per month',
+        'Unlock Opportunities, Events & Resources',
+        'Upload custom banners & images',
+        'Enhanced feed priority'
+      ],
+      borderCls: 'border-teal-500/30 bg-teal-950/10',
+      activeCls: 'border-teal-500 bg-teal-950/20'
+    },
+    {
+      value: 'PREMIUM',
+      name: 'Premium Plan',
+      price: 'KES 2,500',
+      period: '/mo',
+      desc: 'Perfect for schools & large institutions.',
+      features: [
+        'Unlimited posts per month',
+        'All post types and formats unlocked',
+        'Top priority feed placement',
+        'Analytics & follower metrics'
+      ],
+      borderCls: 'border-yellow-500/30 bg-yellow-950/10',
+      activeCls: 'border-yellow-500 bg-yellow-950/20'
+    }
+  ]
 
   useEffect(() => {
     // Wait for auth to finish initializing before checking authentication
@@ -340,6 +435,225 @@ export default function AssociateLanding() {
 
           {/* Main Content */}
           <div className="lg:col-span-2">
+            {/* Broadcast Tier Options for applied associates */}
+            {appStatus?.has_application && (
+              <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 mb-8 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-850 pb-4 flex-wrap gap-3">
+                  <div>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+                      Select / Upgrade Your Partner Space
+                    </h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                      Choose your plan. Paid tiers will automatically activate on verification or update immediately.
+                    </p>
+                  </div>
+                  <div className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-350">
+                    Current Plan: <span className="text-teal-400 font-bold uppercase">{appStatus?.tier || 'FREE'}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {ASSOCIATE_PLANS.map(plan => {
+                    const isCurrent = appStatus?.tier === plan.value;
+                    return (
+                      <div
+                        key={plan.value}
+                        className={`border rounded-2xl p-5 flex flex-col justify-between transition-all ${
+                          isCurrent ? plan.activeCls + ' ring-2 ring-teal-500/50 border-teal-500' : plan.borderCls
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-white text-base">{plan.name}</h4>
+                            {isCurrent && (
+                              <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400 text-[10px] font-bold uppercase tracking-wider border border-teal-500/30">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-baseline gap-1 mb-2">
+                            <span className="text-2xl font-extrabold text-white">{plan.price}</span>
+                            <span className="text-slate-500 text-xs">{plan.period}</span>
+                          </div>
+                          <p className="text-slate-450 text-xs mb-4 min-h-[32px]">{plan.desc}</p>
+                          <ul className="space-y-2 mb-6">
+                            {plan.features.map((feat, idx) => (
+                              <li key={idx} className="flex items-center gap-2 text-slate-300 text-xs">
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-405 flex-shrink-0" />
+                                <span>{feat}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        {!isCurrent && (
+                          <button
+                            onClick={() => {
+                              setSelectedTier(plan.value as any);
+                              if (plan.value === 'FREE') {
+                                handleUpgradeTier('FREE');
+                              } else {
+                                setShowUpgradeCheckout(true);
+                              }
+                            }}
+                            className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors border border-slate-700 hover:border-slate-600"
+                          >
+                            Select Plan
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Inline Checkout Form */}
+                {showUpgradeCheckout && (
+                  <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 mt-6 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-850 pb-3">
+                      <div>
+                        <h4 className="font-bold text-white text-sm">Upgrade to {selectedTier} Plan</h4>
+                        <p className="text-xs text-slate-500">Select payment method below to complete the subscription.</p>
+                      </div>
+                      <button
+                        onClick={() => setShowUpgradeCheckout(false)}
+                        className="p-1 rounded bg-slate-800 text-slate-400 hover:text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800">
+                      {(['mpesa', 'card', 'paypal'] as const).map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveUpgradeTab(tab)}
+                          className={`py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${
+                            activeUpgradeTab === tab
+                              ? 'bg-slate-850 text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-305'
+                          }`}
+                        >
+                          {tab === 'mpesa' ? 'M-Pesa' : tab === 'card' ? 'Card' : 'PayPal'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="pt-2">
+                      {activeUpgradeTab === 'mpesa' && (
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-400">M-Pesa Mobile Number</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. 0712345678"
+                              value={upgradeMpesaPhone}
+                              onChange={e => setUpgradeMpesaPhone(e.target.value)}
+                              className="w-full px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            />
+                          </div>
+                          {isProcessingUpgrade ? (
+                            <div className="p-3 bg-teal-500/5 border border-teal-500/10 rounded-xl flex items-center gap-2">
+                              <Loader className="w-4 h-4 animate-spin text-teal-400" />
+                              <span className="text-xs text-slate-400">{upgradeMsg}</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleUpgradeTier(selectedTier)}
+                              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs transition-all shadow-md"
+                            >
+                              Pay {selectedTier === 'STANDARD' ? 'KES 1,000' : 'KES 2,500'} via M-Pesa
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {activeUpgradeTab === 'card' && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-400">Card Name</label>
+                              <input
+                                type="text"
+                                placeholder="Name on card"
+                                value={upgradeCardName}
+                                onChange={e => setUpgradeCardName(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-400">Card Number</label>
+                              <input
+                                type="text"
+                                placeholder="16-digit card number"
+                                value={upgradeCardNumber}
+                                onChange={e => setUpgradeCardNumber(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-400">Expiry</label>
+                              <input
+                                type="text"
+                                placeholder="MM/YY"
+                                value={upgradeExpiry}
+                                onChange={e => setUpgradeExpiry(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-400">CVC</label>
+                              <input
+                                type="password"
+                                placeholder="***"
+                                value={upgradeCvc}
+                                onChange={e => setUpgradeCvc(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                          </div>
+                          {isProcessingUpgrade ? (
+                            <div className="p-3 bg-teal-500/5 border border-teal-500/10 rounded-xl flex items-center gap-2">
+                              <Loader className="w-4 h-4 animate-spin text-teal-400" />
+                              <span className="text-xs text-slate-400">{upgradeMsg}</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleUpgradeTier(selectedTier)}
+                              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold text-xs transition-all shadow-md"
+                            >
+                              Authorize Card Charge
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {activeUpgradeTab === 'paypal' && (
+                        <div className="space-y-4 text-center py-2">
+                          <p className="text-xs text-slate-500">Pay safely using your PayPal checkout portal.</p>
+                          {isProcessingUpgrade ? (
+                            <div className="p-3 bg-teal-500/5 border border-teal-500/10 rounded-xl flex items-center justify-center gap-2">
+                              <Loader className="w-4 h-4 animate-spin text-teal-400" />
+                              <span className="text-xs text-slate-400">{upgradeMsg}</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleUpgradeTier(selectedTier)}
+                              className="w-full py-2.5 bg-[#FFC439] hover:bg-[#F2B522] text-[#003087] rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                            >
+                              Pay with PayPal
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Tabs - Only show for verified associates */}
             {isVerified && (
               <div className="flex gap-2 mb-6">

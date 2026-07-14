@@ -178,3 +178,12 @@ SPECTACULAR_SETTINGS = {
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
 CHROMA_DB_PATH = config('CHROMA_DB_PATH', default='./chroma_store')
 
+# Safaricom M-Pesa Daraja API Settings
+MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
+MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
+MPESA_SHORTCODE = config('MPESA_SHORTCODE', default='174379')
+MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+MPESA_ENV = config('MPESA_ENV', default='sandbox')
+MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='')
+
+

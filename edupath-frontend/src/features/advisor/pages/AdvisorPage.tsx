@@ -409,9 +409,12 @@ export const AdvisorPage: React.FC = () => {
           {!sessionId && !recommendations && (
             <div className="p-12 text-center space-y-8">
               <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-slate-800 dark:text-white">Ready to find your path?</h3>
-                <p className="text-slate-500 dark:text-slate-400">
-                  You'll answer 10 adaptive questions about your educational journey, and we'll match you with the top 5 Kenyan university programs just for you.
+                <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/30 mb-2 animate-pulse">
+                  ⚠️ Demo Mode Active
+                </div>
+                <h3 className="text-2xl font-semibold text-slate-800 dark:text-white">Ready to try the Demo?</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+                  You are about to start a <strong>Free Demo Session</strong>. You'll answer 10 adaptive questions about your educational journey, and we'll match you with the top 5 Kenyan university programs just for you.
                 </p>
                 {hasGrades && (
                   <p className="text-teal-600 dark:text-teal-400 text-sm">
@@ -427,7 +430,7 @@ export const AdvisorPage: React.FC = () => {
                 {isStarting ? (
                   <><Loader className="w-5 h-5 animate-spin" /> Preparing...</>
                 ) : (
-                  <>Start Interview <ArrowRight className="w-5 h-5" /></>
+                  <>Start Demo <ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
             </div>

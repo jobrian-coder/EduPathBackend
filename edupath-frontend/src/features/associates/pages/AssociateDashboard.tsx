@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   Plus, Edit2, Globe, MapPin, Users, BarChart2,
   Trash2, Eye, Calendar, ExternalLink, AlertTriangle,
+  Sparkles, Lock, CreditCard, ShieldCheck, CheckCircle2, Coins, Loader, X
 } from 'lucide-react'
 import api from '../../../services/api'
 import type { Associate, AssociatePost } from '../../../services/api'
@@ -27,6 +28,7 @@ export default function AssociateDashboard() {
   const [posts, setPosts] = useState<AssociatePost[]>([])
   const [loading, setLoading] = useState(true)
   const [notAssociate, setNotAssociate] = useState(false)
+
 
   // Edit profile state
   const [editingProfile, setEditingProfile] = useState(false)
@@ -54,6 +56,7 @@ export default function AssociateDashboard() {
     }
     load()
   }, [])
+
 
   const openEditProfile = () => {
     if (!associate) return
@@ -289,7 +292,7 @@ export default function AssociateDashboard() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 lg:grid-cols-1 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-1 gap-3">
             {[
               { icon: <BarChart2 className="w-5 h-5 text-teal-400" />, label: 'Total Posts', value: posts.length },
               { icon: <Users className="w-5 h-5 text-violet-400" />, label: 'Followers', value: associate.follower_count },
@@ -303,6 +306,29 @@ export default function AssociateDashboard() {
                 </div>
               </div>
             ))}
+            
+            {/* Subscription Tier Card */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-2.5">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                    {associate.tier} Plan
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {associate.tier === 'FREE' && `${associate.monthly_post_count} / 3 posts this month`}
+                    {associate.tier === 'STANDARD' && `${associate.monthly_post_count} / 10 posts this month`}
+                    {associate.tier === 'PREMIUM' && `${associate.monthly_post_count} / Unlimited posts`}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/associates/upgrade')}
+                className="w-full py-1.5 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-1"
+              >
+                Upgrade Plan
+              </button>
+            </div>
           </div>
         </div>
 
@@ -399,3 +425,4 @@ export default function AssociateDashboard() {
     </div>
   )
 }
+

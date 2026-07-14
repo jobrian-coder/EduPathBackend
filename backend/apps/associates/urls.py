@@ -15,6 +15,7 @@ from .views import (
     create_my_associate_post,
     delete_my_associate_post,
     associate_posts_by_tag,
+    upgrade_tier,
 )
 from .admin_views import (
     dashboard_stats,
@@ -64,6 +65,7 @@ urlpatterns = [
     path('me/', get_my_associate_profile, name='my-associate-profile'),
     path('me/status/', get_my_application_status, name='my-application-status'),
     path('me/update/', update_my_associate_profile, name='update-my-associate-profile'),
+    path('me/upgrade/', upgrade_tier, name='upgrade-tier'),
     path('me/posts/', create_my_associate_post, name='create-my-associate-post'),
     path('me/posts/<int:post_id>/delete/', delete_my_associate_post, name='delete-my-associate-post'),
 

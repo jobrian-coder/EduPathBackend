@@ -21,6 +21,7 @@ import AssociateDirectory from '../features/associates/pages/AssociateDirectory'
 import AssociateDashboard from '../features/associates/pages/AssociateDashboard'
 import AssociateCreatePost from '../features/associates/pages/AssociateCreatePost'
 import AssociatePage from '../features/associates/pages/AssociatePage'
+import AssociateUpgrade from '../features/associates/pages/AssociateUpgrade'
 // Admin imports
 import AdminDashboard from '../features/admin/pages/AdminDashboard'
 import AdminCourses from '../features/admin/pages/AdminCourses'
@@ -66,6 +67,7 @@ export const AppRoutes: RouteObject[] = [
       { path: 'associates/apply', element: <AssociateApply /> },
       { path: 'associates/dashboard', element: <RequireAuth><AssociateDashboard /></RequireAuth> },
       { path: 'associates/dashboard/create', element: <RequireAuth><AssociateCreatePost /></RequireAuth> },
+      { path: 'associates/upgrade', element: <RequireAuth><AssociateUpgrade /></RequireAuth> },
       // Admin routes
       { path: 'admin', element: <RequireAdmin><AdminWrapper><AdminDashboard /></AdminWrapper></RequireAdmin> },
       { path: 'admin/hubs/moderate', element: <RequireAdmin><AdminWrapper><AdminHubModeration /></AdminWrapper></RequireAdmin> },

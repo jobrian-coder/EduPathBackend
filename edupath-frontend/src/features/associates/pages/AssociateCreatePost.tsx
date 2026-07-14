@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Send, AlertTriangle, Image as ImageIcon, Link as LinkIcon, Calendar, Megaphone, FileText, X, Upload } from 'lucide-react'
-import api from '../../../services/api'
+import { ArrowLeft, Send, AlertTriangle, Image as ImageIcon, Link as LinkIcon, Calendar, Megaphone, FileText, X, Upload, Lock } from 'lucide-react'
+import api, { type Associate } from '../../../services/api'
 
 type PostType = 'UPDATE' | 'OPPORTUNITY' | 'EVENT' | 'RESOURCE'
 
@@ -59,6 +59,7 @@ export default function AssociateCreatePost() {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isApproved, setIsApproved] = useState<boolean | null>(null)
+  const [associate, setAssociate] = useState<Associate | null>(null)
 
   useEffect(() => {
     api.associates.getApplicationStatus().then(res => {
@@ -66,12 +67,20 @@ export default function AssociateCreatePost() {
     }).catch(() => {
       setIsApproved(false)
     })
+
+    api.associates.getMe().then(assoc => {
+      setAssociate(assoc)
+    }).catch(() => {})
   }, [])
 
   const selectedType = POST_TYPES.find(t => t.value === postType)!
   const SelectedIcon = selectedType.icon
 
   const handleTypeChange = (type: PostType) => {
+    if (associate?.tier === 'FREE' && type !== 'UPDATE') {
+      setError('Opportunities, Events, and Resources are locked under the Free plan. Please upgrade your plan in the dashboard to publish these post types.')
+      return
+    }
     setPostType(type)
     setError(null)
   }
@@ -167,23 +176,41 @@ export default function AssociateCreatePost() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {POST_TYPES.map(type => {
             const TypeIcon = type.icon
+            const isLocked = associate?.tier === 'FREE' && type.value !== 'UPDATE'
             return (
               <button
                 key={type.value}
                 type="button"
                 onClick={() => handleTypeChange(type.value)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
                   postType === type.value
                     ? type.color
-                    : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-300'
-                }`}
+                    : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-350 bg-slate-900/10'
+                } ${isLocked ? 'opacity-55' : ''}`}
               >
+                {isLocked && <Lock className="w-3.5 h-3.5 absolute top-2 right-2 text-yellow-500" />}
                 <TypeIcon className="w-6 h-6" />
                 <span className="text-xs font-semibold">{type.label}</span>
               </button>
             )
           })}
         </div>
+
+        {/* Quota info banner */}
+        {associate && (
+          <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 mb-6 flex justify-between items-center text-xs text-slate-300">
+            <span>
+              Active Plan: <strong className="text-white uppercase font-bold">{associate.tier}</strong>
+            </span>
+            <span>
+              Quota used: <strong className="text-teal-400 font-bold">
+                {associate.tier === 'FREE' && `${associate.monthly_post_count} / 3 posts`}
+                {associate.tier === 'STANDARD' && `${associate.monthly_post_count} / 10 posts`}
+                {associate.tier === 'PREMIUM' && `${associate.monthly_post_count} / Unlimited`}
+              </strong> this month
+            </span>
+          </div>
+        )}
 
         {/* Type description */}
         <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-900/60 border border-slate-800 mb-6">

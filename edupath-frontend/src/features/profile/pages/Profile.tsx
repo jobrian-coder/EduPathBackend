@@ -4,6 +4,8 @@ import { PageContainer } from '../../../components/layout/PageContainer'
 import { Card, CardContent, CardHeader } from '../../../components/common/Card'
 import api, { type Bookmark } from '../../../services/api'
 import { TermsAcceptanceModal, hasConsented } from '../../legal/components/TermsAcceptanceModal'
+import { ShieldCheck, Sparkles, Coins, GraduationCap, RefreshCw } from 'lucide-react'
+
 
 // interface ProfileStats {
 //   followers: number
@@ -77,10 +79,13 @@ export default function Profile() {
   const [bioDraft, setBioDraft] = useState('')
   const [locationDraft, setLocationDraft] = useState('')
   const [userPosts, setUserPosts] = useState<any[]>([])
+  const [avatarStyle, setAvatarStyle] = useState('avataaars')
+  const [avatarSeed, setAvatarSeed] = useState('')
+  const [profilePictureDraft, setProfilePictureDraft] = useState('')
   const [isLoadingPosts, setIsLoadingPosts] = useState(false)
   const [isRequestingUpgrade, setIsRequestingUpgrade] = useState(false)
   const [upgradeStatus, setUpgradeStatus] = useState<null | 'idle' | 'requested' | 'error'>(null)
-  const [activeTab, setActiveTab] = useState<'academic' | 'activity' | 'role'>('academic')
+  const [activeTab, setActiveTab] = useState<'academic' | 'activity' | 'role' | 'classroom'>('academic')
   const [academic, setAcademic] = useState<any | null>(null)
   const [achievements, setAchievements] = useState<any[]>([])
   const [analytics, setAnalytics] = useState<any | null>(null)
@@ -88,6 +93,49 @@ export default function Profile() {
   const [, setIsLoadingAnalytics] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [followedAssociates, setFollowedAssociates] = useState<any[]>([])
+  
+  // Classroom codes states
+  const [classroomCodes, setClassroomCodes] = useState<any[]>([])
+  const [loadingCodes, setLoadingCodes] = useState(false)
+  const [generateCount, setGenerateCount] = useState(5)
+  const [isGeneratingCodes, setIsGeneratingCodes] = useState(false)
+
+  // Fetch codes when activeTab is classroom
+  useEffect(() => {
+    if (activeTab === 'classroom' && user?.id) {
+      fetchClassroomCodes()
+    }
+  }, [activeTab, user?.id])
+
+  const fetchClassroomCodes = async () => {
+    setLoadingCodes(true)
+    try {
+      const data = await api.auth.listOfferCodes()
+      setClassroomCodes(data)
+    } catch (error) {
+      console.error('Failed to fetch classroom codes:', error)
+    } finally {
+      setLoadingCodes(false)
+    }
+  }
+
+  const handleGenerateCodes = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (generateCount <= 0) return
+    setIsGeneratingCodes(true)
+    try {
+      const res = await api.auth.generateOfferCodes(generateCount)
+      alert(res.message)
+      if (user) {
+        setUser({ ...user, ai_trials_balance: res.ai_trials_balance })
+      }
+      fetchClassroomCodes()
+    } catch (error: any) {
+      alert(error.message || 'Failed to generate offer codes.')
+    } finally {
+      setIsGeneratingCodes(false)
+    }
+  }
 
   const fetchProfile = async () => {
     try {
@@ -163,18 +211,21 @@ export default function Profile() {
     }
   }, [user?.id])
 
-  const profile = useMemo(() => ({
-    ...DEFAULT_PROFILE,
-    ...(user ? {
-      username: user.username ?? DEFAULT_PROFILE.username,
-      fullName: `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.username || DEFAULT_PROFILE.fullName,
-      bio: user.bio ?? DEFAULT_PROFILE.bio,
-      profilePicture: user.profile_picture ?? DEFAULT_PROFILE.profilePicture,
-      location: user.location ?? DEFAULT_PROFILE.location,
-      role: (user.role ?? DEFAULT_PROFILE.role)?.toString().replace(/\b\w/g, (c: string) => c.toUpperCase()),
-      email: user.email,
-    } : {})
-  }), [user])
+  const profile = useMemo(() => {
+    const storedPic = user?.id ? localStorage.getItem(`edupath_avatar_${user.id}`) : null;
+    return {
+      ...DEFAULT_PROFILE,
+      ...(user ? {
+        username: user.username ?? DEFAULT_PROFILE.username,
+        fullName: `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.username || DEFAULT_PROFILE.fullName,
+        bio: user.bio ?? DEFAULT_PROFILE.bio,
+        profilePicture: storedPic || user.profile_picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username || 'John'}`,
+        location: user.location ?? DEFAULT_PROFILE.location,
+        role: (user.role ?? DEFAULT_PROFILE.role)?.toString().replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        email: user.email,
+      } : {})
+    };
+  }, [user])
 
   // Fetch user's posts
   useEffect(() => {
@@ -242,6 +293,9 @@ export default function Profile() {
 
   const handleTermsAccepted = async () => {
     setShowTermsModal(false)
+    if (profilePictureDraft && user?.id) {
+      localStorage.setItem(`edupath_avatar_${user.id}`, profilePictureDraft);
+    }
     // Retry saving after consent
     try {
       const updated = await api.auth.updateProfile({ bio: bioDraft, location: locationDraft })
@@ -266,7 +320,24 @@ export default function Profile() {
             </div>
             <CardContent className="relative z-10 p-6 md:p-8 flex flex-col gap-6 md:flex-row md:items-center">
               <div className="flex items-center gap-6 md:flex-1">
-                <img src={profile.profilePicture} className="w-24 h-24 rounded-full border-4 border-white/80 shadow-2xl" alt="Profile photo" />
+                <div className="relative group flex-shrink-0">
+                  {/* Glowing, rotating gradient ring */}
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-teal-500 via-emerald-400 to-cyan-500 opacity-75 blur-sm group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-tilt"></div>
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <img 
+                      src={editing ? profilePictureDraft || profile.profilePicture : profile.profilePicture} 
+                      className="w-full h-full object-cover" 
+                      alt="Profile photo" 
+                    />
+                  </div>
+                  {/* Floating role-based graphical badge */}
+                  <div className="absolute -bottom-1 -right-1 rounded-full p-2 bg-gradient-to-r from-teal-600 to-cyan-600 border-2 border-white dark:border-slate-800 text-white shadow-lg flex items-center justify-center">
+                    {user?.role === 'admin' && <ShieldCheck className="w-3.5 h-3.5" />}
+                    {user?.role === 'expert' && <Sparkles className="w-3.5 h-3.5" />}
+                    {user?.role === 'contributor' && <Coins className="w-3.5 h-3.5" />}
+                    {(user?.role === 'novice' || !user?.role) && <GraduationCap className="w-3.5 h-3.5" />}
+                  </div>
+                </div>
                 <div className="flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">{profile.role}</div>
                   <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{profile.fullName}</h2>
@@ -274,9 +345,75 @@ export default function Profile() {
                   {!editing ? (
                     <p className="mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{profile.bio}</p>
                   ) : (
-                    <div className="mt-3 max-w-2xl space-y-2">
-                      <textarea value={bioDraft} onChange={e=>setBioDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Your bio..." />
-                      <input value={locationDraft} onChange={e=>setLocationDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500" placeholder="Location" />
+                    <div className="mt-3 max-w-2xl space-y-3 p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-850">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Bio</label>
+                        <textarea value={bioDraft} onChange={e=>setBioDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500 text-sm" placeholder="Your bio..." rows={2} />
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Location</label>
+                        <input value={locationDraft} onChange={e=>setLocationDraft(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-500 text-sm" placeholder="Location" />
+                      </div>
+
+                      <div className="border-t border-slate-200 dark:border-slate-700 my-2 pt-2 space-y-2">
+                        <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider block">🎨 Graphic Avatar Customizer</span>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-slate-500 dark:text-slate-400">Avatar Style</label>
+                          <div className="flex gap-1.5 overflow-x-auto pb-1">
+                            {[
+                              { id: 'avataaars', label: 'Avatars' },
+                              { id: 'bottts', label: 'Robots' },
+                              { id: 'adventurer', label: 'Adventurer' },
+                              { id: 'pixel-art', label: 'Pixel' },
+                              { id: 'lorelei', label: 'Artistic' }
+                            ].map(style => (
+                              <button
+                                key={style.id}
+                                type="button"
+                                onClick={() => {
+                                  setAvatarStyle(style.id);
+                                  setProfilePictureDraft(`https://api.dicebear.com/7.x/${style.id}/svg?seed=${avatarSeed || user?.username || 'John'}`);
+                                }}
+                                className={`px-3 py-1 text-xs rounded-full border whitespace-nowrap transition-all ${
+                                  avatarStyle === style.id
+                                    ? 'bg-teal-500 border-teal-500 text-white shadow-sm font-semibold'
+                                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-750'
+                                }`}
+                              >
+                                {style.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-slate-500 dark:text-slate-400">Custom Seed Word</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={avatarSeed}
+                              onChange={e => {
+                                setAvatarSeed(e.target.value);
+                                setProfilePictureDraft(`https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${e.target.value || user?.username || 'John'}`);
+                              }}
+                              className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-slate-900 dark:text-white text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                              placeholder="Type something to randomize avatar..."
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rand = Math.random().toString(36).substring(7);
+                                setAvatarSeed(rand);
+                                setProfilePictureDraft(`https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${rand}`);
+                              }}
+                              className="px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
+                            >
+                              🎲 Random
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-300">
@@ -322,7 +459,30 @@ export default function Profile() {
                 <button className="flex-1 rounded-lg bg-teal-500 px-4 py-2 font-medium tracking-wide hover:bg-teal-600 transition text-white">Follow</button>
                 <button className="flex-1 rounded-lg bg-slate-200 dark:bg-slate-700 px-4 py-2 font-medium tracking-wide hover:bg-slate-300 dark:hover:bg-slate-600 transition text-slate-700 dark:text-slate-300">Message</button>
                 {!editing ? (
-                  <button onClick={()=>{ setEditing(true); setBioDraft(user?.bio ?? ''); setLocationDraft(user?.location ?? '') }} className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 font-medium tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition text-slate-700 dark:text-slate-300">Edit Profile</button>
+                  <button onClick={()=>{
+                    setEditing(true);
+                    setBioDraft(user?.bio ?? '');
+                    setLocationDraft(user?.location ?? '');
+                    
+                    // Parse seed and style from current avatar URL if it is a Dicebear URL
+                    const currentPic = profile.profilePicture;
+                    let parsedStyle = 'avataaars';
+                    let parsedSeed = user?.username || 'John';
+                    if (currentPic.includes('dicebear.com')) {
+                      const parts = currentPic.split('/');
+                      const styleIdx = parts.indexOf('7.x') + 1;
+                      if (styleIdx > 0 && styleIdx < parts.length) {
+                        parsedStyle = parts[styleIdx];
+                      }
+                      const seedParam = currentPic.split('seed=')[1];
+                      if (seedParam) {
+                        parsedSeed = seedParam.split('&')[0];
+                      }
+                    }
+                    setAvatarStyle(parsedStyle);
+                    setAvatarSeed(parsedSeed);
+                    setProfilePictureDraft(currentPic);
+                  }} className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 font-medium tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition text-slate-700 dark:text-slate-300">Edit Profile</button>
                 ) : (
                   <div className="flex-1 flex gap-2">
                     <button onClick={async()=>{
@@ -331,6 +491,12 @@ export default function Profile() {
                         setShowTermsModal(true)
                         return
                       }
+                      
+                      // Save chosen avatar to localStorage
+                      if (profilePictureDraft && user?.id) {
+                        localStorage.setItem(`edupath_avatar_${user.id}`, profilePictureDraft);
+                      }
+                      
                       try {
                         const updated = await api.auth.updateProfile({ bio: bioDraft, location: locationDraft })
                         setUser(updated)
@@ -510,6 +676,7 @@ export default function Profile() {
             { id: 'academic', label: 'Academic & Interests' },
             { id: 'activity', label: 'Activity & Stats' },
             { id: 'role', label: 'Role & Posts' },
+            { id: 'classroom', label: 'Classroom Codes 🎟️' },
           ].map(t => (
             <button
               key={t.id}
@@ -901,6 +1068,134 @@ export default function Profile() {
                   ))
                 )}
               </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'classroom' && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Generate codes box */}
+            <Card className="theme-surface card-shadow border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <div className="font-semibold text-slate-900 dark:text-white text-lg">🎟️ Generate Shareable Codes</div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-teal-50/50 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900/50 rounded-xl text-xs text-teal-850 dark:text-teal-350 space-y-1">
+                  <div className="font-bold">Available balance to share:</div>
+                  <div className="text-2xl font-black text-teal-600 dark:text-teal-400">
+                    {user?.ai_trials_balance || 0} Tokens
+                  </div>
+                  <p className="mt-1 leading-normal">
+                    Generate student codes from your pool. 1 token will be locked per code created and credited to the student who redeems it.
+                  </p>
+                </div>
+
+                <form onSubmit={handleGenerateCodes} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Number of codes to generate
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={Math.max(1, user?.ai_trials_balance || 0)}
+                      required
+                      value={generateCount}
+                      onChange={(e) => setGenerateCount(parseInt(e.target.value) || 0)}
+                      disabled={isGeneratingCodes || !user?.ai_trials_balance}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isGeneratingCodes || !user?.ai_trials_balance || generateCount <= 0}
+                    className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5"
+                  >
+                    {isGeneratingCodes ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate Codes'
+                    )}
+                  </button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* List generated codes */}
+            <Card className="lg:col-span-2 theme-surface card-shadow border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-slate-900 dark:text-white text-lg">List of Class Invite Codes</div>
+                  <button
+                    onClick={fetchClassroomCodes}
+                    disabled={loadingCodes}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingCodes ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingCodes ? (
+                  <div className="text-center py-12 text-slate-505">Loading offer codes...</div>
+                ) : classroomCodes.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                    <div className="text-4xl mb-2">🎫</div>
+                    <p className="text-sm font-medium">No invite codes generated yet.</p>
+                    <p className="text-xs text-slate-400 mt-1">Use the panel on the left to generate student codes.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-550 uppercase tracking-wider font-bold">
+                          <th className="py-2.5 px-3">Code</th>
+                          <th className="py-2.5 px-3">Created</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classroomCodes.map((codeItem) => (
+                          <tr key={codeItem.id} className="border-b border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                            <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white text-sm select-all">{codeItem.code}</td>
+                            <td className="py-3 px-3">{new Date(codeItem.created_at).toLocaleDateString()}</td>
+                            <td className="py-3 px-3">
+                              {codeItem.is_claimed ? (
+                                <span className="inline-flex px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-250 dark:border-slate-700">
+                                  Redeemed by @{codeItem.claimed_by}
+                                </span>
+                              ) : (
+                                <span className="inline-flex px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 font-semibold animate-pulse">
+                                  Active (Unused)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(codeItem.code);
+                                  alert('Code copied to clipboard!');
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-250 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300 font-medium"
+                              >
+                                Copy
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
             </Card>
           </div>
         )}

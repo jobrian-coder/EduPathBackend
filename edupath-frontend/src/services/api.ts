@@ -181,10 +181,34 @@ export const authAPI = {
       body: JSON.stringify(data),
     }),
 
-  purchaseTrial: (paymentMethod: string, phoneNumber?: string, amount?: number) =>
-    apiRequest<{ message: string; ai_trials_balance: number }>('/auth/profile/purchase_trial/', {
+  purchaseTrial: (paymentMethod: string, phoneNumber?: string, amount?: number, planType?: 'student' | 'class' | 'school') =>
+    apiRequest<{ status: 'pending' | 'completed'; message: string; checkout_request_id?: string; ai_trials_balance: number }>('/auth/profile/purchase_trial/', {
       method: 'POST',
-      body: JSON.stringify({ payment_method: paymentMethod, phone_number: phoneNumber, amount }),
+      body: JSON.stringify({ payment_method: paymentMethod, phone_number: phoneNumber, amount, plan_type: planType }),
+    }),
+
+  checkPaymentStatus: (checkoutRequestId: string) =>
+    apiRequest<{
+      checkout_request_id: string;
+      status: 'pending' | 'completed' | 'failed';
+      plan_type: 'student' | 'class' | 'school';
+      amount: number;
+      ai_trials_balance: number;
+    }>(`/auth/profile/check_payment_status/?checkout_request_id=${checkout_request_id}`),
+
+  generateOfferCodes: (count: number) =>
+    apiRequest<{ message: string; ai_trials_balance: number; codes: any[] }>('/auth/profile/generate_offer_codes/', {
+      method: 'POST',
+      body: JSON.stringify({ count }),
+    }),
+
+  listOfferCodes: () =>
+    apiRequest<any[]>('/auth/profile/list_offer_codes/'),
+
+  redeemOfferCode: (code: string) =>
+    apiRequest<{ message: string; ai_trials_balance: number }>('/auth/profile/redeem_offer_code/', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
     }),
 };
 
@@ -988,6 +1012,8 @@ export interface Associate {
   location: string | null;
   follower_count: number;
   is_following: boolean;
+  tier: 'FREE' | 'STANDARD' | 'PREMIUM';
+  monthly_post_count: number;
   created_at: string;
 }
 
@@ -1068,6 +1094,12 @@ export const associatesAPI = {
     apiRequest<Associate>('/associates/me/update/', {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  upgradeTier: (tier: 'FREE' | 'STANDARD' | 'PREMIUM') =>
+    apiRequest<Associate>('/associates/me/upgrade/', {
+      method: 'POST',
+      body: JSON.stringify({ tier }),
     }),
 
   createPost: (data: {
@@ -1252,7 +1284,7 @@ export const adminApplicationsAPI = {
       link_method: 'email_match' | 'username_match' | 'admin_assigned' | 'already_linked' | null;
     }>(`/associates/admin/applications/${associateId}/approve/`, { 
       method: 'POST',
-      body: userId ? JSON.stringify({ user_id: userId }) : undefined
+      body: JSON.stringify(userId ? { user_id: userId } : {})
     }),
 
   rejectApplication: (associateId: number, reason: string) =>

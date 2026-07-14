@@ -32,10 +32,11 @@ class AssociatePublicSerializer(serializers.ModelSerializer):
     follower_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
+    monthly_post_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Associate
-        fields = ['id', 'user', 'name', 'associate_type', 'bio', 'profile_image', 'website', 'location', 'follower_count', 'is_following', 'created_at']
+        fields = ['id', 'user', 'name', 'associate_type', 'bio', 'profile_image', 'website', 'location', 'follower_count', 'is_following', 'tier', 'monthly_post_count', 'created_at']
         read_only_fields = fields
 
     def get_user(self, obj):
@@ -50,6 +51,9 @@ class AssociatePublicSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return Follow.objects.filter(student=request.user, associate=obj).exists()
         return False
+
+    def get_monthly_post_count(self, obj):
+        return obj.get_monthly_post_count()
 
 
 class AssociatePostPublicSerializer(serializers.ModelSerializer):

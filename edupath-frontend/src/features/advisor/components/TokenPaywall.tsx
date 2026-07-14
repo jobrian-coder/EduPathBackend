@@ -12,13 +12,63 @@ interface TokenPaywallProps {
 }
 
 export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSuccess }) => {
-  const [activeTab, setActiveTab] = useState<'mpesa' | 'card' | 'paypal'>('mpesa');
+  const [activeTab, setActiveTab] = useState<'mpesa' | 'card' | 'paypal' | 'redeem'>('mpesa');
+  const [selectedPlan, setSelectedPlan] = useState<'student' | 'class' | 'school'>('student');
   
+  const PLANS = {
+    student: {
+      name: 'Student Plan',
+      priceKES: 650,
+      priceUSD: 5,
+      priceLabel: '$5',
+      usdLabel: '~KES 650',
+      desc: '1 Career Session. Perfect for an individual career journey analysis.',
+      features: [
+        'Full 10-Question Adaptive Interview',
+        'Top 5 Kenyan University Matches',
+        'KCSE Academic Eligibility Filter',
+        'PDF Career Report Export',
+        '24/7 AI Advisor Chat Session'
+      ]
+    },
+    class: {
+      name: 'Class Plan',
+      priceKES: 6500,
+      priceUSD: 50,
+      priceLabel: '$50',
+      usdLabel: '~KES 6,500',
+      desc: '100 session trials advertised for 100 students. Ideal for standard high school classes.',
+      features: [
+        '100 Session Credits (1 per student)',
+        'Classroom analytics dashboard',
+        'Teacher review & report access',
+        'Priority database matches',
+        'Shared study materials links'
+      ]
+    },
+    school: {
+      name: 'School Plan',
+      priceKES: 26000,
+      priceUSD: 200,
+      priceLabel: '$200',
+      usdLabel: '~KES 26,000',
+      desc: 'Unlimited sessions. Complete access for all students, teachers, and administrators.',
+      features: [
+        'Unlimited AI Career Sessions',
+        'School-wide portal integration',
+        'Custom domain access (e.g. yourschool.edu)',
+        'Dedicated success manager support',
+        'Full administrator exports & reports'
+      ]
+    }
+  };
+
   // M-Pesa states
   const [mpesaPhone, setMpesaPhone] = useState(user?.phone_number || '');
   const [isProcessingMpesa, setIsProcessingMpesa] = useState(false);
   const [mpesaStatusMsg, setMpesaStatusMsg] = useState('');
-  const [mpesaTimer, setMpesaTimer] = useState(15);
+  const [mpesaTimer, setMpesaTimer] = useState(30);
+  const [checkoutRequestId, setCheckoutRequestId] = useState('');
   
   // Card states
   const [cardNumber, setCardNumber] = useState('');
@@ -31,6 +81,10 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
   const [isProcessingPaypal, setIsProcessingPaypal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Redeem states
+  const [redeemCode, setRedeemCode] = useState('');
+  const [isRedeemingCode, setIsRedeemingCode] = useState(false);
+
   // Sync phone number
   useEffect(() => {
     if (user?.phone_number) {
@@ -38,29 +92,73 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
     }
   }, [user]);
 
-  // M-Pesa STK countdown simulator
+  // Poll M-Pesa transaction status
   useEffect(() => {
     let interval: any;
-    if (isProcessingMpesa && mpesaTimer > 0) {
-      interval = setInterval(() => {
-        setMpesaTimer(prev => prev - 1);
+    if (isProcessingMpesa && checkoutRequestId) {
+      interval = setInterval(async () => {
+        setMpesaTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setIsProcessingMpesa(false);
+            setCheckoutRequestId('');
+            alert('M-Pesa payment verification timed out. If you entered your PIN, please refresh in a moment to check your balance.');
+            return 0;
+          }
+          return prev - 1;
+        });
+
+        try {
+          const res = await api.auth.checkPaymentStatus(checkoutRequestId);
+          if (res.status === 'completed') {
+            clearInterval(interval);
+            setIsSuccess(true);
+            setTimeout(() => {
+              onPaymentSuccess(res.ai_trials_balance);
+              setIsProcessingMpesa(false);
+              setCheckoutRequestId('');
+              setIsSuccess(false);
+            }, 1500);
+          } else if (res.status === 'failed') {
+            clearInterval(interval);
+            setIsProcessingMpesa(false);
+            setCheckoutRequestId('');
+            alert('M-Pesa transaction failed or was cancelled.');
+          }
+        } catch (err) {
+          console.error('Error polling payment status:', err);
+        }
       }, 1000);
-    } else if (mpesaTimer === 0 && isProcessingMpesa) {
-      handleCompletePayment('mpesa');
     }
     return () => clearInterval(interval);
-  }, [isProcessingMpesa, mpesaTimer]);
+  }, [isProcessingMpesa, checkoutRequestId]);
 
-  const handleMpesaPay = (e: React.FormEvent) => {
+  const handleMpesaPay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mpesaPhone) return;
     setIsProcessingMpesa(true);
-    setMpesaTimer(15);
+    setMpesaTimer(30);
     setMpesaStatusMsg('Initiating M-Pesa Daraja STK Push...');
     
-    setTimeout(() => {
-      setMpesaStatusMsg('STK Push sent! Please enter your PIN on your phone.');
-    }, 2000);
+    try {
+      const plan = PLANS[selectedPlan];
+      const res = await api.auth.purchaseTrial('mpesa', mpesaPhone, plan.priceKES, selectedPlan);
+      if (res.status === 'pending') {
+        setCheckoutRequestId(res.checkout_request_id || '');
+        setMpesaStatusMsg('STK Push sent! Please enter your PIN on your phone.');
+      } else {
+        setIsSuccess(true);
+        setTimeout(() => {
+          onPaymentSuccess(res.ai_trials_balance);
+          setIsProcessingMpesa(false);
+          setIsSuccess(false);
+        }, 1500);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Failed to initiate M-Pesa payment. Please try again.');
+      setIsProcessingMpesa(false);
+    }
   };
 
   const handleCardPay = (e: React.FormEvent) => {
@@ -80,13 +178,34 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
     }, 2000);
   };
 
-  const handleCompletePayment = async (method: string) => {
+  const handleRedeemCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!redeemCode.trim()) return;
+    setIsRedeemingCode(true);
     try {
-      const res = await api.auth.purchaseTrial(method, method === 'mpesa' ? mpesaPhone : undefined, 45);
+      const res = await api.auth.redeemOfferCode(redeemCode.trim());
       setIsSuccess(true);
       setTimeout(() => {
         onPaymentSuccess(res.ai_trials_balance);
-        setIsProcessingMpesa(false);
+        setIsRedeemingCode(false);
+        setRedeemCode('');
+        setIsSuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Failed to redeem offer code. Please check and try again.');
+      setIsRedeemingCode(false);
+    }
+  };
+
+  const handleCompletePayment = async (method: string) => {
+    try {
+      const plan = PLANS[selectedPlan];
+      const chargeAmount = plan.priceUSD;
+      const res = await api.auth.purchaseTrial(method, undefined, chargeAmount, selectedPlan);
+      setIsSuccess(true);
+      setTimeout(() => {
+        onPaymentSuccess(res.ai_trials_balance);
         setIsProcessingCard(false);
         setIsProcessingPaypal(false);
         setIsSuccess(false);
@@ -94,7 +213,6 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
     } catch (err) {
       console.error(err);
       alert('Payment processing failed. Please try again.');
-      setIsProcessingMpesa(false);
       setIsProcessingCard(false);
       setIsProcessingPaypal(false);
     }
@@ -130,12 +248,16 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
         <div className="space-y-2">
           <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Payment Verified!</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
-            1 Trial Token has been added to your account. Unlocking your session...
+            {selectedPlan === 'student' ? '1 Trial Token has been added to your account. Unlocking your session...' :
+             selectedPlan === 'class' ? '100 Trial Tokens have been added to your account! Unlocking classroom access...' :
+             'Unlimited access has been unlocked for your account! Unlocking school portal...'}
           </p>
         </div>
       </div>
     );
   }
+
+  const activePlan = PLANS[selectedPlan];
 
   return (
     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-850 bg-white dark:bg-slate-900">
@@ -145,29 +267,44 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
           <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800">
             Secure checkout
           </span>
-          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">EduGuide AI Trial Token</h3>
+          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">Choose Your Plan</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
-            To cover API and advanced database indexing cost, every new career analysis session consumes one trial token.
+            Select a tailored plan designed for individuals, classes, or entire schools.
           </p>
         </div>
 
-        {/* Price Tag */}
+        {/* Plan Tiers Selector */}
+        <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+          {(['student', 'class', 'school'] as const).map(planKey => (
+            <button
+              key={planKey}
+              onClick={() => setSelectedPlan(planKey)}
+              disabled={isProcessingMpesa || isProcessingCard || isProcessingPaypal}
+              className={`py-2 text-xs font-bold rounded-lg transition-all capitalize ${
+                selectedPlan === planKey
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              {planKey === 'student' ? 'Student' : planKey === 'class' ? 'Class' : 'School'}
+            </button>
+          ))}
+        </div>
+
+        {/* Price Tag & Info */}
         <div className="bg-white dark:bg-slate-800 border-2 border-teal-500 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex justify-between items-center">
-            <span className="font-bold text-slate-800 dark:text-white text-base">Single Trial Token</span>
+            <span className="font-bold text-slate-800 dark:text-white text-base">{activePlan.name}</span>
             <div className="text-right">
-              <div className="text-2xl font-extrabold text-teal-600 dark:text-teal-400">KES 45</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">~ $0.45 USD</div>
+              <div className="text-2xl font-extrabold text-teal-600 dark:text-teal-400">{activePlan.priceLabel}</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500">{activePlan.usdLabel}</div>
             </div>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal border-t border-slate-100 dark:border-slate-700/50 pt-2">
+            {activePlan.desc}
+          </p>
           <div className="border-t border-slate-100 dark:border-slate-700/50 pt-3 space-y-2.5">
-            {[
-              'Full 10-Question Adaptive Interview',
-              'Top 5 Kenyan University Matches',
-              'KCSE Academic Eligibility Filter',
-              'PDF Career Report Export',
-              '24/7 AI Advisor Chat Session'
-            ].map((item, idx) => (
+            {activePlan.features.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                 <span>{item}</span>
@@ -187,19 +324,19 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
         <h4 className="font-bold text-slate-800 dark:text-white text-lg">Select Payment Method</h4>
         
         {/* Payment tabs */}
-        <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
-          {(['mpesa', 'card', 'paypal'] as const).map(tab => (
+        <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+          {(['mpesa', 'card', 'paypal', 'redeem'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              disabled={isProcessingMpesa || isProcessingCard || isProcessingPaypal}
-              className={`py-2 text-xs font-bold rounded-lg transition-all capitalize ${
+              disabled={isProcessingMpesa || isProcessingCard || isProcessingPaypal || isRedeemingCode}
+              className={`py-2 text-[10px] font-bold rounded-lg transition-all capitalize ${
                 activeTab === tab
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              {tab === 'mpesa' ? 'M-Pesa' : tab === 'card' ? 'Card' : 'PayPal'}
+              {tab === 'mpesa' ? 'M-Pesa' : tab === 'card' ? 'Card' : tab === 'paypal' ? 'PayPal' : 'Redeem Code'}
             </button>
           ))}
         </div>
@@ -249,7 +386,7 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
                   type="submit"
                   className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                 >
-                  Pay KES 45 via M-Pesa
+                  Pay {selectedPlan === 'student' ? 'KES 650' : selectedPlan === 'class' ? 'KES 6,500' : 'KES 26,000'} via M-Pesa
                 </button>
               )}
             </form>
@@ -329,7 +466,7 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
                     className="w-full py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     <CreditCard className="w-4 h-4" />
-                    Pay $0.45 USD Securely
+                    Pay ${selectedPlan === 'student' ? '5' : selectedPlan === 'class' ? '50' : '200'} USD Securely
                   </button>
                 )}
               </div>
@@ -355,10 +492,50 @@ export const TokenPaywall: React.FC<TokenPaywallProps> = ({ user, onPaymentSucce
                   className="w-full py-3.5 bg-[#FFC439] hover:bg-[#F2B522] text-[#003087] rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   <Coins className="w-4.5 h-4.5" />
-                  Pay with PayPal ($0.45)
+                  Pay with PayPal (${selectedPlan === 'student' ? '5' : selectedPlan === 'class' ? '50' : '200'})
                 </button>
               )}
             </div>
+          )}
+
+          {activeTab === 'redeem' && (
+            <form onSubmit={handleRedeemCode} className="space-y-4 flex flex-col justify-between h-full">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Student Invite / Offer Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. EDU-CLASS-XXXXXX"
+                  required
+                  value={redeemCode}
+                  onChange={(e) => setRedeemCode(e.target.value)}
+                  disabled={isRedeemingCode}
+                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none transition-all uppercase"
+                />
+                <p className="text-[10px] text-slate-450 dark:text-slate-500">
+                  Enter the unique student code shared by your teacher or classroom administrator.
+                </p>
+              </div>
+
+              {isRedeemingCode ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <Loader className="w-4 h-4 animate-spin text-teal-650" />
+                  Verifying & Redeeming Code...
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  Redeem Offer Code
+                </button>
+              )}
+            </form>
           )}
         </div>
       </div>
